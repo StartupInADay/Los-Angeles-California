@@ -1,0 +1,122 @@
+/**
+ * @file
+ * SMACSS Modules
+ *
+ * footer component.
+ *
+ */
+#footer {
+  color: $white;
+  font-size: 90%;
+  background: $grayscale_dark;
+  a {
+    color: $grayscale;
+  }
+}
+
+/****************************************
+          FOOTER 4-COLS STYLES
+*****************************************/
+
+.region--footer {
+  font-size: 14px;
+  background-color: $footer__blue;
+  color: $white;
+  position: relative;
+
+  // Container
+  .region--footer--wrapper {
+    max-width: $max-site-width;
+    margin: 0 auto;
+    padding-bottom: 52px;
+  }
+
+  // Column Inner Wrapper
+  .region {
+
+  }
+  // Block Inner Wrapper
+  .block {
+    padding: 25px 25px 10px;
+    @include window_size(desktop) {
+      padding: 40px 45px 0 0;
+    }
+    position: relative;
+  }
+  .col4 {
+    .block {
+      padding-right: 0;
+    }
+  }
+
+  // Footer Block Titles
+  .region--footer-col {
+    color: #fff;
+    .block__title {
+      font-family: Roboto, sans-serif;
+      display: block;
+      color: $white;
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    &.col3 {
+      .labp-twitter-feed {
+        max-width: 320px;
+      }
+    }
+  }
+}
+
+/****************************************
+          FOOTER 4-COLS LAYOUT
+*****************************************/
+.region--footer {
+  $zen-column-count: 4;
+  $zen-grid-width: 100%;
+  @include zen-grid-container();
+
+  .region--footer--col {
+    @include zen-grid-item-base();
+  }
+  @include window_size(tab-wide-up) {
+    
+  }
+  @include window_size(desktop) {
+    .col1 { @include zen-grid-item (1, 1); }
+    .col2 { @include zen-grid-item (1, 2); }
+    .col3 { @include zen-grid-item (1, 3); }
+    .col4 { @include zen-grid-item (1, 4); }
+    padding-bottom: 40px;
+  }
+
+}
+
+
+/****************************************
+          TWITTER BLOCK OVERRIDES
+*****************************************/
+
+
+.SandboxRoot.env-bp-550 .timeline-Tweet-text {
+    font-size: 14px !important;
+  }
+
+.block-twitter-block {
+  .block__title {
+    background: url(../images/icon_twitter-white.svg) no-repeat;
+    background-size: 28px 23px;
+    background-position-x: 130px;
+    height: 28px;
+    padding-top: 2px;
+    /*    @include window_size(desktop) {
+      padding-left: 10px;
+    }*/
+  }
+  iframe {
+    margin-left: -10px;
+  }
+    
+
+}

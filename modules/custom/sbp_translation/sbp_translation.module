@@ -1,0 +1,77 @@
+<?php
+
+/**
+ * Implements hook_block_info().
+ */
+function sbp_translation_block_info() {
+  $blocks = array();
+  $blocks['sbp_translation_icon'] = array(
+    'info' => t('SBP Header Translation Icon'),
+  );
+  $blocks['sbp_translation_form'] = array(
+    'info' => t('SBP Header Translation Form'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function sbp_translation_block_configure($delta = '') {
+  $form = array();
+  switch ($delta) {
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function sbp_translation_block_save($delta = '', $edit = array()) {
+  switch ($delta) {
+  }
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function sbp_translation_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'sbp_translation_icon':
+      $image = theme_image(array(
+        'path' => drupal_get_path('module', 'sbp_translation') . '/images/icon-google-translate.png',
+        'alt' => 'Translate',
+        'attributes' => array('class'=>'sbp-translation-icon'),
+      ));
+      $block['content'] = array(
+        'icon' => array(
+          '#type' => 'markup',
+          '#markup' => $image,
+        ),
+      );
+      break;
+    case 'sbp_translation_form':
+      $block['content'] = _sbp_translation_widget_form();
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Custom callback to render widget markup.
+ */
+function _sbp_translation_widget_form() {
+  $markup = "<div id=\"google_translate_element\"></div>
+
+<script type=\"text/javascript\">
+  function googleTranslateElementInit() {
+	new google.translate.TranslateElement({pageLanguage: 'en', includedLanguages: 'en,zh-TW,es,ja,ru,tl,vi,ko,pt-PT,iw,ar', layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL, autoDisplay: false},'google_translate_element');
+  }
+</script>
+<noscript>Unable to load google translation scripts.</noscript>
+<script type=\"text/javascript\" src=\"//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit\"></script>
+<noscript>Unable to load google translation scripts.</noscript>";
+  return $markup;
+}

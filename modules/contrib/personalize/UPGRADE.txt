@@ -1,0 +1,35 @@
+Module requirements:
+
+* Personalize-7.x-1.0-rc2 or higher requires the Entity API module
+  (https://www.drupal.org/project/entity)
+
+Specific version upgrade requirements:
+
+* Upgrading from Personalize-7.x-1.0-rc2 to Personalize-7.x-1.0-rc3 or later
+
+  After upgrading the module code, DO NOT RUN update.php until after you've
+  met the following conditions:
+
+  * If you're also using the Acquia Lift module, update to its 7.x-1.0-rc4
+    or higher module version.
+  * Modify any custom code you may have that provides a visitor context plugin.
+    The interface for Visitor Context plugins has changed. If you have any code
+    on your site that implements PersonalizeContextInterface, note that the
+    method signature for create() now has the following default arguments:
+    $agent = NULL, $selected_context = array()
+
+* Upgrading from Personalize-7.x-1.0-beta7 to Personalize-7.x-1.0-beta8 or later
+
+  After upgrading the module code, DO NOT RUN update.php until after you've
+  met the following conditions:
+
+  * If you're also using the Acquia Lift module
+    (https://www.drupal.org/project/acquia_lift), update to its 7.x-1.0-beta8
+    or higher module version.
+  * Modify any custom code you may have that provides a visitor context plugin.
+    The interface for Visitor Context plugins has changed. If you have any code
+    on your site that implements PersonalizeContextInterface, note that the
+    method signature for getPossibleValues() now takes a $limit parameter.
+  * Ensure that personalize module and any modules providing visitor context
+    plugins are enabled when you run the update, otherwise fixed targeting
+    rules will be removed from your option sets.

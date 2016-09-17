@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Update instructions for Rabbit Hole taxonomy terms.
+ */
+
+/**
+ * Change the weight of Rabbit Hole taxonomy terms to 999.
+ */
+function rh_taxonomy_update_7001() {
+  db_query("UPDATE {system} SET weight = 999 WHERE name = 'rh_taxonomy'");
+}

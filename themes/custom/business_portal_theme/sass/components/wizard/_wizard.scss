@@ -1,0 +1,343 @@
+$wizard_content_width: 665px;
+$wizard_progress_width: 275px;
+
+@mixin wizard__content_width($width: $wizard_content_width) {
+  width: 100%;
+  padding-right: 50px;
+  box-sizing: border-box;
+  @include window_size(tab-wide-up) {
+    max-width: $width;
+    padding-right: 0;
+  }
+}
+
+
+#wizard {
+  color: $wizard-text;
+  font-family: $roboto;
+  margin-top: 55px;
+  box-sizing: border-box;
+  @include clearfix;
+  padding: 0;
+  .constrained {
+    @include wizard__content_width();
+  }
+  @include window_size(desktop){
+    margin-top: 60px;
+  }
+}
+
+.wizard-page .region--bottom {
+  /*margin-top: 2em;*/
+  @media all and (min-width: 720px) {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    margin-top: 0;
+  }
+}
+
+// Where the wizard gets loaded.
+.wiz {
+  z-index: 9;
+  padding: 0 25px 20px;
+  max-width: $max-site-width;
+  margin: auto;
+  @media (max-width: 720px) {
+    padding-bottom: 100px;
+  }
+}
+
+.wizard {
+  a {
+    color: $wizard-text;
+    font-size: 1em;
+  }
+  p {
+    padding: 0.7em 0 0;
+  }
+}
+
+
+.homepage_panel__content_wrapper{
+  @include window_size(desktop){
+    width: $zen-grid-width;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.wizard__intro-screen--register-business {
+  background-color: $background-city-registration;
+  //height: 900px;
+}
+
+.wizard__content-block {
+  display: inline-block;
+  border: 0px solid black;
+  width: 95%;
+  padding: 0 25px 0 25px;
+  @include window_size(desktop){
+      padding: 0;
+  }
+
+}
+
+.wizard__intro-block {
+  display: inline-block;
+  border: 0px solid black;
+  min-height: 360px;
+  padding: 0;
+  margin: 0;
+  @include window_size(desktop){
+       margin: 0;
+  }
+}
+
+.wizard__content-block--help {
+  display: inline-block;
+  border: 0px solid black;
+  padding: 0 25px 0 25px;
+  @include window_size(desktop){
+      padding: 0;
+  }
+
+}
+
+
+.wizard__header {
+  font-weight: 700;
+  font-size: 1em;
+  padding: 0;
+  margin: 0 0 20px 0;
+  padding: 20px 0 0 0;
+  border: 0px solid red;
+  position: relative;
+  @include window_size(tab-wide-up){
+    padding: 30px 0 0 0;
+  }
+}
+
+.wizard__header-contextual {
+  @media (max-width: 720px) {
+    margin-bottom: 10px;
+  }
+}
+
+.wizard__header--title {
+  font-weight: 700;
+  font-size: 1em;
+  border: 0;
+  padding: 0;
+  margin: 0 0 15px;
+  border: 0px solid red;
+  @include window_size(desktop){
+         font-size: 1.357em;
+
+  }
+
+
+}
+
+// larger title for the intro screen
+.wizard__header--title-government {
+  font-size: 0.857em;
+  text-transform: uppercase;
+  border: 0px solid red;
+  margin:0 0 4px 0;
+  padding: 0px;
+  font-weight: 700;
+
+  @include window_size(desktop){
+          font-size: 1.071em
+  }
+}
+
+
+.wizard__header--title-intro {
+  font-weight: 700;
+  font-size: 1em;
+  border: 0;
+  padding: 0;
+  margin: 0 0 15px 0;
+  border: 0px solid pink;
+  font-size: 1.357em;
+  @include window_size(desktop){
+    font-size: 2.571em;
+
+  }
+
+}
+
+
+.wizard__header-line {
+  height: 4px;
+  max-width: 80px;
+  background: $wizard-hr;
+  display: block;
+  border: 0 none;
+  margin: 0;
+}
+.wizard__question {
+  font-family: Merriweather, serif;
+  font-weight: 400;
+  font-size: 1.667em;
+  margin: 0 0 20px 0;
+  padding: 0;
+  @include wizard__content_width();
+  border: 0px solid red;
+  @include window_size(desktop){
+    font-size: 2.571em;
+     font-size: 2.4em;
+  }
+}
+
+.icon-info {
+  position: absolute;
+  top: 15px; right: 0;
+  background-image: image-url("wizard/icon_context_help.png");
+  background-position: top right;
+  background-repeat: no-repeat;
+  background-size: 40px 40px;
+  width: 40px; height: 40px;
+  @include window_size(tab-wide-up){
+    top: 35px;
+  }
+}
+
+.wizard__question--help{
+  font-family: Merriweather, serif;
+  font-weight: 400;
+  margin: 0px 10px 20px 0;
+  padding: 0 60px 0 0;
+  width: 100%;
+  border: 0px solid red;
+  @include window_size(tab-wide-up){
+    font-size: 2em;
+    marign-bottom: 10px;
+    min-height: 50px;
+  }
+}
+
+.wizard__buttons {
+  border: 0px solid white;
+  margin: 28px 0 28px 0;
+  @include clearfix;
+}
+
+.wizard__button {
+  @include wizard__button--base;
+  margin-bottom: 10px;
+}
+a.wizard__button {
+  color: $wizard_text;
+  text-decoration: none;
+  &:focus{
+    outline: none;
+  }
+}
+
+a.wizard__button--selected {
+  text-decoration: none;
+  padding: 8px 40px 8px 30px;
+  color: $wizard__button_text--selected;
+  background: url("../images/wizard/icon_checkmark.png") $wizard__button--selected no-repeat;
+  background-position: right 19px top 50%;
+  background-size: 14px 10px;
+}
+
+.wizard__button--selected-icon {
+  height: 10px;
+  margin: 0 0 0 3px;
+}
+
+// used on the intro screen
+.wizard__copy--section_intro {
+  padding: 0;
+  margin: 15px 0px 20px 0;
+  font-size: 0.929em;
+  border:0px solid red;
+  a {text-decoration: underline;}
+  @include window_size(tab-wide-up){
+    font-size: 1.357em;
+    max-width: 85%;
+  }
+}
+
+.wizard__icon{
+//    float: right;
+    width:40px;
+    height:40px;
+    margin: 15px 20px 20px 0;
+    border: 0px solid red;
+    @include window_size(desktop){
+  //      float: left;
+    }
+}
+
+.wizard__icon_help{
+//    float: right;
+    width:40px;
+    height:40px;
+    margin: 15px 0 20px 0;
+    border: 0px solid red;
+    @include window_size(desktop){
+        //float: left;
+    }
+}
+
+.wizard__header_block--help{
+    border: 0px solid red;
+    margin: 0;
+    padding: 0;
+    @include clearfix;
+}
+
+.wizard__illustration {
+  border: 0px solid blue;
+  margin:0 0 0 0;
+  width: 100%;
+  max-width: 665px;
+  
+  @media (min-width: 0px) and (max-width: 719px) {
+    margin: 0;
+    padding: 0;
+    width: 131%;
+    max-width: none;
+    margin-left: -7%;
+  }
+}
+
+.wizard__illustration img{
+  width: 100%;
+  height:100%;
+  @include window_size(desktop){
+    width: 100%;
+    height:100%;
+  }
+}
+
+.wizard__help_content{
+  border: 0px solid red;
+  @include wizard__content_width();
+  margin:20px 0 20px 0;
+  padding-right: 0;
+  a {
+    text-decoration: underline;
+  }
+  p {
+    margin: 1em 0;
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+}
+
+.wizard__help_hr{
+  height: 2px;
+  max-width: 80px;
+  background: $dark_blue;
+  display: block;
+  border: 0 none;
+  margin: 0;
+}

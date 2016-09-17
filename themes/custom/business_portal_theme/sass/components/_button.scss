@@ -1,0 +1,25 @@
+/**
+ * @file
+ * SMACSS Modules
+ *
+ * button
+ *
+ */
+
+/* An href styled like a button */
+.button--link {
+  display: inline-block;
+  text-align: center;
+  background-color: #EEE;
+  transition: all 0.2s ease 0s;
+  padding: 0 10px;
+}
+
+.button--link:hover {
+  background-color: $grayscale_dark !important;
+}
+
+.icon-download,
+.icon-folder-empty {
+  color: white;
+}

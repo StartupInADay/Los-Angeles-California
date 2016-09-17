@@ -1,0 +1,4 @@
+name = Business Portal Translation
+description = Provide translation blocks for Business Portal.
+core = 7.x
+

@@ -1,0 +1,81 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the editor_ckeditor_widgets module.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function editor_ckeditor_widgets_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    if (($library = libraries_detect('leaflet')) && !empty($library['installed'])) {
+      $requirements['editor_ckeditor_widgets_leaflet'] = array(
+        'title' => t('CKEditor @name widget', array('@name' => $library['name'])),
+        'value' => t('Installed'),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['editor_ckeditor_widgets_leaflet'] = array(
+        'title' => t('CKEditor @name widget', array('@name' => $library['name'])),
+        'value' => t('Not installed'),
+        'description' => $library['error message'],
+        'severity' => REQUIREMENT_INFO,
+      );
+    }
+
+    if (($library = libraries_detect('placeholder')) && !empty($library['installed'])) {
+      $requirements['editor_ckeditor_widgets_placeholder'] = array(
+        'title' => t('CKEditor @name widget', array('@name' => $library['name'])),
+        'value' => t('Installed'),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['editor_ckeditor_widgets_placeholder'] = array(
+        'title' => t('CKEditor @name widget', array('@name' => $library['name'])),
+        'value' => t('Not installed'),
+        'description' => $library['error message'],
+        'severity' => REQUIREMENT_INFO,
+      );
+    }
+
+    if (($library = libraries_detect('abbr')) && !empty($library['installed'])) {
+      $requirements['editor_ckeditor_widgets_abbr'] = array(
+        'title' => t('CKEditor @name widget', array('@name' => $library['name'])),
+        'value' => t('Installed'),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['editor_ckeditor_widgets_abbr'] = array(
+        'title' => t('CKEditor @name widget', array('@name' => $library['name'])),
+        'value' => t('Not installed'),
+        'description' => $library['error message'],
+        'severity' => REQUIREMENT_INFO,
+      );
+    }
+
+    if (($library = libraries_detect('timestamp')) && !empty($library['installed'])) {
+      $requirements['editor_ckeditor_widgets_timestamp'] = array(
+        'title' => t('CKEditor @name widget', array('@name' => $library['name'])),
+        'value' => t('Installed'),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['editor_ckeditor_widgets_timestamp'] = array(
+        'title' => t('CKEditor @name widget', array('@name' => $library['name'])),
+        'value' => t('Not installed'),
+        'description' => $library['error message'],
+        'severity' => REQUIREMENT_INFO,
+      );
+    }
+  }
+
+  return $requirements;
+}

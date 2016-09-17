@@ -1,0 +1,364 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function collections_menu() {
+  $items = array();
+
+  $items['collection/autocomplete'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'collection_autocomplete',
+    'access arguments' => array('access collection list')
+  );
+
+  $items['admin/structure/collection/%collection'] = array(
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'collection_view',
+    'access arguments' => array('view', 3),
+    'access callback' => 'collection_access',
+    'page arguments' => array(3),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function collection_entity_info() {
+  $return = array(
+    'collection' => array(
+      'label' => t('Collection'),
+      'plural label' => t('Collections'),
+      'description' => t('Collection Entity Type.'),
+      'entity class' => "Drupal\\collection\\Collection",
+      'controller class' => "Drupal\\collection\\CollectionController",
+      'base table' => 'collection',
+      'fieldable' => FALSE,
+      'exportable' => TRUE,
+      'entity keys' => array(
+        'id' => 'cid',
+        'name' => 'name',
+        'status' => 'status',
+        'module' => 'module',
+        'label' => 'label',
+      ),
+      'label callback' => 'entity_class_label',
+      'uri callback' => 'entity_class_uri',
+      'module' => 'collection',
+      'admin ui' => array(
+        'path' => 'admin/structure/collection',
+        'controller class' => 'Drupal\\collection\\CollectionUIController',
+      ),
+      'access callback' => 'collection_access',
+    ),
+  );
+
+  if (module_exists('entitycache')) {
+    $return['collection']['field cache'] = FALSE;
+    $return['collection']['entity cache'] = TRUE;
+  }
+
+  return $return;
+}
+
+
+/**
+ * Load multiple collection entities based on certain conditions.
+ *
+ * @param $cids
+ *   An array of collection IDs.
+ * @param $conditions
+ *   An array of conditions to match against the {collection} table.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   An array of test entity objects, indexed by pid.
+ */
+function collection_load_multiple($cids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('collection', $cids, $conditions, $reset);
+}
+
+/**
+ * Create a new collection
+ */
+function collection_create($values) {
+  return entity_create('collection', $values);
+}
+
+/**
+ * Load a collection
+ */
+function collection_load($name) {
+  $collection = entity_load('collection', array($name));
+  return reset($collection);
+}
+
+/**
+ * Entity Form
+ */
+function collection_form($form, &$form_state, $collection, $op) {
+
+  $form['collection'] = array(
+    '#type' => 'value',
+    '#value' => $collection,
+  );
+
+  $form['label'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Label'),
+    '#default_value' => $collection->label(),
+    '#required' => TRUE,
+  );
+
+  $form['name'] = array(
+    '#type' => 'machine_name',
+    '#default_value' => $collection->identifier(),
+    '#maxlength' => 32,
+    '#machine_name' => array(
+      'exists' => 'collection_load',
+      'source' => array('label'),
+    ),
+    '#description' => t('A unique machine-readable name for this collection. It must only contain lowercase letters, numbers, and underscores.'),
+  );
+
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save Collection'),
+    '#weight' => 40,
+  );
+
+  if ($op == 'edit') {
+    $form['actions']['delete'] = array(
+      '#type' => 'submit',
+      '#value' => t('Delete Collection'),
+      '#weight' => 45,
+      '#limit_validation_errors' => array(),
+      '#submit' => array('collection_form_submit_delete')
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Form API submit callback for the type form.
+ */
+function collection_form_submit(&$form, &$form_state) {
+  $collection = entity_ui_form_submit_build_entity($form, $form_state);
+
+  $collection->status = ENTITY_IN_DB;
+  $collection->save();
+  $form_state['redirect'] = 'admin/structure/collection';
+}
+
+/**
+ * Form API submit callback for the delete button.
+ */
+function collection_form_submit_delete(&$form, &$form_state) {
+  $form_state['redirect'] = 'admin/structure/collection/manage/' . $form_state['collection']->name . '/delete';
+}
+
+/**
+ * Determines whether the given user has access to a collection.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create', 'delete'
+ *   or just 'edit' (being the same as 'create' or 'update').
+ * @param $collection
+ *   Optionally a collection If nothing is
+ *   given, access for all collections is determined.
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the current user.
+ * @return boolean
+ *   Whether access is allowed or not.
+ */
+function collection_access($op, $collection = NULL, $account = NULL) {
+  // Only real permissions are view, delete, create and edit
+  switch ($op) {
+    case 'view':
+    case 'delete':
+    case 'create':
+      break;
+    case 'add':
+      $op = 'create';
+      break;
+    default:
+      $op = 'edit';
+  }
+
+  // If no user object is supplied, the access check is for the current user.
+  if (empty($account)) {
+    $account = $GLOBALS['user'];
+  }
+
+  if (user_access('administer collections', $account)) {
+    return TRUE;
+  }
+
+  $perm = "$op collections";
+  if (user_access($perm, $account)) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_permissions().
+ */
+function collection_permission() {
+  $perms = array(
+    'administer collections' =>  array(
+      'title' => t('Administer collection'),
+      'description' => t('Edit and view all collection.'),
+    ),
+    'create collections' => array(
+      'title' => t('Add a collection'),
+    ),
+    'edit collections' => array(
+      'title' => t('Add a collection'),
+    ),
+    'view collections' => array(
+      'title' => t('View a collection'),
+    ),
+    'delete collections' => array(
+      'title' => t('Delete a collection'),
+    ),
+    'access collection list' => array(
+      'title' => t('Access Collection Autocomplete List'),
+    )
+  );
+
+  return $perms;
+}
+
+/**
+ * A function other modules can use for auto-complete Lists
+ *
+ * @param string $text
+ * @param string $current
+ */
+function collection_autocomplete($text = '', $current = '') {
+  drupal_json_output(collection_get_all($text));
+}
+
+/**
+ * Get a list of all collections
+ */
+function collection_get_all($text = '', $exclude = '') {
+  $query = db_select('collection', 'c')
+    ->fields('c', array('name', 'label'))
+    ->condition('label', '%' . db_like($text) . '%', 'LIKE')
+    ->range(0, 10);
+
+  if ($exclude) {
+    $query->condition('label', $exclude, 'NOT');
+  }
+
+  return $query->execute()->fetchAllKeyed();
+}
+
+/**
+ * Get a list of collection
+ *
+ * @param $exclude
+ *  Collection to exclude
+ *
+ * @return array
+ *  name => label
+ */
+function collection_get_collection_list($include = array(), array $exclude = array()) {
+  $query = db_select('collection', 'c')
+    ->fields('c', array('name', 'label'));
+
+  if ($exclude) {
+    $query->condition('name', $exclude, 'NOT IN');
+  }
+
+  if ($include) {
+    $query->condition('name', $include, "IN");
+  }
+
+  return $query->execute()->fetchAllKeyed();
+}
+
+function collection_view($collection) {
+  $title = t('Usage report for @title', array('@title' => $collection->label()));
+  drupal_set_title($title);
+  drupal_add_library('system', 'ui.tabs');
+
+  $build = array(
+    '#prefix' => '<div id="collection-usage">',
+    '#suffix' => '</div>',
+  );
+
+  $build['header'] = array(
+    '#prefix' => '<div id="collection-usage-top">',
+    '#suffix' => '</div>',
+    '#markup' => $title,
+    '#weight' => 1,
+  );
+
+  $build['usage_tabs'] = array(
+    '#prefix' => '<div id="collection-usage-tabs">',
+    'links' => array(),
+    '#theme' => 'theme_links',
+    '#suffix' => '</div>',
+    '#weight' => 2,
+  );
+
+  $build['usage'] = array(
+    '#weight' => 3,
+    'items' => array(),
+  );
+
+  foreach (collection_build_usage($collection) as $usage_name => $usage_info) {
+    $build['usage_tabs']['links'] = array(
+      'title' => $usage_info['label'],
+      'href' => '',
+      'fragment' => "collection-usage-tab-$usage_name",
+    );
+
+    $build['usage']['items'][$usage_name] = array(
+      '#markup' => $usage_info['usage'],
+      '#type' => 'markup',
+      '#prefix' => '<div id="collection-usage-tab-' . $usage_name . '">',
+      '#suffix' => '</div>',
+    );
+  }
+
+  return $build;
+}
+
+/**
+ * Get the collection types
+ */
+function collection_get_types() {
+  /**
+   * 'label'
+   * 'view callback'
+   * 'arguments'
+   */
+  return module_invoke_all('collection_usage_info');
+}
+
+/**
+ * Build the collection usage lists
+ */
+function collection_build_usage($collection) {
+  $return = array();
+  foreach (collection_get_types() as $type => $info) {
+    $function = $info['view_callback'];
+    $args = empty($info['arguments']) ? array() : $info['arguments'];
+    array_unshift($args, $collection);
+    $return[$type] = array(
+      'label' => $info['label'],
+      'usage' => call_user_func_array($function, $args),
+    );
+  }
+
+  return $return;
+}

@@ -1,0 +1,81 @@
+/* Generic Contextual Links */
+div.contextual-links-wrapper:not(.contextual-links-active) a.contextual-links-trigger:not(.quickedit-contextual-link) {
+  background: #fff url(../images/gear-select.png) no-repeat -3px 3px;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #ddd;
+  border-radius: 13px;
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  box-sizing: border-box;
+}
+
+div.contextual-links-wrapper.contextual-links-active a.contextual-links-trigger:not(.quickedit-contextual-link) {
+  background: #fff url(../images/gear-select.png) no-repeat -3px -17px;
+  width: 24px;
+  height: 19px;
+}
+
+div.contextual-links-wrapper ul.contextual-links {
+  -moz-border-radius: 0px;
+  -webkit-border-bottom-left-radius: 0px;
+  -webkit-border-bottom-right-radius: 0px;
+  -webkit-border-top-right-radius: 0px;
+  -webkit-border-top-left-radius: 0px;
+  border-radius: 0px;
+}
+
+/* Block (bean) Contextual Links */
+.pane-block > div.contextual-links-wrapper {
+  bottom: 15px;
+  top: inherit;
+}
+
+.pane-block > div.contextual-links-wrapper:not(.contextual-links-active) a.contextual-links-trigger {
+  background: #fff url(../images/cube-select.png) no-repeat -3px 3px;
+}
+
+.pane-block > div.contextual-links-wrapper.contextual-links-active a.contextual-links-trigger {
+  background: #fff url(../images/cube-select.png) no-repeat -3px -17px; 
+}
+
+/* Panels IPE Contextual Links */
+.panels-ipe-display-container + div.contextual-links-wrapper.contextual-links-processed {
+  left: 0;
+  right: auto;
+  z-index: 400;
+}
+.panels-ipe-display-container + div.contextual-links-wrapper ul.contextual-links {
+  left: 0;
+  right: auto;
+}
+
+.panels-ipe-display-container + div.contextual-links-wrapper:not(.contextual-links-active) a.contextual-links-trigger {
+  background: #fff url(../images/th-select.png) no-repeat -3px 3px;
+}
+
+.panels-ipe-display-container + div.contextual-links-wrapper.contextual-links-active a.contextual-links-trigger {
+  background: #fff url(../images/th-select.png) no-repeat -3px -17px;
+}
+
+/* Views and Views Content Pane Contextual Links */
+.pane-views-panes > div.contextual-links-wrapper,
+.view > div.contextual-links-wrapper {
+  width: 100px;
+  left: 0;
+  right: inherit;
+}
+
+.pane-views-panes > div.contextual-links-wrapper ul.contextual-links,
+.view > div.contextual-links-wrapper ul.contextual-links {
+  left: 0;
+  right: inherit;
+}
+
+.pane-views-panes > div.contextual-links-wrapper:not(.contextual-links-active) a.contextual-links-trigger {
+  background: #fff url(../images/list-select.png) no-repeat -3px 3px;
+}
+
+.pane-views-panes > div.contextual-links-wrapper.contextual-links-active a.contextual-links-trigger {
+  background: #fff url(../images/list-select.png) no-repeat -3px -17px;
+}
+

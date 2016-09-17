@@ -1,0 +1,6 @@
+name = Hierarchical Text
+description = Defines hierarchical text field types.
+package = Fields
+core = 7.x
+dependencies[] = field
+dependencies[] = text

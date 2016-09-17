@@ -1,0 +1,58 @@
+<?php
+/**
+ * @file
+ * Install/schema hooks for the picture module.
+ */
+/**
+ * Implements hook_schema().
+ */
+function picture_schema() {
+  $schema = array();
+  $schema['picture_mapping'] = array(
+    'description' => 'Responsible images and styles mappings to breakpoints',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'The internal identifier for this mapping',
+        'no export' => TRUE, // do not export database only keys.
+      ),
+      'machine_name' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'The machine name of the mapping',
+      ),
+      'breakpoint_group' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'The group this mapping belongs to',
+      ),
+      'mapping' => array(
+        'type' => 'blob',
+        'not null' => TRUE,
+        'description' => 'The mappings linked to the breakpoints group',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+    // CTools exportable object definition
+    'export' => array(
+      'key' => 'machine_name',
+      'key name' => 'machine_name',
+      'primary key' => 'id',
+      'identifier' => 'picture_mapping',
+      'admin_title' => 'label',
+      'default hook' => 'default_picture_mapping',
+      'api' => array(
+        'owner' => 'picture',
+        'api' => 'default_picture_mapping',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+  );
+
+  return $schema;
+}

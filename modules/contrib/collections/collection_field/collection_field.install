@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * Implements of hook_field_schema().
+ */
+function collection_field_field_schema() {
+  $columns = array(
+    'value' => array(
+      'description' => 'Collection',
+      'type' => 'varchar',
+      'length' => '50',
+      'not null' => TRUE,
+      'default' => '',
+    ),
+  );
+
+  return array(
+    'columns' => $columns,
+    'indexes' => array(
+      'collection' => array('value'),
+    ),
+  );
+}

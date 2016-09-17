@@ -1,0 +1,33 @@
+# -*- mode: nginx; mode: flyspell-prog;  ispell-local-dictionary: "american" -*-
+### Configuration for the cache warmer (crawler).
+
+server {
+    ## This is bound to the loopback interface for both IPv4 and IPV6.
+    listen 127.0.0.1:8890;
+    listen [::1]:8890 ipv6only=on;
+    server_name cache_warmer.no-ip; # bogus TLD for safety
+
+    limit_conn arbeit 192;
+
+    access_log /var/log/nginx/cache_warmer.access.log;
+    error_log /var/log/nginx/cache_warmer.error.log;
+
+    ## Path to the Lua scripts implementing the parallel crawker.
+    root /home/luser/.drush/cache_warmer/lua;
+    index index.html;
+
+    ## The catch all location.
+    location / {
+        empty_gif;
+    }
+
+    ## The crawler locations.
+    location = /cache-warmer {
+        content_by_lua_file '$document_root/cache_warmer_requests.lua';
+    }
+
+    location = /parallel-reqs {
+        content_by_lua_file '$document_root/cache_warmer_client.lua';
+    }
+
+} # server

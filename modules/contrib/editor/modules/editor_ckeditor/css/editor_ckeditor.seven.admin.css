@@ -1,0 +1,9 @@
+/**
+ * The .seven.admin.css file is intended to contain styles that override
+ * declarations in the Seven admin theme.
+ */
+.block .ckeditor-toolbar-configuration ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}

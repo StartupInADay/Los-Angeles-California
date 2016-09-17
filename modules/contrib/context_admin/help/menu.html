@@ -1,0 +1,19 @@
+<p>You selected your path on the intial configuration page, but the visible menu item options are going to define where your link shows up.  For example, you can place a link to this page in a pre-existing menu, a menu tab, a local action, or no-where at all.</p>
+
+<h3>Local Actions</h3>
+<p>Local actions are new to D7, and are really easy to use. Unlike the confusion associated with getting menu tabs up and running, local actions simply appear when you visit a parent page. As always in order for this type of menu item to appear it must be a direct descendant (path wise) of the page on which you wish for it to display. As a quick example, if you want to add a local action to node pages then since a node page displays at node/%node your path would be node/%node/something.</p>
+
+<h3>Menu Tabs</h3>
+<p>By far the most robust solution to most of our administrative needs is menu tabs.  Menu tabs however come with their own set of confusion.  To get menu tabs working properly you'll need to meet a couple of requirements.</p>
+<ul>
+  <li>A default menu tab (MENU_DEFAULT_LOCAL_TASK)</li>
+  <li>Any additional menu tab (MENU_LOCAL_TASK)</li>
+</ul>
+
+<h3>Default Menu Tabs</h3>
+<p>Default menu tabs are really the secret sauce to making this work, but they are a little confusing.  Essentially you can think of a menu tab as being a set of secondary links on whatever menu item you're trying to view.  So if we're looking at example.com/link then for tabbing purposes it will need a default menu tab at example.com/link/view.  This will allow you to place additional menu items as needed, i.e. example.com/link/edit, example.com/link/add_node or whatever may fit your purposes. If you use page_manager to set this up you need only setup a single path (at link/view) and in the menu options tell it that it is a default menu tab. Page manager will handle the other magic necessary to perform this task.</p>
+
+<h3>Other Menu Tabs</h3>
+<p>As detailed above other menu tabs need only conform to the parent's path convention to properly show up on the page.</p>
+
+<p><strong>*NOTE:</strong>If only the default menu tab is present, no tabs will appear.</p>

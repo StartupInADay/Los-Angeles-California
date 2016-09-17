@@ -1,0 +1,487 @@
+<?php
+
+/**
+ * @file form_builder_examples.module
+ * Sample implementations of form_builder.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function form_builder_examples_menu() {
+  $items = array();
+
+  $items['form-builder-example'] = array(
+    'title' => 'Form builder example',
+    'page callback' => 'form_builder_interface',
+    'page arguments' => array('example', 'sample'),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'form_builder.admin.inc',
+    'file path' => drupal_get_path('module', 'form_builder') . '/includes',
+  );
+
+  $items['form-builder-example/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'form_builder_interface',
+    'page arguments' => array('example', 'sample'),
+    'access arguments' => array('access content'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['form-builder-example/import'] = array(
+    'title' => 'Import',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_builder_examples_import_form'),
+    // TODO: Make a form import.
+    'access callback' => FALSE,
+    'access arguments' => array('access content'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['form-builder-example/export'] = array(
+    'title' => 'Export',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_builder_examples_export_form'),
+    'access arguments' => array('access content'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  return $items;
+}
+
+/**
+ * A sample form array for testings.
+ */
+function form_builder_examples_example() {
+  $form = array(
+    'sample_textfield' => array(
+      '#form_builder' => array(
+        'element_id' => 'sample_textfield',
+        'element_type' => 'textfield',
+        'configurable' => TRUE,
+        'removable' => TRUE,
+      ),
+      '#type' => 'textfield',
+      '#title' => 'Sample textfield',
+      '#default_value' => 'a sample value',
+      '#field_prefix' => 'Prefix: ',
+      '#field_suffix' => ' :Suffix',
+      '#size' => 20,
+      '#weight' => 0,
+    ),
+    'sample_checkboxes' => array(
+      '#form_builder' => array(
+        'element_id' => 'sample_checkboxes',
+        'element_type' => 'checkboxes',
+        'configurable' => TRUE,
+        'removable' => TRUE,
+      ),
+      '#type' => 'checkboxes',
+      '#title' => 'Sample checkboxes',
+      '#options' => array('one' => 'one', 'two' => 'two', 'three' => 'three'),
+      '#default_value' => array('two'),
+      '#weight' => 1,
+      '#multiple' => 1,
+    ),
+    'sample_textarea' => array(
+      '#form_builder' => array(
+        'element_id' => 'sample_textarea',
+        'element_type' => 'textarea',
+        'configurable' => TRUE,
+        'removable' => TRUE,
+      ),
+      '#type' => 'textarea',
+      '#title' => 'Sample textarea',
+      '#default_value' => 'Text area sample value',
+      '#weight' => 2,
+    ),
+    'sample_radios' => array(
+      '#form_builder' => array(
+        'element_id' => 'sample_radios',
+        'element_type' => 'radios',
+        'configurable' => TRUE,
+        'removable' => TRUE,
+      ),
+      '#type' => 'radios',
+      '#title' => 'Sample radios',
+      '#options' => array('one' => 'one', 'two' => 'two', 'three' => 'three'),
+      '#default_value' => 'two',
+      '#weight' => 3,
+    ),
+    'sample_select' => array(
+      '#form_builder' => array(
+        'element_id' => 'sample_select',
+        'element_type' => 'select',
+        'configurable' => TRUE,
+        'removable' => TRUE,
+      ),
+      '#type' => 'select',
+      '#title' => 'Sample select',
+      '#options' => array('one' => 'one', 'two' => 'two', 'three' => 'three'),
+      '#default_value' => 'two',
+      '#weight' => 4,
+      '#multiple_toggle' => TRUE,
+    ),
+  );
+
+  return $form;
+}
+
+/**
+ * Implementation of hook_form_builder_field_access().
+ */
+function form_builder_examples_form_builder_field_access($op, $form_type, $form_id, $element) {
+  // If desiring to add extra access permissions return FALSE if access is denied.
+  // return user_access('administer content types');
+}
+
+/**
+ * Implements hook_form_builder_form_types().
+ */
+function form_builder_examples_form_builder_form_types() {
+  return array('example' => array());
+}
+
+/**
+ * Implements of hook_form_builder_element_types().
+ *
+ * Define the supported fields and properties supported by CCK.
+ */
+function form_builder_examples_form_builder_element_types($form_type, $form_id) {
+  if ($form_type != 'example') {
+    return;
+  }
+
+  $fields['fieldset'] = array(
+    'title' => t('Fieldset'),
+    'properties' => array(
+      'title',
+      'description',
+      'collapsible',
+      'collapsed',
+    ),
+    'default' => array(
+      '#title' => t('New fieldset'),
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    ),
+  );
+
+  $fields['number'] = array(
+    'title' => t('Number'),
+    'properties' => array(
+      'title',
+      'description',
+      'field_prefix',
+      'field_suffix',
+      'default_value',
+      'required',
+    ),
+    // TODO: how to handle validate functions?
+    'validate' => array(
+      'number',
+    ),
+    'default' => array(
+      '#title' => t('New number'),
+      '#type' => 'textfield',
+    ),
+  );
+
+  $fields['select'] = array(
+    'title' => t('Select list'),
+    'properties' => array(
+      'title',
+      'description',
+      'default_value',
+      'required',
+      'options',
+      'multiple', // Handled by options element.
+      'key_type', // Handled by options element.
+      'key_type_toggle', // Handled by options element.
+      'key_type_toggled', // Handled by options element.
+    ),
+    'default' => array(
+      '#title' => t('New select list'),
+      '#type' => 'select',
+      '#options' => array('1' => 'one', '2' => 'two', '3' => 'three'),
+      '#multiple_toggle' => TRUE,
+    ),
+  );
+
+  // TODO: Merge checkbox with checkboxes?
+  /*
+  $fields['checkbox'] = array(
+    'title' => t('Checkbox'),
+    'properties' => array(
+      'title',
+      'description',
+      'return_value',
+      'default_value',
+      'required',
+     ),
+    'default' => array(
+      '#title' => t('New checkbox'),
+      '#type' => 'checkbox',
+    ),
+  );
+  */
+
+  $fields['checkboxes'] = array(
+    'title' => t('Checkboxes'),
+    'properties' => array(
+      'title',
+      'description',
+      'default_value',
+      'required',
+      'options',
+      'multiple',
+      'key_type', // Handled by options element.
+      'key_type_toggle', // Handled by options element.
+      'key_type_toggled', // Handled by options element.
+    ),
+    'default' => array(
+      '#title' => t('New checkboxes'),
+      '#type' => 'checkboxes',
+      '#options' => array('one' => 'one', 'two' => 'two', 'three' => 'three'),
+    ),
+  );
+
+  $fields['radios'] = array(
+    'title' => t('Radios'),
+    'properties' => array(
+      'title',
+      'description',
+      'default_value',
+      'required',
+      'options',
+      'key_type', // Handled by options element.
+      'key_type_toggle', // Handled by options element.
+      'key_type_toggled', // Handled by options element.
+    ),
+    'default' => array(
+      '#title' => t('New radios'),
+      '#type' => 'radios',
+      '#options' => array('one' => 'one', 'two' => 'two', 'three' => 'three'),
+    ),
+  );
+
+  $fields['textfield'] = array(
+    'title' => t('Textfield'),
+    'properties' => array(
+      'title',
+      'description',
+      'field_prefix',
+      'field_suffix',
+      'default_value',
+      'required',
+      'size',
+    ),
+    'default' => array(
+      '#title' => t('New textfield'),
+      '#type' => 'textfield',
+    ),
+  );
+
+  $fields['textarea'] = array(
+    'title' => t('Textarea'),
+    'properties' => array(
+      'title',
+      'description',
+      'default_value',
+      'required',
+      'rows',
+      'cols',
+    ),
+    'default' => array(
+      '#title' => t('New textarea'),
+      '#type' => 'textarea',
+    ),
+  );
+
+  $fields['file'] = array(
+    'title' => t('File'),
+    'properties' => array(
+      'title',
+      'description',
+      'required',
+      'size',
+      'file_extension_validate',
+      'file_size_validate',
+    ),
+    'default' => array(
+      '#title' => t('New file'),
+      '#type' => 'file',
+      '#size' => 30,
+    ),
+  );
+
+  $fields['image'] = array(
+    'title' => t('Image'),
+    'properties' => array(
+      'title',
+      'description',
+      'required',
+    ),
+    'validate' => array(
+      'file_extension_validate',
+      'file_size_validate',
+      'file_image_size',
+    ),
+    'default' => array(
+      '#title' => t('New image'),
+      '#type' => 'file',
+      '#size' => 30,
+    ),
+  );
+
+  return $fields;
+}
+
+/**
+ * Implementation of hook_form_builder_preview_alter().
+ */
+function form_builder_examples_form_builder_preview_alter($element, $form_type, $form_id) {
+  if ($form_type == 'form_builder_examples') {
+    if (isset($element['#description'])) {
+      $element['#description'] = filter_xss($element['#description']);
+    }
+  }
+}
+
+/**
+ * Implementation of hook_form_builder_load().
+ *
+ * Convert a CCK content type into a standard form builder array.
+ *
+ * @param $form_id
+ *   The unique identifier for the form being edited. For CCK, this is the
+ *   content type name.
+ */
+function form_builder_examples_form_builder_load($form_type, $form_id) {
+  if ($form_type == 'example') {
+    $form = form_builder_examples_example();
+
+    return $form;
+  }
+}
+
+/**
+ * Implementation of hook_form_builder_save().
+ *
+ * Take a form builder array and save it to the content type.
+ */
+function form_builder_examples_form_builder_save($form, $form_type, $form_id) {
+  if ($form_type == 'example') {
+    // Save the settings based on the changes to the $form array.
+  }
+}
+
+/**
+ * Menu callback for importing an entire FAPI array.
+ */
+function form_builder_examples_import_form(&$form_state) {
+  $form = array();
+
+  $form['import'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Import code'),
+  );
+
+  return $form;
+}
+
+/**
+ * Menu callback for exporting an entire FAPI array.
+ */
+function form_builder_examples_export_form() {
+  module_load_include('inc', 'form_builder', 'includes/form_builder.api');
+  module_load_include('inc', 'form_builder', 'includes/form_builder.cache');
+
+  $form = array();
+
+  $current = FormBuilderLoader::instance()
+    ->fromCache('example', 'sample')
+    ->getFormArray();
+
+  $form['export'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Export code'),
+    '#default_value' => form_builder_examples_export($current),
+    '#attributes' => array('readonly' => 'readonly', 'style' => 'font-family: monospace;'),
+    '#rows' => 20,
+  );
+
+  return $form;
+}
+
+
+function form_builder_examples_export($form) {
+  $output = '';
+  $output .= form_builder_examples_export_recurse($form);
+  $output .= 'return $form;';
+  return $output;
+}
+
+/**
+ * Recursive function for pretty-printing of FAPI arrays.
+ */
+function form_builder_examples_export_recurse($form, $parents = array()) {
+  $output = '';
+
+  // Sort this level of the array according to weight.
+  uasort($form, 'element_sort');
+
+  // Print out this parent element and it's properties.
+  $properties = element_properties($form);
+  $omit = array('#form_builder', '#key');
+  if (count($properties)) {
+    $output .= form_builder_examples_export_variable_name($parents) . " = array(\n";
+    foreach (element_properties($form) as $property) {
+      if (!in_array($property, $omit)) {
+        if (is_array($form[$property])) {
+          $output .= "  '". $property . "' => array(\n";
+          foreach ($form[$property] as $key => $value) {
+            if ($property == '#options') {
+              $output .= "    '" . $key . "' => t('". $value ."'),\n";
+            }
+            else {
+              $output .= "    '" . $key . "' => '". $value ."',\n";
+            }
+          }
+          $output .= "  ),\n";
+        }
+        else {
+          if (($property == '#title') || ($property == '#description')) {
+            $output .= "  '". $property . "' => t('" . str_replace("'", "\'", $form[$property]) ."'),\n";
+          }
+          else {
+            $output .= "  '". $property . "' => '" . str_replace("'", "\'", $form[$property]) ."',\n";
+          }
+        }
+      }
+    }
+    $output .= ");\n";
+  }
+  else {
+    $output .= form_builder_examples_export_variable_name($parents) . " = array();\n";
+  }
+
+  foreach (element_children($form) as $key) {
+    $parents[] = $key;
+    $output .= form_builder_examples_export_recurse($form[$key], $parents);
+    array_pop($parents);
+  }
+
+  return $output;
+}
+
+
+function form_builder_examples_export_variable_name($parents) {
+  $output = '$form';
+  foreach ($parents as $parent) {
+    $output .= "['". $parent ."']";
+  }
+  return $output;
+}

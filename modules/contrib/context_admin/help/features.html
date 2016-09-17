@@ -1,0 +1,3 @@
+<p>Exportables are implemented "for free" since we are piggy-backing on page_manager. This means we have default integration to both features module and for bulk and manual ctools exports.</p>
+
+<p>With this capability it's a good idea to maximize the exportability of your pages. Importantly utilize the entity bundle plugins whenever dealing with entity bundles as this will segment on actual type name and not type id (especially useful for taxonomy terms). Similarly, avoid actual entity ids whenever possible. This is sometimes impossible so you may have to make other assurances or get creative with your exports. Still context_admin supports this sort of use case out of the box and should work reliably.</p>

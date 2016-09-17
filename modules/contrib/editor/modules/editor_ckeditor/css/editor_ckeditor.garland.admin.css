@@ -1,0 +1,7 @@
+/**
+ * The .bartik.admin.css file is intended to contain styles that override
+ * declarations in the Bartik theme.
+ */
+ul.ckeditor-buttons li {
+  margin: 0;
+}

@@ -1,0 +1,204 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for LABP.
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * Perform actions to set up the site for this profile.
+ *
+ * @see system_install()
+ */
+function business_portal_install() {
+  // Enable default theme.
+  $theme = 'business_portal_theme';
+  theme_enable(array('zen', 'business_portal_theme'));
+  variable_set('theme_default', $theme);
+
+  // Enable admin theme.
+  $admin_theme = 'ember';
+  theme_enable(array($admin_theme));
+  variable_set('admin_theme', $admin_theme);
+
+  // Use admin theme when editing nodes.
+  variable_set('node_admin_theme', '1');
+
+  // Disable bartik and seven.
+  theme_disable(array('bartik', 'seven'));
+
+  // Enable some standard blocks.
+  $default_theme = variable_get('theme_default', $theme);
+  $blocks = array(
+    array(
+      'module' => 'search',
+      'delta' => 'form',
+      'theme' => $default_theme,
+      'status' => 1,
+      'weight' => 50,
+      'region' => 'header',
+      'pages' => '',
+      'cache' => -1,
+    ),
+    /*array(
+      'module' => 'system',
+      'delta' => 'main',
+      'theme' => $default_theme,
+      'status' => 1,
+      'weight' => 0,
+      'region' => 'content',
+      'pages' => '',
+      'cache' => -1,
+    ),
+    array(
+      'module' => 'system',
+      'delta' => 'help',
+      'theme' => $default_theme,
+      'status' => 1,
+      'weight' => 0,
+      'region' => 'help',
+      'pages' => '',
+      'cache' => -1,
+    ),*/
+    array(
+      'module' => 'system',
+      'delta' => 'main',
+      'theme' => $admin_theme,
+      'status' => 1,
+      'weight' => 0,
+      'region' => 'content',
+      'pages' => '',
+      'cache' => -1,
+    ),
+    array(
+      'module' => 'system',
+      'delta' => 'help',
+      'theme' => $admin_theme,
+      'status' => 1,
+      'weight' => 0,
+      'region' => 'help',
+      'pages' => '',
+      'cache' => -1,
+    ),
+  );
+  $query = db_insert('block')->fields(array('module', 'delta', 'theme', 'status', 'weight', 'region', 'pages', 'cache'));
+  foreach ($blocks as $block) {
+    $query->values($block);
+  }
+  $query->execute();
+
+  // Enable user picture support and set the default to a square thumbnail option.
+  variable_set('user_pictures', '1');
+  variable_set('user_picture_dimensions', '1024x1024');
+  variable_set('user_picture_file_size', '800');
+  variable_set('user_picture_style', 'thumbnail');
+
+  // Allow visitor account creation with admin only.
+  variable_set('user_register', USER_REGISTER_ADMINISTRATORS_ONLY);
+
+  // Enable default permissions for system roles.
+  //user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array('access content', 'access comments'));
+  //user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('access content', 'access comments', 'post comments', 'skip comment approval'));
+
+  // Create a default role for site administrators
+  // with all available permissions assigned.
+  $admin_role = new stdClass();
+  $admin_role->name = 'administrator';
+  $admin_role->weight = 2;
+  user_role_save($admin_role);
+  user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
+  // Set this as the administrator role.
+  variable_set('user_admin_role', $admin_role->rid);
+
+  // Assign user 1 the "administrator" role.
+  db_insert('users_roles')
+    ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
+    ->execute();
+  variable_set('site_frontpage', 'home');
+}
+
+/**
+ * Implements hook_install_tasks_alter().
+ */
+function business_portal_install_tasks_alter(&$tasks, $install_state) {
+  global $install_state;
+
+  // Skip language selection install step and default language to English.
+  $tasks['install_select_locale']['display'] = FALSE;
+  $tasks['install_select_locale']['run'] = INSTALL_TASK_SKIP;
+  $install_state['parameters']['locale'] = 'en';
+
+  // Override "install_finished" task.
+  $tasks['install_finished']['function'] = 'business_portal_install_finished';
+}
+
+/**
+ * Override of install_finished().
+ */
+function business_portal_install_finished(&$install_state) {
+  // Flush all caches to ensure that any full bootstraps during the installer
+  // do not leave stale cached data, and that any content types or other items
+  // registered by the installation profile are registered correctly.
+  drupal_flush_all_caches();
+
+  // Remember the profile which was used.
+  variable_set('install_profile', drupal_get_profile());
+
+  // Installation profiles are always loaded last
+  db_update('system')
+    ->fields(array('weight' => 1000))
+    ->condition('type', 'module')
+    ->condition('name', drupal_get_profile())
+    ->execute();
+
+  // Cache a fully-built schema.
+  drupal_get_schema(NULL, TRUE);
+
+  // Run cron to populate update status tables (if available) so that users
+  // will be warned if they've installed an out of date Drupal version.
+  // Will also trigger indexing of profile-supplied content or feeds.
+  drupal_cron_run();
+
+  // Clear & rebuild Features key caches.
+  features_get_info(NULL, NULL, TRUE);
+  features_rebuild();
+
+  // Rebuild all Default Config (cleanup install).
+  defaultconfig_rebuild_all();
+
+  // Revert all Features (cleanup install).
+  features_revert();
+
+  // Configures menu blocks.
+  cache_clear_all();
+  db_update('block')
+    ->fields(array(
+      'region' => 'bottom',
+      'status' => 1,
+      'title' => '<none>',
+    ))
+    ->condition('module', 'menu')
+    ->condition('delta', 'menu-footer-')
+    ->condition('theme', 'business_portal_theme')
+    ->execute();
+  cache_clear_all();
+
+  // Remove install messages.
+  $messages = array('completed', 'status', 'warning', 'error');
+  foreach ($messages as $message) {
+    drupal_get_messages($message, TRUE);
+  }
+
+  // Finish installation.
+  if (!drupal_is_cli()) {
+    // Redirect UI-based install to the site homepage.
+    drupal_goto(variable_get('site_frontpage', ''));
+  }
+  else {
+    // Display a success message for Drush-based install.
+    drupal_set_message("Business Portal install complete.");
+  }
+}
+
+

@@ -1,0 +1,14 @@
+/*
+ * @file
+ * Administration CSS for entity_embed.
+ */
+ 
+/* Hides the next button when not degrading to non-javascript browser */
+html.js .next-button { 
+  display: none; 
+}
+
+/* Makes the next/choose button align to the right of the select control */
+.form-item-entity-type {
+  display: inline-block;
+}

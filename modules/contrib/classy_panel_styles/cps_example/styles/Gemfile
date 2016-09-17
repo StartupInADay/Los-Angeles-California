@@ -1,0 +1,17 @@
+source 'https://rubygems.org'
+
+group :development do
+
+  # Sass, Compass and extensions.
+  gem 'sass', '~> 3.4.10'              # Sass.
+  gem 'toolkit', '~> 2.7.0'            # Toolkit
+  gem 'brevis', '~> 0.2.9'             # Brevis Toolkit
+  gem 'compass', '~> 1.0.1'            # Framework built on Sass.
+  gem 'compass-validator'              # So you can `compass validate`.
+  gem 'singularitygs', '~>1.5.1'       # Alternative to the Susy grid framework.
+  gem 'singularity-extras', '~>1.0.0'
+  gem 'breakpoint', '~>2.5.0'          # Manages CSS media queries.
+  gem 'oily_png'                       # Faster Compass sprite generation.
+  gem 'chunky_png'                     # Faster Compass sprite generation.
+
+end

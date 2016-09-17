@@ -1,0 +1,533 @@
+body.panels-ipe {
+  margin-bottom: 60px !important;
+}
+
+/* Hide the IPE toolbar on print output. */
+@media print {
+  #panels-ipe-control-container {
+    display: none !important;
+  }
+  body.panels-ipe {
+    margin-top: 0 !important;
+  }
+}
+
+/* Hide the control container when the overlay is open. */
+html.overlay-open #panels-ipe-control-container {
+  display: none !important;
+}
+html.overlay-open body.panels-ipe {
+  margin-top: 0 !important;
+}
+
+div.panels-ipe-handlebar-wrapper {
+  border-bottom: 1px solid #CCC;
+}
+
+.panels-ipe-editing div.panels-ipe-portlet-wrapper {
+  margin-top: 1em;
+  border: 1px solid #CCC;
+  width: 100%;
+}
+
+/* Hide empty panes when not editing them. */
+.panels-ipe-empty-pane {
+  display: none;
+}
+
+.panels-ipe-editing .panels-ipe-empty-pane {
+  display: block;
+}
+
+.panels-ipe-editing div.panels-ipe-portlet-wrapper:hover {
+  border: 1px dashed #CCC;
+}
+
+.panels-ipe-editing .panels-ipe-sort-container {
+  min-height: 40px;
+}
+
+.panels-ipe-editing .panels-ipe-sort-container .ui-sortable-helper {
+  background: white;
+}
+
+.panels-ipe-editing div.panel-pane div.admin-links {
+  display: none !important;
+}
+
+.panels-ipe-editing .panels-ipe-sort-container .ui-sortable-placeholder {
+  border: 2px dotted #29aae1;
+  background-color: transparent;
+  margin: 1em 0;
+  -moz-border-radius: 0;
+	-khtml-border-radius: 0;
+	-webkit-border-radius: 0;
+	border-radius: 0;
+}
+
+div.panels-ipe-handlebar-wrapper ul {
+  float: left;
+  margin: 0;
+  padding: 0;
+  text-align: right;
+}
+
+/* pushes buttons together to make solid buttonbar */
+div.panels-ipe-handlebar-wrapper li {
+  background: none;
+  list-style-type: none;
+  list-style-image: none;
+  margin: 0;
+  padding: 0;
+  float: left;
+}
+
+/* remove padding so button bar fills space */
+div.panels-ipe-draghandle, 
+div.panels-ipe-nodraghandle {
+  background: #fff;
+  padding: 0px;
+}
+
+div.panels-ipe-draghandle span.panels-ipe-draghandle-icon {
+  display: block;
+  float: right;
+  cursor: move;
+  width: 34px;
+  height: 34px;
+  padding: 3px !important; /* override button defaults */
+}
+
+span.panels-ipe-draghandle-icon-inner {
+  display: block;
+  width: 34px;
+  height: 34px;
+  background: url(../images/999/grip_999.png) no-repeat 3px 3px;
+}
+
+div.panels-ipe-placeholder {
+  border: 2px dashed #ddd;
+  padding: 0;
+  position: relative;
+  margin-top: .5em;
+  background-color: #f5f5f5;
+  color: #999;
+  font: 15px/1.3em "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+  text-align: left;
+  word-spacing: 0;
+}
+
+div.panels-ipe-placeholder h3 {
+  font-weight: normal;
+  width: 75%;
+  margin: 0px;
+  color: #333;
+  font-size: 1em;
+  font-family: "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  text-shadow: none;
+  padding: 0em;
+  font-weight: normal;
+  padding-left:5px;
+  line-height:2.8em;
+}
+
+/* Hide editor-state-on elements initially */
+.panels-ipe-on {
+  display: none;
+} 
+
+.panels-ipe-editing .panels-ipe-on {
+  display: block;
+}
+
+/* Show editor-state-off elements initially */
+.panels-ipe-off {
+  display: block;
+}
+
+div.panels-ipe-newblock {
+  position: absolute;
+  right: 10px;
+  top: 0;
+  margin-left: -30px;
+  z-index: 99;
+}
+
+div.panels-ipe-newblock li {
+  padding: 0;
+}
+
+div.panels-ipe-handlebar-wrapper li a, 
+div.panels-ipe-dragtitle span, 
+div.panels-ipe-newblock a, 
+span.panels-ipe-draghandle-icon {
+  display: inline-block;
+  border: 0px solid transparent; 
+  padding: 4px 5px;
+  font: bold 12px/32px "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  text-decoration: none;
+  height: auto;
+  color: #666;
+  cursor: pointer;
+  outline: none;
+  -moz-border-radius: 0px;
+  -khtml-border-radius: 0px;
+  -webkit-border-radius: 0px;
+  border-radius: 0px;
+  background: transparent;
+}
+
+div.panels-ipe-handlebar-wrapper li a span,
+div.panels-ipe-newblock a span {
+  display: block;
+  height: 25px;
+  width:25px;
+  margin-top:4px;
+  background-position: center center;
+  background-repeat: no-repeat;
+  text-align: left;
+  text-indent: -9999em;
+}
+
+div.panels-ipe-handlebar-wrapper li.edit a span {
+  background-image: url(../images/999/gear_999.png);
+}
+
+div.panels-ipe-handlebar-wrapper li.edit a:active span {
+  background-image: url(../images/F05A27/gear_F05A27.png);
+}
+
+div.panels-ipe-handlebar-wrapper li.edit a:hover span {
+  background-image: url(../images/555/gear_555.png);
+}
+
+div.panels-ipe-handlebar-wrapper li.style a span,
+div.panels-ipe-newblock a.style span {
+  background-image: url(../images/999/brush_999.png);
+}
+
+div.panels-ipe-handlebar-wrapper li.style a:active span,
+div.panels-ipe-newblock a.style:active span {
+  background-image: url(../images/F05A27/brush_F05A27.png);
+}
+
+div.panels-ipe-handlebar-wrapper li.style a:hover span,
+div.panels-ipe-newblock a.style:hover span {
+  background-image: url(../images/555/brush_555.png);
+}
+
+div.panels-ipe-newblock a.add span {
+  background-image: url(../images/999/plus_999.png);
+}
+
+div.panels-ipe-newblock a.add:active span {
+  background-image: url(../images/F05A27/plus_F05A27.png);
+}
+
+div.panels-ipe-newblock a.add:hover span {
+  background-image: url(../images/555/plus_555.png);
+}
+
+div.panels-ipe-handlebar-wrapper li.delete a span {
+  background-image: url(../images/999/trashcan_999.png);
+}
+
+div.panels-ipe-handlebar-wrapper li.delete a:active  span {
+  background-image: url(../images/F05A27/trashcan_F05A27.png);
+}
+
+div.panels-ipe-handlebar-wrapper li.delete a:hover span {
+  background-image: url(../images/555/trashcan_555.png);
+}
+
+div.panels-ipe-handlebar-wrapper li a:hover,
+div.panels-ipe-dragtitle span:hover,
+div.panels-ipe-newblock a:hover,
+span.panels-ipe-draghandle-icon:hover {
+}
+
+span.panels-ipe-draghandle-icon-inner {
+  display: block;
+  width: 34px;
+  height: 34px;
+  background: url(../images/999/grip_999.png) no-repeat center center;
+  background-size: 24px 24px;
+}
+
+span.panels-ipe-draghandle-icon-inner:active {
+  background: url(../images/F05A27/grip_F05A27.png) no-repeat center center;
+}
+
+div.panels-ipe-handlebar-wrapper li a:active,
+div.panels-ipe-dragtitle span:active,
+div.panels-ipe-newblock a:active,
+span.panels-ipe-draghandle-icon:active {
+  outline: none;
+}
+
+.panels-ipe-editing .panels-ipe-portlet-content {
+  margin: 10px 3px;
+  overflow: hidden;
+}
+
+.panels-ipe-editing .panels-ipe-region {
+  border: transparent dotted 1px;
+  float: left;
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+div.panels-ipe-draghandle {
+  border: none;
+}
+
+.ui-sortable-placeholder {
+  margin: 1em;
+  border: 1px dotted black;
+  visibility: visible !important;
+  height: 50px !important;
+}
+
+.ui-sortable-placeholder * {
+  visibility: hidden;
+}
+
+span.panels-ipe-dragbar-admin-title {
+  font-family: "Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  font-size: 0.9em;
+  color: #FFF;
+  background-color: #999;
+  padding: 0.32em;
+  margin-top: 0.62em;
+  margin-left: 0.6em;
+  display: inline-block;
+  -moz-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+}
+
+/** ============================================================================
+ * Controller form markup
+ */
+
+div#panels-ipe-control-container {
+  z-index: 999;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  display: none;
+  background-color: #000;
+  padding: 0;
+  overflow: hidden;
+  -moz-box-shadow: -2px -2px 2px 1px rgba(0, 0, 0, 0.3333);
+  -webkit-box-shadow: -2px -2px 2px 1px rgba(0, 0, 0, 0.3333);
+  box-shadow: -2px -2px 2px 1px rgba(0, 0, 0, 0.3333);
+}
+
+.panels-ipe-form-container {
+    background-color: #000;
+}
+
+.ipe-throbber {
+  background-color: #232323;
+  background-image: url("../images/loading-small.gif");
+  background-position: center center;
+  background-repeat: no-repeat;
+  -moz-border-radius: 7px;
+  -webkit-border-radius: 7px;
+  border-radius: 7px;
+  height: 24px;
+  opacity: .9;
+  padding: 4px;
+  width: 24px;
+  /* Can't do center:50% middle: 50%, so approximate it for a typical window size. */
+  left: 49%;
+  position: fixed;
+  top: 48.5%;
+  z-index: 1001;
+}
+
+/* Hide the drupal system throbber image */
+.ipe-throbber .throbber {
+  display: none;
+}
+
+div.panels-ipe-pseudobutton-container,
+div.panels-ipe-control .form-submit {
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  -moz-border-radius: 0px;
+  -webkit-border-radius: 0px;
+  border-radius: 0px;
+  color: #CCC;
+  display: inline-block;
+  font: bold 12px/33px "Open Sans", "Lucida Grande", Tahoma, Verdana, sans-serif;
+  height: 33px;
+  margin: 0px;
+}
+
+div.panels-ipe-control .form-submit {
+  padding: 0 0.8em 2px 34px;
+}
+
+div.panels-ipe-control input.panels-ipe-save, div.panels-ipe-control input.panels-ipe-cancel,
+div.panels-ipe-control input.panels-ipe-save:hover, div.panels-ipe-control input.panels-ipe-cancel:hover,
+div.panels-ipe-control input.panels-ipe-save:active, div.panels-ipe-control input.panels-ipe-cancel:active {
+  background-repeat: no-repeat;
+}
+
+div.panels-ipe-pseudobutton-container a {
+  height: 33px;
+  padding: 0 0.8em;
+  display: inline-block;
+  color: #CCC;
+  text-decoration: none;
+}
+
+div.panels-ipe-control input.panels-ipe-save {
+  background-image: url(../images/FFF/check_FFF.png);
+}
+
+div.panels-ipe-control input.panels-ipe-cancel {
+  background-image: url(../images/FFF/x_FFF.png);
+}
+
+/* target the ID here because panels uses the same class for both cancel and revert */
+div.panels-ipe-control input#panelizer-ipe-revert {
+  background-image: url(../images/FFF/arrow_ccw_FFF.png);
+}
+
+
+div.panels-ipe-pseudobutton-container:hover,
+div.panels-ipe-control .form-submit:hover {
+  background: #333;
+}
+
+div.panels-ipe-pseudobutton-container a:hover {
+  color: #FFF;
+}
+
+div.panels-ipe-control input.panels-ipe-cancel:hover {
+   background-image: url(../images/FFF/x_FFF.png);
+   background-color: #333;
+   color: #fff;
+}
+
+div.panels-ipe-control input.panels-ipe-save:hover {
+  background-color: #333;
+   background-image: url(../images/8AC340/check_8AC340.png);
+  color: #fff;
+}
+
+div.panels-ipe-pseudobutton-container:active,
+div.panels-ipe-control .form-submit:active {
+  background: #555;
+  color: #CCC;
+}
+
+div.panels-ipe-pseudobutton-container a:active {
+  color: #CCC;
+}
+
+div.panels-ipe-control input.panels-ipe-cancel:active {
+  
+  background-image: url(../images/FFF/x_FFF.png)
+
+}
+
+div.panels-ipe-control input.panels-ipe-save:active {
+  background-image: url(../images/FFF/x_FFF.png)
+}
+
+div.panels-ipe-pseudobutton-container a.panels-ipe-startedit {
+  padding-left: 34px;
+  background: url(../images/FFF/gear_FFF.png) no-repeat 6px 5px;
+}
+
+
+div.panels-ipe-pseudobutton-container a.panels-ipe-change-layout {
+  padding-left: 34px;
+  background: url(../images/FFF/grid_FFF.png) no-repeat 6px 5px;
+}
+
+div.panels-ipe-button-container {
+  margin: 0px;
+  text-align: center;
+}
+
+form#panels-ipe-edit-control-form {
+  text-align: center;
+}
+
+span.panels-ipe-draghandle-icon {
+  display: inline-block;
+  border: 0px solid transparent;
+  padding: 4px 12px;
+  font: bold 12px/32px "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  text-decoration: none;
+  height: 33px;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+  -moz-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+  background: transparent;
+}
+
+#panels-dnd-main div.panel-region h2.label {
+color: #bbb!important;
+text-shadow: none!important;
+text-align: center;
+font-size: 13pt;
+margin: 0 0 .5em 0;
+background: #222;
+padding-right: 16px;
+vertical-align: middle;
+min-width: 20%;
+}
+
+/* make labels full width when on change layout screen so that you can see how wide the columsn are */
+#panels-change-layout #panels-dnd-main div.panel-region h2.label {
+width:100%;
+}
+
+
+/* updates to styling for classy panels */
+#classy-panel-styles-pane-form .description, #panels-edit-style-settings-form .description {
+  width: auto;
+  float: left;
+  clear: both;
+  text-align: left;
+  padding: 0;
+  margin: 5px 2% 4px 0%;
+  font-weight: bold;
+  line-height: 1.1;
+  width: 78%;
+}
+
+#classy-panel-styles-pane-form .form-item label, #panels-edit-style-settings-form .form-item label {
+    width: inherit;
+  float: left;
+  clear: both;
+  font-size: 15px;
+  text-align: left;
+  color: #007fbf;
+  padding: 0;
+  margin: 3px 2% 10px 0;
+  font-weight: bold;
+  line-height: 1.1;
+}
+
+#classy-panel-styles-pane-form .form-item, #panels-edit-style-settings-form .form-item {
+  margin-bottom:35px;
+  width:75%;
+  }

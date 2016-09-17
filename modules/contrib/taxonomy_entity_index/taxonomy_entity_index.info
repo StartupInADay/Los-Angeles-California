@@ -1,0 +1,14 @@
+name = Taxonomy Entity Index
+description = Provides an actual entity to term index table for lookups.
+core = 7.x
+dependencies[] = taxonomy
+files[] = includes/views/handlers/taxonomy_entity_index_handler_filter_tid_depth.inc
+files[] = includes/views/handlers/taxonomy_entity_index_handler_argument_tid_depth.inc
+files[] = includes/views/handlers/taxonomy_entity_index_handler_field_tid.inc
+
+; Information added by Drupal.org packaging script on 2014-01-24
+version = "7.x-1.0-beta7"
+core = "7.x"
+project = "taxonomy_entity_index"
+datestamp = "1390603432"
+

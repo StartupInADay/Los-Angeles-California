@@ -1,0 +1,99 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the Editor module.
+ */
+
+/**
+ * Implements hook_schema_alter().
+ */
+function editor_schema_alter(&$schema) {
+  $schema['filter_format']['fields']['editor'] = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+    'description' => 'Name of the associated editor (CKEditor).',
+  );
+  $schema['filter_format']['fields']['editor_settings'] = array(
+    'type' => 'text',
+    'size' => 'big',
+    'not null' => FALSE,
+    'serialize' => TRUE,
+    'description' => 'A serialized array of name value pairs that store the editor settings for the specific editor.',
+  );
+}
+
+/**
+ * Implements hook_install().
+ */
+function editor_install() {
+  $schema = array();
+
+  editor_schema_alter($schema);
+
+  $spec = $schema['filter_format']['fields']['editor'];
+
+  // If another module has added a {filter_format}.editor field, change it to
+  // the expected specification. Otherwise, add it.
+  if (db_field_exists('filter_format', 'editor')) {
+    // Indexes using a field being changed must be dropped prior to calling
+    // db_change_field(). However, the database API doesn't provide a way to do
+    // this without knowing what the old indexes are. Therefore, it is the
+    // responsibility of the module that added them to drop them prior to
+    // allowing this module to be installed.
+    db_change_field('filter_format', 'editor', 'editor', $spec);
+  }
+  else {
+    db_add_field('filter_format', 'editor', $spec);
+  }
+
+  $spec = $schema['filter_format']['fields']['editor_settings'];
+
+  // If another module has added a {filter_format}.editor_settings field, change
+  // it to the expected specification. Otherwise, add it.
+  if (db_field_exists('filter_format', 'editor_settings')) {
+    // Indexes using a field being changed must be dropped prior to calling
+    // db_change_field(). However, the database API doesn't provide a way to do
+    // this without knowing what the old indexes are. Therefore, it is the
+    // responsibility of the module that added them to drop them prior to
+    // allowing this module to be installed.
+    db_change_field('filter_format', 'editor_settings', 'editor_settings', $spec);
+  }
+  else {
+    db_add_field('filter_format', 'editor_settings', $spec);
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function editor_uninstall() {
+  // Remove the added column to the core {filter_format} table.
+  db_drop_field('filter_format', 'editor');
+
+  // Remove the added column to the core {filter_format} table.
+  db_drop_field('filter_format', 'editor_settings');
+}
+
+/**
+ * Allow 'editor' and 'editor_settings' fields to be NULL.
+ */
+function editor_update_7100() {
+  $spec = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+    'description' => 'Name of the associated editor (CKEditor).',
+  );
+  db_change_field('filter_format', 'editor', 'editor', $spec);
+
+  $spec = array(
+    'type' => 'text',
+    'size' => 'big',
+    'not null' => FALSE,
+    'serialize' => TRUE,
+    'description' => 'A serialized array of name value pairs that store the editor settings for the specific editor.',
+  );
+  db_change_field('filter_format', 'editor_settings', 'editor_settings', $spec);
+}

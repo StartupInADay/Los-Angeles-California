@@ -1,0 +1,282 @@
+<?php
+
+/**
+ * @file
+ * Tests for Personalize Fields field_collection support.
+ */
+
+class PersonalizeFieldsCollectionTest extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Personalize Fields Field Collection Tests'),
+      'description' => t('Tests field_collection support of Personalize Fields module (requires field_collection module).'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('personalize', 'personalize_fields', 'personalize_test', 'field_collection'));
+    $this->admin_user = $this->drupalCreateUser(array(
+      'access administration pages',
+      'administer site configuration',
+      'access content',
+      'administer content types',
+      'administer nodes',
+      'bypass node access',
+      'manage personalized content',
+    ));
+  }
+
+  function testFieldCollection() {
+    $this->drupalLogin($this->admin_user);
+
+    // Create a field collection field on a node
+    $field = array(
+      'type' => 'field_collection',
+      'field_name' => 'container',
+      'cardinality' => 1,
+      'settings' => array(),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'container',
+      'entity_type' => 'node',
+      'label' => 'Test Field Collection',
+      'bundle' => 'article',
+      'required' => FALSE,
+      'widget' => array(
+        'type' => 'field_collection_embed'
+      ),
+    );
+    field_create_instance($instance);
+
+    // Add a personalizable field to that field collection.
+    $field = array(
+      'type' => 'text',
+      'field_name' => 'article_test_field',
+      'cardinality' => -1,
+      'settings' => array(
+        'personalize' => array(
+          'enabled' => 1,
+          'agent_type' => 'test_agent',
+          'options' => array(
+            'test_agent' => array(
+              'use_client_side_goal_processing' => 1
+            )
+          )
+        ),
+      ),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'article_test_field',
+      'entity_type' => 'field_collection_item',
+      'label' => 'Personalizable Test Collection Subfield',
+      'bundle' => 'container',
+      'required' => FALSE
+    );
+    field_create_instance($instance);
+
+    // Create a test node, fill in 2 variations on a single field collection.
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['container[und][0][article_test_field][und][0][value]'] = 'first variation';
+    $edit['container[und][0][article_test_field][und][1][value]'] = 'second variation';
+    $this->drupalGet('node/add/article');
+    $this->drupalPost(NULL, NULL, t('Add another item'));
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $nid = $this->getNidFromCurrentUrl();
+
+    // Assert that we can load the new option set from the db.
+    $option_sets = personalize_option_set_load_by_type('fields');
+    $option_set = reset($option_sets);
+
+    // The agent machine name will have been generated based on the entity type
+    // and field label.
+    $first_agent = 'container-personalizable-test-collection-subfield';
+    $this->assertEqual($first_agent, $option_set->agent);
+
+    $field_info = array(
+      'entity_type' => 'field_collection_item',
+      'entity_id' => 1,
+      'field_name' => 'article_test_field',
+    );
+    $this->assertEqual($field_info, $option_set->field_info);
+
+    $options = array(
+      array(
+        'option_id' => 'first-variation',
+        'option_label' => 'first variation',
+      ),
+      array(
+        'option_id' => 'second-variation',
+        'option_label' => 'second variation',
+      ),
+    );
+    $this->assertEqual($options, $option_set->options);
+
+    // Now edit the node and change some field values.
+    $edit = array();
+    $edit['container[und][0][article_test_field][und][0][value]'] = 'first variation altered';
+    $edit['container[und][0][article_test_field][und][1][value]'] = 'second variation altered';
+    $this->drupalPost('node/' . $nid . '/edit', $edit, t('Save'));
+
+    // Reload the option set from the cache
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+
+    $options = array(
+      array(
+        'option_id' => 'first-variation',
+        'option_label' => 'first variation altered',
+      ),
+      array(
+        'option_id' => 'second-variation',
+        'option_label' => 'second variation altered',
+      ),
+    );
+    $this->assertEqual($options, $option_set->options);
+  }
+
+  function testMultiValueFieldCollection() {
+    $this->drupalLogin($this->admin_user);
+
+    // Create a field collection field on a node
+    $field = array(
+      'type' => 'field_collection',
+      'field_name' => 'container',
+      'cardinality' => -1,
+      'settings' => array(),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'container',
+      'entity_type' => 'node',
+      'label' => 'Test Field Collection',
+      'bundle' => 'article',
+      'required' => FALSE,
+      'widget' => array(
+        'type' => 'field_collection_embed'
+      ),
+    );
+    field_create_instance($instance);
+
+    // Add a personalizable field to that field collection.
+    $field = array(
+      'type' => 'text',
+      'field_name' => 'article_test_field',
+      'cardinality' => 2,
+      'settings' => array(
+        'personalize' => array(
+          'enabled' => 1,
+          'agent_type' => 'test_agent',
+          'options' => array(
+            'test_agent' => array(
+              'use_client_side_goal_processing' => 1
+            )
+          )
+        ),
+      ),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'article_test_field',
+      'entity_type' => 'field_collection_item',
+      'label' => 'Personalizable Test Collection Subfield',
+      'bundle' => 'container',
+      'required' => FALSE
+    );
+    field_create_instance($instance);
+
+    // Create a test node, fill in 2 variations on a single field collection.
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['container[und][0][article_test_field][und][0][value]'] = 'first variation';
+    $edit['container[und][0][article_test_field][und][1][value]'] = 'second variation';
+    $edit['container[und][1][article_test_field][und][0][value]'] = 'second os first variation';
+    $edit['container[und][1][article_test_field][und][1][value]'] = 'second os second variation';
+
+    $this->drupalGet('node/add/article');
+    $this->drupalPost(NULL, NULL, t('Add another item'));
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $nid = $this->getNidFromCurrentUrl();
+
+    // Assert that we can load the new option set from the db.
+    $option_sets = personalize_option_set_load_by_type('fields');
+    $osids = array_keys($option_sets);
+    $first_os = $option_sets[$osids[0]];
+    $second_os = $option_sets[$osids[1]];
+
+    // The agent machine name will have been generated based on the entity type
+    // and field label.
+    $first_agent = 'container-personalizable-test-collection-subfield';
+    $this->assertEqual($first_agent, $first_os->agent);
+    $field_collections = entity_load('field_collection_item', FALSE);
+
+    $entity_ids = array_keys($field_collections);
+    $field_info = array(
+      'entity_type' => 'field_collection_item',
+      'entity_id' => $entity_ids[0],
+      'field_name' => 'article_test_field',
+    );
+    $this->assertEqual($field_info, $first_os->field_info);
+
+    $options = array(
+      array(
+        'option_id' => 'first-variation',
+        'option_label' => 'first variation',
+      ),
+      array(
+        'option_id' => 'second-variation',
+        'option_label' => 'second variation',
+      ),
+    );
+    $this->assertEqual($options, $first_os->options);
+
+    $second_agent = 'container-personalizable-test-collection-subfield-2';
+    $this->assertEqual($second_agent, $second_os->agent);
+
+    $field_info = array(
+      'entity_type' => 'field_collection_item',
+      'entity_id' => $entity_ids[1],
+      'field_name' => 'article_test_field',
+    );
+    $this->assertEqual($field_info, $second_os->field_info);
+
+    $options = array(
+      array(
+        'option_id' => 'second-os-first-variation',
+        'option_label' => 'second os first variation',
+      ),
+      array(
+        'option_id' => 'second-os-second-variation',
+        'option_label' => 'second os second variation',
+      ),
+    );
+    $this->assertEqual($options, $second_os->options);
+    // Start the campaigns.
+    personalize_agent_set_status($first_agent, PERSONALIZE_STATUS_RUNNING);
+    personalize_agent_set_status($second_agent, PERSONALIZE_STATUS_RUNNING);
+    // Now edit the node and change some field values.
+    $edit = array();
+    $edit['container[und][0][article_test_field][und][0][value]'] = 'first variation altered';
+    $edit['container[und][0][article_test_field][und][1][value]'] = 'second variation altered';
+    $edit['container[und][1][article_test_field][und][0][value]'] = 'second os first variation altered';
+    $edit['container[und][1][article_test_field][und][1][value]'] = 'second os second variation altered';
+    $this->drupalPost('node/' . $nid . '/edit', $edit, t('Save'));
+  }
+
+  /**
+   * Helper to grab the nid from the url so that we don't have to make assumptions
+   * about the nid of the node we just created.
+   */
+  protected function getNidFromCurrentUrl() {
+    $url = $this->getUrl();
+    $matches = array();
+    if (preg_match('/node\/(\d+)/', $url, $matches)) {
+      return $matches[1];
+    }
+    return NULL;
+  }
+}
+

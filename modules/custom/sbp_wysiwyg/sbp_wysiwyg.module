@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the SBP WYSIWYG feature.
+ */
+
+include_once 'sbp_wysiwyg.features.inc';

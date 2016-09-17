@@ -1,0 +1,425 @@
+<?php
+
+/**
+ * @file form_builder.module
+ * Generic form building framework and user interface.
+ */
+
+define('FORM_BUILDER_ROOT', 0);
+
+/**
+ * Implementation of hook_menu().
+ */
+function form_builder_menu() {
+  $items = array();
+
+  $items['admin/build/form-builder/add'] = array(
+    'title' => 'Add field',
+    'description' => 'Add a field to a form.',
+    'page callback' => 'form_builder_add_page',
+    'access callback' => 'form_builder_menu_field_access',
+    'access arguments' => array('add', 4, 5, 6),
+    'type' => MENU_CALLBACK,
+    'file' => 'form_builder.admin.inc',
+    'file path' => drupal_get_path('module', 'form_builder') . '/includes',
+  );
+
+  $items['admin/build/form-builder/clone'] = array(
+    'title' => 'Clone field',
+    'description' => 'Clone a field within a form.',
+    'page callback' => 'form_builder_clone_page',
+    'access callback' => 'form_builder_menu_field_access',
+    'access arguments' => array('clone', 4, 5, 6),
+    'type' => MENU_CALLBACK,
+    'file' => 'form_builder.admin.inc',
+    'file path' => drupal_get_path('module', 'form_builder') . '/includes',
+  );
+
+  $items['admin/build/form-builder/configure'] = array(
+    'title' => 'Configure field',
+    'description' => 'Configure a field within a form.',
+    'page callback' => 'form_builder_configure_page',
+    'access callback' => 'form_builder_menu_field_access',
+    'access arguments' => array('configure', 4, 5, 6),
+    'type' => MENU_CALLBACK,
+    'file' => 'form_builder.admin.inc',
+    'file path' => drupal_get_path('module', 'form_builder') . '/includes',
+  );
+
+  $items['admin/build/form-builder/remove'] = array(
+    'title' => 'Remove field',
+    'description' => 'Remove a field from a form.',
+    'page callback' => 'form_builder_remove_page',
+    'access callback' => 'form_builder_menu_field_access',
+    'access arguments' => array('remove', 4, 5, 6),
+    'type' => MENU_CALLBACK,
+    'file' => 'form_builder.admin.inc',
+    'file path' => drupal_get_path('module', 'form_builder') . '/includes',
+  );
+
+  $items['admin/build/form-builder/json'] = array(
+    'title' => 'JSON representation',
+    'description' => 'Display a form field as a JSON string.',
+    'page callback' => 'form_builder_field_json',
+    'access callback' => 'form_builder_menu_field_access',
+    'access arguments' => array('view', 4, 5, 6),
+    'type' => MENU_CALLBACK,
+    'file' => 'form_builder.admin.inc',
+    'file path' => drupal_get_path('module', 'form_builder') . '/includes',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function form_builder_theme() {
+  return array(
+    'form_builder_element_wrapper' => array(
+      'render element' => 'element',
+      'file' => 'includes/form_builder.admin.inc',
+    ),
+    'form_builder_wrapper' => array(
+      'render element' => 'element',
+      'file' => 'includes/form_builder.admin.inc',
+    ),
+    'form_builder_empty_form' => array(
+      'variables' => array(),
+      'file' => 'includes/form_builder.admin.inc',
+    ),
+    'form_builder_empty_fieldset' => array(
+      'variables' => array(),
+      'file' => 'includes/form_builder.admin.inc',
+    ),
+    'form_builder_no_field_selected' => array(
+      'variables' => array(),
+      'file' => 'includes/form_builder.admin.inc',
+    ),
+    'form_builder_field_loading' => array(
+      'variables' => array(),
+      'file' => 'includes/form_builder.admin.inc',
+    ),
+    'form_builder_field_palette' => array(
+      'variables' => array('fields' => NULL, 'groups' => NULL, 'form_type' => NULL, 'form_id' => NULL),
+      'file' => 'includes/form_builder.admin.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function form_builder_block_info() {
+  $blocks = array();
+  $blocks['fields'] = array(
+    'info' => t('Form builder fields'),
+    'weight' => 0,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function form_builder_block_view($delta = '') {
+  $block = array();
+  if ($delta == 'fields' && form_builder_active_form()) {
+    module_load_include('inc', 'form_builder', 'includes/form_builder.admin');
+    $block['content'] = form_builder_field_palette();
+  }
+  return $block;
+}
+
+/**
+ * Access callback for field configuration, viewing, addition, and deletion.
+ */
+function form_builder_menu_field_access($op, $form_type, $form_id, $element_id) {
+  if (empty($form_type) || empty($form_id) || empty($element_id)) {
+    // If called by menu API to check access, we should not try and check
+    // with fake data, which ends up in PHP errors.
+    return;
+  }
+
+  module_load_include('inc', 'form_builder', 'includes/form_builder.api');
+  module_load_include('inc', 'form_builder', 'includes/form_builder.cache');
+  $element = form_builder_cache_field_load($form_type, $form_id, $element_id);
+  $access = FALSE;
+
+  if ($op == 'add' || $op == 'view') {
+    $access = TRUE;
+  }
+  if ($op == 'clone') {
+    // Unique fields cannot be cloned (or otherwise they would not be unique).
+    // Cloning fieldsets is also not currently supported.
+    $fields = FormBuilderLoader::instance()->getElementTypeInfo($form_type, $form_id);
+    $access = !empty($element['#form_builder']['element_type']) && empty($fields[$element['#form_builder']['element_type']]['unique']) && $element['#form_builder']['element_type'] != 'fieldset';
+  }
+  if ($op == 'configure' && !empty($element['#form_builder']['configurable'])) {
+    $access = TRUE;
+  }
+  if ($op == 'remove' && !empty($element['#form_builder']['removable'])) {
+    $access = TRUE;
+  }
+
+  $module_accesses = module_invoke_all('form_builder_field_access', $op, $form_type, $form_id, $element);
+  if (!empty($module_accesses)) {
+    $access = array_pop($module_accesses);
+  }
+
+  return $access;
+
+}
+
+/**
+ * Implementation of hook_form_builder_properties().
+ */
+function form_builder_form_builder_properties($form_type) {
+  module_load_include('inc', 'form_builder', 'includes/form_builder.properties');
+
+  return array(
+    'key' => array(
+      'form' => 'form_builder_property_key_form',
+    ),
+    'title' => array(
+      'form' => 'form_builder_property_title_form',
+    ),
+    'title_display' => array(
+      'form' => 'form_builder_property_title_display_form',
+    ),
+    'description' => array(
+      'form' => 'form_builder_property_description_form',
+    ),
+    'disabled' => array(
+      'form' => 'form_builder_property_disabled_form',
+    ),
+    'weight' => array(
+      'form' => 'form_builder_property_weight_form',
+    ),
+    'default_value' => array(
+      'form' => 'form_builder_property_default_value_form',
+    ),
+    'markup' => array(
+      'form' => 'form_builder_property_markup_form',
+      'submit' => array('form_builder_property_markup_form_submit'),
+    ),
+    'maxlength' => array(
+      'form' => 'form_builder_property_maxlength_form',
+    ),
+    'required' => array(
+      'form' => 'form_builder_property_required_form',
+    ),
+    'options' => array(
+      'form' => 'form_builder_property_options_form',
+      'submit' => array('form_builder_property_options_form_submit'),
+    ),
+    'size' => array(
+      'form' => 'form_builder_property_size_form',
+    ),
+    'rows' => array(
+      'form' => 'form_builder_property_rows_form',
+    ),
+    'cols' => array(
+      'form' => 'form_builder_property_cols_form',
+    ),
+    'field_prefix' => array(
+      'form' => 'form_builder_property_field_prefix_form',
+    ),
+    'field_suffix' => array(
+      'form' => 'form_builder_property_field_suffix_form',
+    ),
+    'collapsible' => array(
+      'form' => 'form_builder_property_collapsible_form',
+    ),
+    'collapsed' => array(
+      'form' => 'form_builder_property_collapsed_form',
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_form_builder_property_groups().
+ */
+function form_builder_form_builder_property_groups($form_type) {
+  return array(
+    'default' => array(
+      'weight' => 0,
+      'title' => t('Properties'),
+    ),
+    'hidden' => array(
+      'weight' => 100,
+      'title' => t('Advanced'),
+      'collapsed' => TRUE,
+      'collapsible' => TRUE,
+    ),
+    'display' => array(
+      'weight' => 1,
+      'title' => t('Display'),
+    ),
+    'options' => array(
+      'weight' => 2,
+      'title' => t('Options'),
+    ),
+    'validation' => array(
+      'weight' => 3,
+      'title' => t('Validation'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_form_builder_palette_groups().
+ */
+function form_builder_form_builder_palette_groups() {
+  return array(
+    'default' => array(
+      'weight' => 0,
+      'title' => t('Standard'),
+    ),
+    'special' => array(
+      'weight' => 5,
+      'title' => t('Special'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_form_builder_validators().
+ */
+function form_builder_form_builder_validators($form_type) {
+  return array(
+    'form_validate_integer' => array(
+      'form' => 'form_builder_validate_integer',
+    ),
+    'form_validate_decimal' => array(
+      'form' => 'form_builder_validate_decimal',
+    ),
+    'form_validate_email' => array(
+      'form' => 'form_builder_validate_email',
+    ),
+    'form_validate_url' => array(
+      'form' => 'form_builder_validate_url',
+    ),
+  );
+}
+
+/**
+ * Static storage of the current type of form being edited (if any).
+ *
+ * @param $new_type_name
+ *   The name of the type being edited. If this value is passed in, the static
+ *   variable is set. If this parameter is ommited, the current type is
+ *   returned. Pass in FALSE to reset current type.
+ */
+function form_builder_active_form($new_type = NULL, $new_id = NULL) {
+  static $active_form = FALSE;
+
+  if (isset($new_type) && isset($new_id)) {
+    if (!$new_type && !$new_id) {
+      $active_form = FALSE;
+    }
+    else {
+      $active_form['form_type'] = $new_type;
+      $active_form['form_id'] = $new_id;
+    }
+  }
+
+  return $active_form;
+}
+
+/**
+ * Generic validation function to check that an element has a integer value.
+ */
+function form_validate_integer(&$element, &$form_state) {
+  $value = $element['#value'];
+
+  if (empty($value)) {
+    return;
+  }
+
+  // Remove thousands separators from numbers.
+  $locale_info = localeconv();
+  $separator = empty($locale_info['thousands_sep']) ? ',' : $locale_info['thousands_sep'];
+  $new_value = str_replace(array(' ', $separator), '', $value);
+  $int_value = $new_value * 1;
+  $new_value = (string) $int_value;
+  if (!is_int($int_value) || $int_value === 0) {
+    form_error($element, t('The %title field value must be an integer.', array('%title' => $element['#title'])));
+  }
+  elseif ($new_value !== $value) {
+    form_set_value($element, $new_value, $form_state);
+  }
+}
+
+/**
+ * Generic validation function to check that an element has a decimal value.
+ */
+function form_validate_decimal(&$element, &$form_state) {
+  $value = $element['#value'];
+
+  if (empty($value)) {
+    return;
+  }
+
+  // Remove thousands separators from numbers.
+  $locale_info = localeconv();
+  $separator = empty($locale_info['thousands_sep']) ? ',' : $locale_info['thousands_sep'];
+  $new_value = str_replace(array(' ', $separator), '', $value);
+  $float_value = $new_value * 1.0;
+  $new_value = (string) $float_value;
+  if (!is_float($float_value) || $float_value === 0.0) {
+    form_error($element, t('The %title field value must be a decimal.', array('%title' => $element['#title'])));
+  }
+  elseif ($new_value !== $value) {
+    form_set_value($element, $new_value, $form_state);
+  }
+}
+
+/**
+ * Generic validation function to check for a valid e-mail value.
+ */
+function form_validate_email(&$element, &$form_state) {
+  if (empty($element['#value'])) {
+    return;
+  }
+
+  if (!valid_email_address($element['#value'])) {
+    form_error($element, t('The %title field value must be a valid e-mail address.', array('%title' => $element['#title'])));
+  }
+}
+
+/**
+ * Generic validation function to check for a valid url value.
+ */
+function form_validate_url(&$element, &$form_state) {
+  if (empty($element['#value'])) {
+    return;
+  }
+
+  if (!valid_url($element['#value'], isset($element['#absolute_url']) ? $element['#absolute_url'] : TRUE)) {
+    form_error($element, t('The %title field value must be a valid URL.', array('%title' => $element['#title'])));
+  }
+}
+
+/**
+ * Implementation of hook_registry_files_alter().
+ *
+ * Reassign formbuilder include files to their respective modules.
+ * Required to make module_invoke() type of calls working.
+ */
+function form_builder_registry_files_alter(&$files, $module_cache) {
+  $module_files = file_scan_directory(drupal_get_path('module', 'form_builder') . '/modules', '!^.*\.inc$!');
+  foreach ($module_files as $path => $file) {
+    $files[$file->uri]['module'] = $file->name;
+    $files[$file->uri]['weight'] = 0;
+  }
+}
+
+/**
+ * Implement hook_cron().
+ *
+ * Remove stale form_builder_cache entries.
+ */
+function form_builder_cron() {
+  FormBuilderFormBase::purge(variable_get('form_builder_timeout', 21600));
+}

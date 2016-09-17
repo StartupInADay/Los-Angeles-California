@@ -1,0 +1,30 @@
+<?php
+function sps_test_menu() {
+  return array(
+    'sps_test_call/%' => array(
+      'title' => 'Test SPS Preview Form',
+      'description' => '',
+      'page callback' => 'sps_test_call',
+      'page arguments' => array(1),
+      'access callback' => TRUE,
+    ),
+  );
+}
+
+function sps_test_call_set($name, $rtn) {
+  $returns = variable_get('sps_test_call', array());
+  $returns[$name] = $rtn;
+  variable_set('sps_test_call', $returns);
+
+}
+function sps_test_call($name) {
+  $returns = variable_get('sps_test_call', array());
+  if(isset($returns[$name]) 
+  ) {
+    return eval($returns[$name]);
+  }
+  else {
+     return '';
+  }
+}
+

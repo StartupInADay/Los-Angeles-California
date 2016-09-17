@@ -1,0 +1,81 @@
+.view-faq-listing {
+  background-color: white;
+  font-family: Roboto, sans-serif;
+  .ui-accordion {
+    .views-accordion-faq_listing-default-header {
+      border-top: 3px solid $dark_blue;
+      font-family: Merriweather, serif;
+      color: $dark_blue;
+      font-size: 1.285em;
+      font-weight: 400;
+      margin: 0 0 30px 0;
+      padding: 15px 20px 0 0;
+      @include window_size(desktop) {
+        font-size: 2em;
+      }
+      
+    }
+
+    .ui-accordion-header {
+      @include border-radius(0);
+      font-family: Roboto, sans-serif;
+      /*margin-top: 25px;*/
+      padding: 15px 0 15px 25px;
+      font-weight: 700;
+      font-size: 18px;
+      border: none !important;
+      border-top: 1px solid #dcdcdc !important;
+      line-height: 1.2em;
+      a {
+        color: $dark_blue;
+      }
+      background: $white;
+      position: relative;
+    }
+    .ui-accordion-content {
+      font-family: Roboto, sans-serif;
+      color: rgba(0, 0, 0, 0.6);
+      margin: 0;
+      padding: 0 0 10px 25px;
+      background: $white;
+      border: none !important;
+      max-width: 90%;
+      font-size: 14px;
+      line-height: 1.35;
+      height: auto;
+      @include window_size(tab-wide-up) {
+        max-width: 70%;
+        font-size: 1em;
+      }
+      @include window_size(desktop) {
+        max-width: 85%;
+      }
+    }
+    
+    .views-row-last {
+      margin-bottom: 30px;
+    }
+    
+    .ui-accordion-header-icon {
+      position: absolute;
+      width: 20px;
+      height: 30px;
+      top: 25px;
+      left: 0;
+      transition: all 0.5s ease 0s;
+      -webkit-transform: rotate(0deg);
+      outline: none;
+      background: url("../images/subsections/arrow_right.png") 0 0 no-repeat;
+      background-size: 11px 17px;
+    }
+    .ui-accordion-header-active {
+      .ui-accordion-header-icon {
+        top: 22px;
+        left: -6px;
+        outline: none;
+        -webkit-transform: rotate(90deg);
+      }
+    }
+    
+  }
+}

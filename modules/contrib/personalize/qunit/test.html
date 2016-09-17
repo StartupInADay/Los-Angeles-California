@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Personalize JS Tests</title>
+    <link rel="stylesheet" href="http://code.jquery.com/qunit/qunit-1.14.0.css">
+</head>
+<body>
+
+<div id="qunit"></div>
+<div id="qunit-fixture">
+    <!-- HTML required for DOM tests -->
+    <div id="personalized-content">
+        // First option set appears once on the page.
+        <div class="personalize-option-set" data-personalize="osid-1">
+            <noscript>ohai</noscript>
+            <script type="text/template">
+                {"first-choice":{"html":"<div class=\"osid-1-first-option\">this is the first choice<\/div>","index":0},"second-choice":{"html":"<div class=\"osid-1-second-option\">this is the second choice<\/div>","index":1}}
+            </script>
+        </div>
+        // Second option set appears twice on the page.
+        <div class="personalize-option-set" data-personalize="osid-2">
+            <noscript>ohai</noscript>
+            <script type="text/template">
+                {"first-choice":{"html":"<div class=\"osid-2-first-option\">this is the first choice<\/div>","index":0},"second-choice":{"html":"<div class=\"osid-2-second-option\">this is the second choice<\/div>","index":1}}
+            </script>
+        </div>
+        <div class="personalize-option-set" data-personalize="osid-2">
+            <noscript>ohai</noscript>
+            <script type="text/template">
+                {"first-choice":{"html":"<div class=\"osid-2-first-option\">this is the first choice<\/div>","index":0},"second-choice":{"html":"<div class=\"osid-2-second-option\">this is the second choice<\/div>","index":1}}
+            </script>
+        </div>
+        // Third option set has an empty html property
+        <div class="personalize-option-set" data-personalize="osid-3">
+            <noscript><div class="osid-3-noscript-option">ohai</div></noscript>
+            <script type="text/template">
+                {"first-choice":{"html":"<div class=\"osid-3-first-option\">this is the first choice<\/div>","index":0},"second-choice":{"html":"","index":1}}
+            </script>
+        </div>
+        // Fourth option set has an empty html property and is rendered twice.
+        <div class="personalize-option-set" data-personalize="osid-4">
+            <noscript><div class="osid-4-noscript-option">ohai</div></noscript>
+            <script type="text/template">
+                {"first-choice":{"html":"<div class=\"osid-4-first-option\">this is the first choice<\/div>","index":0},"second-choice":{"html":"","index":1}}
+            </script>
+        </div>
+        <div class="personalize-option-set" data-personalize="osid-4">
+            <noscript><div class="osid-4-noscript-option">ohai</div></noscript>
+            <script type="text/template">
+                {"first-choice":{"html":"<div class=\"osid-4-first-option\">this is the first choice<\/div>","index":0},"second-choice":{"html":"","index":1}}
+            </script>
+        </div>
+    </div>
+</div>
+
+
+<script src="http://code.jquery.com/qunit/qunit-1.14.0.js"></script>
+<script src="http://code.jquery.com/jquery-1.4.4.js"></script>
+<script src="jquery.ba-bbq.js"></script>
+<script type="text/javascript">
+    var Drupal = Drupal || {};
+    Drupal.behaviors = Drupal.behaviors || {};
+    Drupal.attachBehaviors = function(bread, circus){};
+    Drupal.settings = Drupal.settings || {};
+    Drupal.theme = Drupal.theme || {};
+    Drupal.settings.personalize = Drupal.settings.personalize || {};
+    Drupal.ajax = Drupal.ajax || {};
+    Drupal.ajax.prototype = Drupal.ajax.prototype || {};
+    Drupal.ajax.prototype.commands = Drupal.ajax.prototype.commands || {};
+</script>
+
+<script src="../js/promise-1.0.0.min.js"></script>
+<script src="../js/personalize.js"></script>
+<script src="tests.js"></script>
+</body>
+</html>

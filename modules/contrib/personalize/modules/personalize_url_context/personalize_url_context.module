@@ -1,0 +1,169 @@
+<?php
+
+/**
+ * @file personalize_url_context.module
+ * Provides a visitor context plugin for querystring params.
+ */
+
+define('PERSONALIZE_COOKIE_EXISTS_PREFIX', 'has-cookie-');
+
+/**
+ * Implements hook_menu().
+ */
+function personalize_url_context_menu() {
+  $items = array();
+  $items['admin/config/content/personalize/browser_context'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'title' => 'Browser Contexts',
+    'description' => 'Configure which querystring parameters and cookies can be used as visitor contexts.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('personalize_url_context_admin_form'),
+    'access arguments' => array('administer personalize configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_personalize_visitor_contexts().
+ */
+function personalize_url_context_personalize_visitor_context() {
+  $info = array();
+  $path = drupal_get_path('module', 'personalize_url_context') . '/plugins';
+  $info['querystring_context'] = array(
+    'path' => $path . '/visitor_context',
+    'handler' => array(
+      'file' => 'QuerystringContext.inc',
+      'class' => 'QuerystringContext',
+    ),
+  );
+  $info['cookie_context'] = array(
+    'path' => $path . '/visitor_context',
+    'handler' => array(
+      'file' => 'CookieContext.inc',
+      'class' => 'CookieContext',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function personalize_url_context_ctools_plugin_api($owner, $api) {
+  if ($owner == 'personalize' && $api == 'personalize') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function personalize_url_context_page_build(&$page) {
+  $contexts = variable_get('personalize_url_querystring_contexts', _personalize_url_context_get_utm_parameter_names());
+  $params = array();
+  // Filter the list of actual querystring parameters to just those defined
+  // in our config.
+  foreach (drupal_get_query_parameters() as $key => $value) {
+    if (in_array($key, $contexts)) {
+      $params[$key] = check_plain($value);
+    }
+  }
+  // We need the base url for comparison against the referrer in our js.
+  global $base_url;
+  $settings = array(
+    'querystring_params' => $params,
+    'base_url' => $base_url,
+  );
+
+  $page['page_top']['personalize_url_context'] = array(
+    '#attached' => array(
+      'js' => array(
+        drupal_get_path('module', 'personalize_url_context') . '/js/personalize_url_context.js' => array(),
+        array(
+          'data' => array('personalize_url_context' => $settings),
+          'type' => 'setting'
+        ),
+      ),
+    )
+  );
+}
+
+/**
+ * Configuration form for querystring params and cookies
+ *
+ * This form allows the specification of querystring parameters and cookies so
+ * that these can be used for targeting purposes.
+ */
+function personalize_url_context_admin_form($form, &$form_state) {
+  $form = array(
+    '#attached' => array(
+      'css' => array(
+        drupal_get_path('module', 'personalize_url_context') . '/css/personalize_url_context.admin.css'
+      )
+    )
+  );
+  $query_string_contexts = variable_get('personalize_url_querystring_contexts', _personalize_url_context_get_utm_parameter_names());
+  $form['querystring_contexts'] = array(
+    '#prefix' => '<div class="personalize-url-context-textarea">',
+    '#suffix' => '</div>',
+    '#description' => t('List here all of the querystring parameters you might want to use for targeting purposes in your personalizations. Put each parameter on its own line.'),
+    '#type' => 'textarea',
+    '#title' => t('Querystring contexts'),
+    '#default_value' => !empty($query_string_contexts) ? implode("\r\n", $query_string_contexts) : '',
+  );
+
+  $cookie_contexts = variable_get('personalize_cookie_contexts', array());
+  $form['cookie_contexts'] = array(
+    '#prefix' => '<div class="personalize-cookie-context-textarea">',
+    '#suffix' => '</div>',
+    '#description' => t('List here all of the cookies you might want to use for targeting purposes in your personalizations. Put each cookie on its own line.'),
+    '#type' => 'textarea',
+    '#title' => t('Cookie contexts'),
+    '#default_value' => !empty($cookie_contexts) ? implode("\r\n", $cookie_contexts) : '',
+  );
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  return $form;
+}
+
+/**
+ * Returns the list of UTM parameter names.
+ *
+ * @return array
+ *   An array of strings representing parameter names.
+ */
+function _personalize_url_context_get_utm_parameter_names() {
+  return array(
+    'utm_campaign',
+    'utm_source',
+    'utm_medium',
+    'utm_content',
+    'utm_term',
+  );
+}
+
+/**
+ * Submit callback for the configuration form.
+ */
+function personalize_url_context_admin_form_submit($form, &$form_state) {
+  $querystring_contexts = array();
+  if ($form_state['values']['querystring_contexts']) {
+    $new_contexts = explode("\r\n", $form_state['values']['querystring_contexts']);
+    foreach ($new_contexts as $context) {
+      $querystring_contexts[] = trim($context);
+    }
+  }
+  variable_set('personalize_url_querystring_contexts', $querystring_contexts);
+
+  $cookie_contexts = array();
+  if ($form_state['values']['cookie_contexts']) {
+    $new_contexts = explode("\r\n", $form_state['values']['cookie_contexts']);
+    foreach ($new_contexts as $context) {
+      $cookie_contexts[] = trim($context);
+    }
+  }
+  variable_set('personalize_cookie_contexts', $cookie_contexts);
+}

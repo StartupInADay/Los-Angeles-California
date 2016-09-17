@@ -1,0 +1,44 @@
+.panel__general_content {
+  margin-top: 15px;
+  
+  .panel__general_content__title {
+    @include page__content_header--level_1_thin;
+  }
+
+  .panel__general_content__body {
+    h1 {
+      @include page__content_header--level_1
+    }
+    h2 {
+      @include page__content_header--level_2;
+    }
+    h2.thin_line {
+      @include page__content_header--level_2_thin;
+    }
+    h3 {
+      @include page__content_header--level_3;
+    }
+    p.intro {
+      @include page__content_paragraph--intro
+    }
+    p {
+      @include page__content_paragraph--level_2;
+    }
+    ul {
+      @include page__content_list;
+    }
+    ul.no_bullets {
+      @include page__content_list--no_bullets;
+    }
+    ol {
+      @include page__content_ordered_list;
+    }
+    a.content_link, a.page__content_link {
+      @include page__content_link;
+    }
+  }
+
+  .panel__quote-line {
+    @include hr-full;
+  }
+}

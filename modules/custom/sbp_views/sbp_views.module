@@ -1,0 +1,20 @@
+<?php
+/**
+ * @file
+ * Code for the SBP Views feature.
+ */
+
+include_once 'sbp_views.features.inc';
+
+/**
+ * Implements hook_form_alter().
+ */
+function sbp_views_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'views_exposed_form') {
+    if (!empty($form['search_api_views_fulltext'])) {
+      $form['search_api_views_fulltext']['#attributes'] = array(
+        'placeholder' => 'Search',
+      );
+    }
+  }
+}

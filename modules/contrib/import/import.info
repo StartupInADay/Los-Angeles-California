@@ -1,0 +1,21 @@
+name = Import
+description = Migration base classes for entity imports.
+core = 7.x
+package = Development
+project = import
+dependencies[] = ctools
+dependencies[] = entity
+dependencies[] = migrate
+dependencies[] = migrate_extras
+dependencies[] = migrate_ui
+files[] = import.base.comments.inc
+files[] = import.base.nodes.inc
+files[] = import.base.terms.inc
+files[] = import.base.users.inc
+
+; Information added by Drupal.org packaging script on 2015-06-11
+version = "7.x-1.0-alpha1"
+core = "7.x"
+project = "import"
+datestamp = "1434048489"
+

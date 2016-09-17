@@ -1,0 +1,27 @@
+/**
+ * @file
+ * Garland-specific theming for Form Builder. Expand the column to fit the add
+ * new field block (260px wide).
+ */
+
+body.sidebar-right #center {
+  margin-right: -280px;
+}
+body.sidebars #center {
+  margin: 0 -280px 0 -210px;
+}
+
+/* And add blanks left and right for the sidebars to fill */
+body.sidebar-right #squeeze {
+  margin-right: 280px;
+}
+body.sidebars #squeeze {
+  margin: 0 280px 0 210px;
+}
+
+/* Style the tabs to work with the Garland fieldset gradient */
+#form-builder ul.form-builder-tabs li.active {
+  border-bottom: 1px solid #ebf4fa;
+  background: #ebf4fa;
+}
+

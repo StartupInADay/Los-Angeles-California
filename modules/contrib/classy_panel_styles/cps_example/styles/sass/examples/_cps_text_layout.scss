@@ -1,0 +1,30 @@
+@import "cps_init";
+
+// BASICS
+.align-center {
+  text-align: center;
+}
+
+.align-right {
+  text-align: right;
+}
+
+.align-left {
+  text-align: left;
+}
+
+@include panel-pane-with-ipe {
+  .text-columns-4 {
+    @include column-count(4);
+    @include column-gap(10px);
+  }
+  .text-columns-3 {
+    @include column-count(3);
+    @include column-gap(10px);
+  }
+  .text-columns-2 {
+    @include column-count(2);
+    @include column-gap(10px);
+  }
+}
+

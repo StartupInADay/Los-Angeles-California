@@ -1,0 +1,205 @@
+<?php
+
+/**
+ * @file
+ * Sets up the table to link entities with option sets.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function personalize_fields_schema() {
+  return array(
+    'cache_personalize_fields' => personalize_fields_get_cache_table_schema()
+  );
+}
+
+/**
+ * Implements hook_install().
+ */
+function personalize_fields_install() {
+  // This is done to work around a bug in RDF module
+  // @see https://drupal.org/node/1940986 regarding this bug.
+  db_update('system')
+    ->fields(array('weight' => 20))
+    ->condition('name', 'personalize_fields', '=')
+    ->execute();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function personalize_fields_uninstall() {
+  // Remove the "personalizable" setting from all fields. We cannot
+  // use field_update_field() for this as it's not possible to remove
+  // existing settings (it just merges the old settings into whatever
+  // settings you pass it).
+  $result = db_select('field_config', 'f')
+    ->fields('f', array('id', 'data'))
+    ->execute();
+  foreach ($result as $row) {
+    $data = unserialize($row->data);
+    if (isset($data['settings']['personalize'])) {
+      unset($data['settings']['personalize']);
+    }
+    db_update('field_config')
+      ->fields(array('data' => serialize($data)))
+      ->condition('id', $row->id)
+      ->execute();
+  }
+}
+
+/**
+ * Add a cache table for entity fields.
+ */
+function personalize_fields_update_7001() {
+  drupal_load('module', 'personalize_fields');
+  $schema = personalize_fields_get_cache_table_schema();
+  db_create_table('cache_personalize_fields', $schema);
+
+  // Now get all existing fields-based option sets and convert their field info
+  // to the new storage.
+  $result = db_select('personalize_fields_option_sets', 'pf')
+    ->fields('pf')
+    ->execute();
+  foreach ($result as $row) {
+    $os = db_query("SELECT osid, data FROM {personalize_option_sets} WHERE osid =
+   :osid", array(':osid' => $row->osid))->fetchObject();
+    if (empty($os)) {
+      continue;
+    }
+    $data = unserialize($os->data);
+    $data['personalize_fields_entity_type'] = $row->entity_type;
+    $data['personalize_fields_entity_id'] = $row->entity_id;
+    $data['personalize_fields_field_name'] = $row->field_name;
+
+    db_update('personalize_option_sets')
+      ->fields(array('data' => serialize($data)))
+      ->condition('osid', $row->osid)
+      ->execute();
+
+    $cid = _personalize_fields_get_cid_for_field($row->entity_type, $row->entity_id, $row->field_name);
+    cache_set($cid, $row->osid, 'cache_personalize_fields');
+  }
+  // Now drop the old table.
+  db_drop_table('personalize_fields_option_sets');
+}
+
+/**
+ * Switch to the new configuration settings for personalizable fields.
+ */
+function personalize_fields_update_7002() {
+  // For all fields set as personalizable we need to switch them to
+  // the new settings structure.
+  $result = db_select('personalize_option_sets', 'o')
+    ->fields('o', array('agent', 'data'))
+    ->condition('plugin', 'fields')
+    ->execute();
+
+  $personalized_fields = array();
+  foreach ($result as $row) {
+    $data = unserialize($row->data);
+    if (!isset($personalized_fields[$data['personalize_fields_field_name']])) {
+      // We base our default agent type for this field on the agent type of the
+      // first existing agent we come to that's used for one of these fields.
+      $plugin = db_query("SELECT plugin FROM {personalize_agent} WHERE machine_name = :name", array(':name' => $row->agent))->fetchField();
+      $personalized_fields[$data['personalize_fields_field_name']] = $plugin;
+    }
+  }
+
+  $result = db_select('field_config', 'f')
+    ->fields('f', array('id', 'field_name', 'data'))
+    ->execute();
+  foreach ($result as $row) {
+    $data = unserialize($row->data);
+    if (isset($data['settings']['personalizable'])) {
+      $enabled = $data['settings']['personalizable'];
+      unset($data['settings']['personalizable']);
+      // We can only set this as personalizable if we have default agent configuration
+      // to copy from an existing option set.
+      if (isset($personalized_fields[$row->field_name]) && $enabled) {
+        $data['settings']['personalize'] = array(
+          'enabled' => 1,
+          'agent_type' => $personalized_fields[$row->field_name],
+          // There's no way to distinguish the options needed for general configuration
+          // of this type of agent from other data that has been saved with the agent
+          // so we just set an empty options array here. It is up to the agent plugin to
+          // ensure defaults are set when an actual agent is created.
+          'options' => array()
+        );
+      }
+
+      db_update('field_config')
+        ->fields(array('data' => serialize($data)))
+        ->condition('id', $row->id)
+        ->execute();
+    }
+  }
+}
+
+/**
+ * Truncate any long option labels created from personalize fields content.
+ */
+function personalize_fields_update_7003() {
+  drupal_load('module', 'personalize_fields');
+  $result = db_select('personalize_option_sets', 'o')
+    ->fields('o', array('osid', 'options'))
+    ->condition('plugin', 'fields', '=')
+    ->execute();
+  foreach ($result as $row) {
+    $options = unserialize($row->options);
+    foreach ($options as &$option) {
+      $option['option_label'] = _personalize_fields_generate_option_label_from_value($option['option_label']);
+    }
+    db_update('personalize_option_sets')
+      ->condition('osid', $row->osid)
+      ->fields(array('options' => serialize($options)))
+      ->execute();
+  }
+}
+
+/**
+ * All agents created automatically by personalize_fields module should be flagged as such.
+ */
+function personalize_fields_update_7004() {
+  drupal_load('module', 'personalize_fields');
+  $fields_option_sets = db_select('personalize_option_sets', 'o')
+    ->fields('o', array('osid', 'agent'))
+    ->condition('plugin', 'fields', '=')
+    ->execute();
+  foreach ($fields_option_sets as $os) {
+    // Ignore agents that already somehow have multiple option sets as these were likely
+    // not automatically created.
+    $result = db_select('personalize_option_sets', 'o')
+      ->fields('o', array('osid'))
+      ->condition('agent', $os->agent, '=')
+      ->execute();
+    if (count($result) > 1) {
+      continue;
+    }
+    $agent_result = db_select('personalize_agent', 'a')
+      ->fields('a')
+      ->condition('a.machine_name', $os->agent)
+      ->execute();
+    if ($agent_record = $agent_result->fetchObject()) {
+      $data = unserialize($agent_record->data);
+      if (!isset($data['auto_created'])) {
+        $data['auto_created'] = 1;
+      }
+      // Update the agent.
+      db_update('personalize_agent')
+        ->fields(array('data' => serialize($data)))
+        ->condition('machine_name', $os->agent)
+        ->execute();
+    }
+  }
+}
+
+/**
+ * Helper to get the schema for the cache table.
+ */
+function personalize_fields_get_cache_table_schema() {
+  $table_schema = drupal_get_schema_unprocessed('system', 'cache');
+  $table_schema['description'] = 'Cache table for storing option set IDs for field instances.';
+  return $table_schema;
+}

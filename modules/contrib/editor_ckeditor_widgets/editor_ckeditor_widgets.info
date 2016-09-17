@@ -1,0 +1,14 @@
+name = Editor CKEditor Widgets
+description = Integrates with CKEditor to provide common embeddable widgets.
+package = User interface
+core = 7.x
+
+dependencies[] = editor_ckeditor
+dependencies[] = libraries
+
+
+; Information added by drush on 2016-02-18
+version = ""
+project = "editor_ckeditor_widgets"
+datestamp = "1455828873"
+

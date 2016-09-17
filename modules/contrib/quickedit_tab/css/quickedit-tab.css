@@ -1,0 +1,57 @@
+#navbar-administration .navbar-bar #quickedit-navbar-tab {
+  display: block;
+  float: right;
+  position: relative;
+}
+
+#navbar-administration .navbar-bar #quickedit-trigger-link {
+  margin: 0;
+}
+
+#navbar-administration .navbar-bar #quickedit-navbar-tab:hover {
+  background-image: -webkit-linear-gradient(rgba(255, 255, 255, 0.125) 20%, transparent 200%);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.125) 20%, transparent 200%);
+}
+
+#navbar-administration .navbar-bar #quickedit-navbar-tab.active,
+#navbar-administration .navbar-bar #quickedit-navbar-tab.active:hover {
+  background-image: -webkit-linear-gradient(rgba(255, 255, 255, 0.25) 20%, transparent 200%);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.25) 20%, transparent 200%);
+}
+
+#navbar-administration .navbar-bar #quickedit-navbar-tab .navbar-icon.navbar-icon-quickedit {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+  width: 3em;
+  height: 3em;
+  background-image: url("../images/quickedit.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  overflow: hidden;
+  text-indent: -999px;
+}
+
+#navbar-administration .navbar-bar #quickedit-navbar-tab .navbar-icon.navbar-icon-quickedit:hover {
+  background-image: url("../images/quickedit-active.png");
+}
+
+#navbar-administration .navbar-bar #quickedit-navbar-tab.active .navbar-icon.navbar-icon-quickedit {
+  background-image: url("../images/quickedit-active.png");
+}
+
+div.contextual-links-wrapper:not(.contextual-links-active) a.quickedit-contextual-link {
+  border: 1px solid #ddd;
+  border-radius: 13px;
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  background: #fff url(../images/quickedit-select.png) no-repeat 3px 3px;
+  width: 20px;
+  height: 22px;
+}
+
+div.contextual-links-wrapper.contextual-links-active a.quickedit-contextual-link {
+  background: #fff url(../images/quickedit-select.png) no-repeat 3px -17px; 
+  width: 20px;
+  height: 18px;
+}

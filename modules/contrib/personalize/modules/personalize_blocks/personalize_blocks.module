@@ -1,0 +1,368 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function personalize_blocks_menu() {
+  $items['admin/structure/personalize-blocks'] = array(
+    'title' => 'Personalize blocks',
+    'description' => 'Manage your personalized blocks',
+    'page callback' => 'personalize_blocks_list',
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'personalize_blocks.admin.inc',
+  );
+  $items['admin/structure/personalize-blocks/add'] = array(
+    'title' => 'Add personalized block',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('personalize_blocks_form', 'add'),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_LOCAL_ACTION,
+    'file' => 'personalize_blocks.admin.inc',
+  );
+  $items['admin/structure/personalize/variations/personalize-blocks/add'] = array(
+    'title' => 'Add personalized block',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('personalize_blocks_form', 'add'),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'personalize_blocks.admin.inc',
+  );
+  $items['admin/structure/personalize/variations/personalize-blocks/manage/%personalize_block'] = array(
+    'title' => 'Edit Personalized Block',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('personalize_blocks_form', 'edit', 6),
+    'access arguments' => array('manage personalized content'),
+    'file' => 'personalize_blocks.admin.inc',
+  );
+  $items['admin/structure/personalize/variations/personalize-blocks/manage/%personalize_block/edit'] = array(
+    'title' => 'Edit Personalized Block',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+  );
+  $items['admin/structure/personalize/variations/personalize-blocks/manage/%personalize_block/delete'] = array(
+    'title' => 'Delete Personalized Block',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('personalize_blocks_block_delete', 6),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'personalize_blocks.admin.inc',
+  );
+  $items['admin/structure/personalize/variations/personalize-blocks/manage/%personalize_block/%/delete'] = array(
+    'title' => 'Delete Personalized Block Variation',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('personalize_blocks_block_option_delete', 6, 7),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'personalize_blocks.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_personalize_option_set_type().
+ */
+function personalize_blocks_personalize_option_set_type() {
+  return array(
+    'block' => array()
+  );
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function personalize_blocks_ctools_plugin_api($owner, $api) {
+  if ($owner == 'personalize' && $api == 'personalize') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function personalize_blocks_theme() {
+  return array(
+    'personalize_blocks_admin_form_blocks' => array(
+      'render element' => 'blocks',
+      'file' => 'personalize_blocks.admin.inc',
+    ),
+    'personalize_blocks_admin_form_draggable_blocks' => array(
+      'render element' => 'blocks',
+      'file' => 'personalize_blocks.admin.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_drupal_goto_alter().
+ *
+ * This works together with the block dropdown code to ensure a sensible
+ * workflow when creating a new block from within the personalized block
+ * creation process.
+ *
+ * @see _personalize_blocks_form()
+ */
+function personalize_blocks_drupal_goto_alter(&$path, &$options, &$http_response_code) {
+  // If we are redirecting from adding a new block, and we got there from
+  // the "add a new one" link, we need to ensure that the new block is
+  // now selected in the dropdown.
+  if ($_GET['q'] == 'admin/structure/block/add' && isset($_POST['info']) && isset($options['query']['personalize_add_block'])) {
+    // We need the bid of the custom block that was just added.
+    $bid = db_select('block_custom', 'b')
+      ->fields('b', array('bid'))
+      ->condition('info', $_POST['info'])
+      ->orderBy('b.bid', 'DESC')
+      ->execute()
+      ->fetchField();
+    $options['query']['personalize_blocks_new_block'] = $bid;
+    unset($options['query']['personalize_add_block']);
+  }
+}
+
+/**
+ * Loads a personalized block by its osid.
+ *
+ * @param $osid
+ *   The osid of the option set.
+ * @return The loaded option set or NULL no option set of type
+ *   'blocks' exists with the given osid.
+ */
+function personalize_block_load($osid) {
+  $os = personalize_option_set_load($osid);
+  if (!$os || $os->plugin != 'block') {
+    return NULL;
+  }
+  return $os;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function personalize_blocks_block_info() {
+  $blocks = array();
+  foreach (personalize_option_set_load_by_type('block') as $personalized_block) {
+    $blocks[$personalized_block->osid]['info'] = $personalized_block->data['block_title'];
+  }
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function personalize_blocks_block_view($delta = '') {
+  $block = array();
+  $path_is_admin = path_is_admin(current_path());
+  if ($pblock = personalize_blocks_build_personalized_block($delta, $path_is_admin)) {
+      $block['content'] = $pblock;
+      $block['content']['#contextual_links']['personalize_blocks'] = array('admin/structure/personalize/variations/personalize-blocks/manage', array($delta));
+      $block['subject'] = FALSE;
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_contextual_links_view_alter().
+ */
+function personalize_blocks_contextual_links_view_alter(&$element, $items) {
+  if (!user_access('manage personalized content')) {
+    return;
+  }
+  if (isset($element['#element']['#block']) && $element['#element']['#block']->module != 'personalize_blocks' && !isset($element['#element']['#block']->personalized)) {
+    $block = $element['#element']['#block'];
+    if (isset($block->bid)) {
+      $links = &$element['#links'];
+      personalize_add_personalize_this_contextual_link($links, 'admin/structure/personalize/variations/personalize-blocks/add', array('query' => array('original_block' => $block->bid)));
+    }
+  }
+}
+
+/**
+ * Builds a personalized block given an option set id.
+ */
+function personalize_blocks_build_personalized_block($osid, $show_default_only = FALSE) {
+  if ($option_set = personalize_block_load($osid)) {
+    $personalized_block = new PersonalizedBlock($option_set->options, $option_set->executor);
+    try {
+      // Show only the default variation block.
+      if ($show_default_only) {
+        return $personalized_block->buildDefault();
+      }
+
+      $renderable = $personalized_block->build();
+    }
+    catch (Exception $e) {
+      return NULL;
+    }
+
+    // Block renders all content variations.
+    if (isset($renderable['sub_blocks'])) {
+      $children = element_children($renderable['sub_blocks']);
+      $mismatch = count($children) != count($option_set->options);
+      foreach ($children as $key => $child) {
+        if ($mismatch && $key > 0) {
+          // Something went wrong with at least one option. Just output a single
+          // block.
+          unset($renderable['sub_blocks'][$child]);
+        }
+        else {
+          // Add a contextual link for editing the personalize block.
+          foreach (element_children($renderable['sub_blocks'][$child]) as $key) {
+            $renderable['sub_blocks'][$child][$key]['#contextual_links']['personalize_blocks'] = array(
+              'admin/structure/personalize/variations/personalize-blocks/manage',
+              array($osid, 'edit'),
+            );
+          }
+        }
+      }
+      if ($mismatch) {
+        // Something went wrong with at least one option. Return without further
+        // processing.
+        return $renderable;
+      }
+      $renderable['#first_option'] = $renderable['sub_blocks'][0];
+      $renderable['#personalize_options'] = array();
+      $renderable['#theme_wrappers'] = array('personalize_options_wrapper');
+      foreach($option_set->options as $i => $option) {
+        $renderable['#personalize_options'][$option['option_id']] = $renderable['sub_blocks'][$i];
+      }
+    }
+    else {
+      // Chosen block is rendered upon at decision time.
+      $renderable['#theme_wrappers'] = array('personalize_options_callback_wrapper');
+      $renderable['#first_option'] = $renderable['default_block'];
+    }
+    $renderable['#personalize_option_set'] = $option_set;
+    personalize_element_with_option_set($renderable, $option_set, TRUE);
+    $renderable['#attached']['css'][] = drupal_get_path('module', 'personalize_blocks') . '/personalize-blocks.css';
+
+    return $renderable;
+  }
+  return NULL;
+}
+
+/**
+ * Replace an existing block with a personalized one.
+ *
+ * @param $bid
+ *   The block id for the block placement we want to replace.
+ *
+ * @param $pblock
+ *   The personalized block to use instead.
+ */
+function personalize_blocks_replace_existing($bid, $pblock) {
+  $query = db_select('block', 'b')
+    ->fields('b', array('theme', 'weight', 'region', 'visibility', 'pages'))
+    ->condition('bid', $bid);
+  $result = $query->execute();
+  $record = $result->fetchAssoc();
+  // Disable the existing block
+  db_update('block')
+    ->condition('bid', $bid)
+    ->fields(array('region' => -1))
+    ->execute();
+  // Now use the original block's config settings on our new block.
+  try {
+    db_merge('block')
+      ->key(array('theme' => $record['theme'], 'delta' => $pblock->osid, 'module' => 'personalize_blocks'))
+      ->fields(array(
+        'region' => $record['region'],
+        'pages' => $record['pages'],
+        'status' => 1,
+        'visibility' => $record['visibility'],
+        'weight' => $record['weight'],
+        'title' => '',
+        'custom' => 0,
+        'cache' => DRUPAL_CACHE_PER_ROLE,
+      ))
+      ->execute();
+  }
+  catch (PDOException $e) {
+    watchdog('personalize_blocks', 'Could not place personalized block %block', array('%block' => $pblock->osid));
+  }
+}
+
+/**
+ * Implements hook_page_alter().
+ *
+ * Prevent the assembled blocks from this module from being run through
+ * theme_block().
+ */
+function personalize_blocks_page_alter(&$page) {
+  // Find the regions on the page and cycle through them.
+  $parents = element_children($page);
+  foreach ($parents as $parent) {
+    // Find the blocks in the region and check if the block comes from this
+    // module. If so, remove 'block' from '#theme_wrappers'.
+    $children = element_children($page[$parent]);
+    foreach ($children as $child) {
+      $data = &$page[$parent][$child];
+      if (isset($data['#block']) && $data['#block']->module == 'personalize_blocks') {
+        $wrapper_key = array_search('block', $data['#theme_wrappers']);
+        if ($wrapper_key !== FALSE) {
+          unset($data['#theme_wrappers'][$wrapper_key]);
+          $data['#attributes']['class'][] = 'personalized-block';
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_personalize_create_new_links().
+ */
+function personalize_blocks_personalize_create_new_links() {
+  return array(
+    array(
+      'title' => 'Personalized Block',
+      'path' => 'admin/structure/personalize/variations/personalize-blocks/add',
+    ),
+  );
+}
+
+/**
+ * Implements hook_personalize_edit_link().
+ */
+function personalize_blocks_personalize_edit_link($option_set) {
+  if ($option_set->plugin != 'block') {
+    return '';
+  }
+  return "admin/structure/personalize/variations/personalize-blocks/manage/{$option_set->osid}/edit";
+}
+
+/**
+ * Implements hook_personalize_delete_link().
+ */
+function personalize_blocks_personalize_delete_link($option_set) {
+  if ($option_set->plugin != 'block') {
+    return '';
+  }
+  return "admin/structure/personalize/variations/personalize-blocks/manage/{$option_set->osid}/delete";
+}
+
+/**
+ * Implements hook_personalize_get_executor_options().
+ */
+function personalize_blocks_personalize_get_executor_options() {
+  return array(
+    'show' => array(
+      'default' => TRUE,
+    ),
+    'callback' => array(),
+  );
+}
+
+/**
+ * Implements hook_personalize_option_load().
+ */
+function personalize_blocks_personalize_option_load($option_set, $option) {
+  $bid = $option['bid'];
+  $personalized_block = new PersonalizedBlock(array($option));
+  $block = $personalized_block->buildBlock($bid);
+  list($module, $delta) = PersonalizedBlock::extractBlockId($bid);
+  $block["{$module}_{$delta}"]['#contextual_links']['personalize_blocks'] = array(
+    'admin/structure/personalize/variations/personalize-blocks/manage',
+    array($option_set->osid, 'edit'),
+  );
+
+  return $block;
+}

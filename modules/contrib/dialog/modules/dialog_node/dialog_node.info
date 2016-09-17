@@ -1,0 +1,14 @@
+name = Dialog Node
+description = Moves various node actions into interactive overlays.
+package = Dialog
+core = 7.x
+
+dependencies[] = dialog
+dependencies[] = node
+
+; Information added by Drupal.org packaging script on 2016-01-04
+version = "7.x-2.0-alpha8"
+core = "7.x"
+project = "dialog"
+datestamp = "1451879739"
+

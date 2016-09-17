@@ -1,0 +1,14 @@
+name = Quick Edit Tab
+description = Navbar integration for In-place content editing.
+package = Spark
+core = 7.x
+
+dependencies[] = quickedit
+dependencies[] = navbar
+
+; Information added by Drupal.org packaging script on 2016-02-17
+version = "7.x-1.1+5-dev"
+core = "7.x"
+project = "quickedit_tab"
+datestamp = "1455725665"
+

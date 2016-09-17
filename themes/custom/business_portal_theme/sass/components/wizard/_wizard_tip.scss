@@ -1,0 +1,48 @@
+// TIP section
+.wizard__tip {
+  margin: 20px 0 20px 0;
+  padding-left: 30px;
+  position: relative;
+  @include wizard__content_width(($wizard_content_width - 30));
+  
+  .wizard__tip_icon {
+    position: absolute;
+    left: 0; top: 0;
+    height: 20px; width: 20px;
+    background-image: image-url("wizard/icon_info.png");
+    background-size: 100%;
+  }
+}
+
+.wizard__tip_content {
+  .wizard__tip_copy {
+    padding: 0;
+    margin: 0 0 20px 0;
+    font-size: 0.929em;
+
+    @include window_size(desktop){
+      font-size: 1.333em;
+      font-size: 1.2em;
+    }
+  }
+  p {
+    margin-top: 0; padding-top: 0;
+  }
+}
+
+
+.wizard__tip_button {
+  @include border-radius(20px);
+  border: 2px solid $dark_blue;
+  font-size: 0.85em !important;
+  padding: 6px 15px;
+  margin: 0 0 20px 30px !important;
+  letter-spacing: 0.5px;
+  font-weight: 900;
+  display: inline-block;
+  color:$dark_blue !important;
+}
+
+.wizard__tip_button.wizard__button--selected {
+  color: white !important;
+}

@@ -1,0 +1,90 @@
+//
+// @file
+// Layout styles for the Demonstratie panel layouts.
+//
+
+@import "base";
+
+@include establish-baseline();
+
+/**
+ * Layout helpers
+ */
+
+.content-region {
+  clear: both;
+  width: 100%;
+
+  .panels-dnd & {
+    margin-bottom: $base-rhythm-unit;
+  }
+}
+
+.region-featured-medium {
+  @include respond(medium) {
+    .feature-row & {
+      @include box-sizing(border-box);
+      @include inline-block;
+      float: left;
+      clear: none;
+      width: 49%;
+      margin-right: 2%;
+
+      &:nth-child(even) {
+        margin-right: 0;
+      }
+    }
+  }
+}
+
+.horizontal-layout {
+  > .panel-pane,
+  > .pane-content > .node,
+  > .pane-content .views-row,
+  div.panels-ipe-portlet-wrapper {
+
+    @include respond(small) {
+      @include box-sizing(border-box);
+      @include inline-block;
+      float: left;
+      margin-right: 2%;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+
+    @include respond(small medium) {
+      width: 49%;
+
+      &:nth-child(odd) {
+        clear: left;
+      }
+
+      &:nth-child(even) {
+        margin-right: 0;
+      }
+    }
+
+    @include respond(medium) {
+      // Instead of a direct percentage, I will leave the formula for future
+      // reference.
+      // (100% / items_in_row]) - (spacing * items_minus_one / items_in_row)
+      width: (100% / 4) - (2% * 3 / 4);
+
+      &:nth-child(4n+1) {
+        clear: left;
+      }
+
+      &:nth-child(4n) {
+        margin-right: 0;
+      }
+    }
+  }
+}
+
+// Small fix for previewing unpublished nodes.
+.hero-image .node-unpublished {
+  background: none;
+}
+

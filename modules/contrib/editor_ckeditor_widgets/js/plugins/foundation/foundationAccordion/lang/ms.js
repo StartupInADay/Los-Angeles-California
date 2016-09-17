@@ -1,0 +1,22 @@
+CKEDITOR.plugins.setLang('foundationAccordion', 'ms', {//Malay
+	plugin 			: 'Yayasan Accordion',
+    title 			: 'Tajuk',
+	content 		: 'Kandungan',
+	htmlIsAllowed	: 'HTML Adalah Dibenarkan',
+	addNewItem		: 'Tambah Baru Perkara',
+	minimum			: 'Plugin mesti mengandungi sekurang-kurangnya 1 item',
+	link			: 'Oautan',
+	style			: 'Style',
+	type			: 'Jenis',
+	size			: 'Saiz',
+	blockLevel		: 'Sekat Tahap',
+	active			: 'Aktif',
+	enabled			: 'Membolehkan',
+	text			: 'Teks',
+	preview			: 'Preview',
+	optional		: 'Pilihan',
+	badge			: 'Badge',
+	caption			: 'Caption',
+	image			: 'Imej',
+	delete			: 'Adakah anda pasti anda mahu memadam item ini?'
+});

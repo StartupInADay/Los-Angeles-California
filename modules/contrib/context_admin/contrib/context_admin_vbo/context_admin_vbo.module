@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * Implementation of hook_views_api().
+ */
+function context_admin_vbo_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'context_admin_vbo') . '/includes',
+  );
+}
+
+function context_admin_vbo_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'context_admin') {
+    return 'plugins/' . $plugin;
+  }
+}
+

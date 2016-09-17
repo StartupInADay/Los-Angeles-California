@@ -1,0 +1,48 @@
+<?php
+class SPSTestERSUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Test ERS Unit Tests',
+      'description' => 'Test the functionality of the ERSOverride object',
+      'group' => 'SPSIntegration',
+    );
+  }
+
+  public function testERSOverride() {
+    $data = array(
+      'node' => array(
+        array(
+          'entity_type' => 'node',
+          'entity_id' => 2,
+          'revision_id' => 10,
+        ),
+        array(
+          'entity_type' => 'node',
+          'entity_id' => 5,
+          'revision_id' => 3,
+        ),
+        array(
+          'entity_type' => 'node',
+          'entity_id' => 2,
+          'revision_id' => 13,
+        ),
+      ),
+      'bean' => array(
+        'entity_type' => 'bean',
+        'entity_id' => 2,
+        'revision_id' => 19,
+      ),
+    );
+
+    $ers_override = new \Drupal\sps_ers\Test\ERSTestOverride(array(), new Drupal\sps\Test\Manager());
+    $ers_override->setResults($data);
+
+    $overrides = $ers_override->getOverrides();
+
+    $this->assertEqual($overrides['node-2']['revision_id'], 13, 'ERSOverride should take the last published revision.');
+
+    $this->assertEqual($overrides['bean-2']['revision_id'], 19, 'ERSOverride should handle multiple entity types.');
+    $this->assertEqual($overrides['bean-2']['type'], 'bean', 'ERSOverride should translate entity_type key to type.');
+    $this->assertEqual($overrides['bean-2']['id'], 2, 'ERSOverride should translate entity_id to id.');
+  }
+}

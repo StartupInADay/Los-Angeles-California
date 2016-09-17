@@ -1,0 +1,6 @@
+<?php
+/**
+ */
+
+// Drupal needs this empty module file. This module is used for declaring hooks
+// on the fly in tests.

@@ -1,0 +1,146 @@
+<?php
+
+/**
+ * @file Visitor Actions UI - Installation file.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function visitor_actions_ui_install() {
+  $t = get_t();
+  $menu_name = 'visitor-actions-controls';
+  $menu = array(
+    'menu_name' => $menu_name,
+    'title' => $t('Visitor actions controls'),
+    'description' => $t('The <em>Visitor actions controls</em> menu contains actions to create and manage visitor actions.'),
+  );
+  menu_save($menu);
+
+  // Create a link to the actions page.
+  $item = array(
+    'link_title' => $t('Actions'),
+    'link_path' => drupal_get_normal_path('admin/structure/visitor_actions'),
+    'menu_name' => $menu['menu_name'],
+    'expanded' => TRUE,
+  );
+  $action_link_mlid = menu_link_save($item);
+
+  // Create a link to launch in-place action editing.
+  $item = array(
+    'link_title' => $t('Add action'),
+    'link_path' => drupal_get_normal_path('admin/structure/visitor_actions/add'),
+    'menu_name' => $menu['menu_name'],
+    'plid' => $action_link_mlid,
+  );
+  menu_link_save($item);
+
+  // Update the menu router information.
+  menu_rebuild();
+}
+
+/**
+ * Implements hook_enable().
+ */
+function visitor_actions_ui_enable() {
+  $items = db_select('menu_links', 'ml')
+    ->fields('ml')
+    ->condition('module', 'menu')
+    ->condition('menu_name', 'visitor-actions-controls')
+    ->condition('hidden', 1)
+    ->execute()->fetchAllAssoc('mlid', PDO::FETCH_ASSOC);
+  // Enable links that are disabled.
+  if (!empty($items)) {
+    foreach ($items as $item) {
+      $item['options'] = unserialize($item['options']);
+      $item['hidden'] = 0;
+      menu_link_save($item);
+    }
+    // Update the menu router information.
+    menu_rebuild();
+  }
+}
+
+/**
+ * Implements hook_disable().
+ */
+function visitor_actions_ui_disable() {
+  $items = db_select('menu_links', 'ml')
+    ->fields('ml')
+    ->condition('module', 'menu')
+    ->condition('menu_name', 'visitor-actions-controls')
+    ->condition('hidden', 0)
+    ->execute()->fetchAllAssoc('mlid', PDO::FETCH_ASSOC);
+  // Disable links that are enabled.
+  if (!empty($items)) {
+    foreach ($items as $item) {
+      $item['options'] = unserialize($item['options']);
+      $item['hidden'] = 1;
+      menu_link_save($item);
+    }
+    // Update the menu router information.
+    menu_rebuild();
+  }
+  if (isset($_SESSION['visitor_actions_ui_edit_mode'])) {
+    unset($_SESSION['visitor_actions_ui_edit_mode']);
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function visitor_actions_ui_uninstall() {
+  if ($menu = menu_load('visitor-actions-controls')) {
+    // Delete the menu items.
+    $mlids = db_select('menu_links', 'ml')
+      ->fields('ml', array('mlid'))
+      ->condition('module', 'menu')
+      ->condition('menu_name', 'visitor-actions-controls')
+      ->execute()->fetchAllAssoc('mlid', PDO::FETCH_ASSOC);
+    // Delete links from the Visitor actions controls menu.
+    if (!empty($mlids)) {
+      foreach ($mlids as $mlid) {
+        menu_link_delete($mlid);
+      }
+    }
+    menu_delete($menu);
+    // Update the menu router information.
+    menu_rebuild();
+  }
+}
+
+
+/**
+ * Implements hook_requirements().
+ */
+function visitor_actions_ui_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $libraries = array(
+      'underscore' => 'Underscore',
+      'backbone' => 'Backbone',
+    );
+    foreach ($libraries as $lib => $label) {
+      $requirements['visitor_actions_ui_' . $lib] = array(
+        'title' => t('Visitor Actions UI: @library', array('@library' => $label)),
+        'value' => t('The @library library is not present', array('@library' => $label)),
+        'severity' => REQUIREMENT_ERROR,
+      );
+      if (function_exists('libraries_detect')) {
+        if (($library = libraries_detect($lib)) && !empty($library['installed'])) {
+          $requirements['visitor_actions_ui_' . $lib]['value'] = t('@version (@variant)', array(
+            '@version' => $library['version'],
+            '@variant' => _visitor_actions_ui_libraries_get_preferred_variant_name($library),
+          ));
+          $requirements['visitor_actions_ui_' . $lib]['severity'] = REQUIREMENT_OK;
+        }
+        elseif (!empty($library['error'])) {
+          $requirements['visitor_actions_ui_' . $lib]['value'] = $library['error message'];
+        }
+      }
+    }
+  }
+
+  return $requirements;
+}

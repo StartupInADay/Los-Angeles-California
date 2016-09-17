@@ -1,0 +1,86 @@
+<?php
+
+abstract class SPSBaseUnitTest extends DrupalUnitTestCase {
+  public function setUp() {
+    parent::setUp();
+    $this->enableModule('sps_test');
+
+    drupal_load('module', 'xautoload');
+    drupal_load('module', 'sps');
+    drupal_load('module', 'sps_test');
+    _xautoload_register();
+    spl_autoload_unregister('drupal_autoload_class');
+    spl_autoload_unregister('drupal_autoload_interface');
+  }
+
+  protected function assertCheckInterface($interface, $object, $message) {
+    $ref_class = new ReflectionClass($object);
+    if (in_array($interface, $ref_class->getInterfaceNames())) {
+      $this->pass($message, 'SPS');
+    }
+    else {
+      $this->fail($message, 'SPS');
+    }
+  }
+  /*
+  *
+   * SPSBaseUnitTest::assertThrows
+   *
+   * Test if a block of code throws an exeption
+   *
+   * @PARAM $closure Closure
+   * @PARAM $type string
+   *  name of an exception class
+   * @PARAM $error_message string
+   * @PARAM $message
+   *   the message of the test
+   */
+  protected function assertThrows(Closure $closure, $type, $error_message = NULL, $message) {
+    try {
+      $closure();
+    }
+    catch (Exception $e) {
+      if (!($e instanceof $type)) {
+        throw $e;
+      }
+      if (isset($error_message)) {
+        if ($e->getMessage() != $error_message) {
+          $this->fail($message, "SPS");
+          return;
+        }
+      }
+      $this->pass($message, "SPS");
+      return;
+    }
+    $this->fail($message, "SPS");
+  }
+
+  /**
+   * Test that an object is an instance of a class
+   *
+   * @param $class
+   * @param $object
+   * @param $message
+   */
+  protected function assertIsInstance($class, $object, $message) {
+    if ($object instanceof $class) {
+      $this->pass($message, "SPS");
+    }
+    else {
+      $this->fail($message, "SPS");
+    }
+  }
+
+  /**
+   * Fake enables a module for the purpose of a unit test
+   *
+   * @param $name
+   *  The module's machine name (i.e. ctools not Chaos Tools)
+   */
+  protected function enableModule($name) {
+    $modules = module_list();
+    $modules[$name] = $name;
+    module_list(TRUE, FALSE, FALSE, $modules);
+  }
+
+}

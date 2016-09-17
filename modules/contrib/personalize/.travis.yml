@@ -1,0 +1,12 @@
+language: php
+php:
+- 5.4
+before_install:
+- wget https://raw.githubusercontent.com/jonkemp/qunit-phantomjs-runner/master/runner.js
+script:
+- phantomjs runner.js qunit/test.html 10
+- phantomjs runner.js qunit/libraries.html
+- phantomjs runner.js modules/personalize_elements/qunit/test.html
+notifications:
+  slack:
+    secure: Qu9YmR8rYuAewTipVQl9h0tRwUp13g5eTLZiPa9peZ1KQ+78PtXZ5bKUeboIUOE/EJ1IHs/MxzYAcjsklFDLzfn2/fDMOkSaVIIdRNRMLY+AaiBUw5uIhBtYg9x5RZv8MZ0SNvbUu9AhHiGvJPGoVOpb8/kVw0U/LHmYMv8RIdk=

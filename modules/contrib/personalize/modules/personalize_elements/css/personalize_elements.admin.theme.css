@@ -1,0 +1,14 @@
+/* Link look alike styling for add variation button */
+.personalize-elements-add-link-prefix:after {
+  content: '+';
+  color: #2fa6e5;
+}
+input[type="submit"].personalize-elements-add-option {
+  text-decoration: none;
+  color: #2fa6e5;
+  font-weight: normal;
+}
+input[type="submit"].personalize-elements-add-option:hover {
+  text-decoration: underline;
+  color: #007ec0;
+}

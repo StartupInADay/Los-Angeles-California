@@ -1,0 +1,3 @@
+Classy Panel Styles 7.x-1.x, 2014-08-21
+---------------------------------------
+- API is stable; recommended for production use.

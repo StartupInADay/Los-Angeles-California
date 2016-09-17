@@ -1,0 +1,7 @@
+
+* Render fieldsets, obviously.
+* Not use custom theme function to theme rearrange form to
+  add TableDrag and visual specialties.
+* Name new fieldsets manually (system name) instead of always
+  getting names like fieldset, fieldset_1, fieldset_2 etc.
+

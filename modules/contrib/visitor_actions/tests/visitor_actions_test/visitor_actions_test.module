@@ -1,0 +1,218 @@
+<?php
+
+/**
+ * @file visitor_actions_test.module
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function visitor_actions_test_menu() {
+  $items = array();
+  $items['visitor-actions-test/form-action'] = array(
+    'type' => MENU_CALLBACK,
+    'title' => 'Testing Visitor Actions',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('visitor_actions_test_form_first'),
+    'access callback' => TRUE,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_forms()
+ */
+function visitor_actions_test_forms($form_id, $args) {
+  $forms = array();
+
+  if (strpos($form_id, 'visitor_actions_test_form_') !== FALSE) {
+    $forms[$form_id] = array(
+      'callback' => 'visitor_actions_test_form',
+    );
+  }
+
+  return $forms;
+}
+
+/**
+ * Menu callback for testing visitor actions.
+ */
+function visitor_actions_test_form($form, &$form_state) {
+  $form = array();
+
+  $form['test'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Test'),
+  );
+
+  $form['actions'] = array('#type' => 'actions');
+
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_visitor_actions_info().
+ */
+function visitor_actions_test_visitor_actions_info() {
+  $actions = array(
+    'visitor_actions_test_form_click_test' => array(
+      'plugin' => 'link',
+      'label' => t('clicks the click-test link'),
+      'client_side' => TRUE,
+      'pages' => '',
+      'identifier' => '.click-test',
+      'event' => 'click'
+    ),
+    'visitor_actions_test_form_hover_test' => array(
+      'plugin' => 'link',
+      'label' => t('hovers over the hover-test link'),
+      'client_side' => TRUE,
+      'identifier' => '.hover-test',
+      'event' => 'mouseenter'
+    ),
+    'visitor_actions_test_form_breadcrumb_link' => array(
+      'plugin' => 'link',
+      'label' => t('clicks a breadcrumb link'),
+      'client_side' => TRUE,
+      'pages' => 'user',
+      'identifier' => '.breadcrumb a',
+      'event' => 'click'
+
+    ),
+    'visitor_actions_test_form_submit_server_side' => array(
+      'plugin' => 'form',
+      'label' => t('Submits the test form'),
+      'client_side' => FALSE,
+      'identifier' => 'visitor_actions_test_form_first',
+      'event' => 'submit_server',
+      'pages' => '',
+    ),
+    'visitor_actions_test_form_submit_client_side' => array(
+      'plugin' => 'form',
+      'label' => t('Submits the test form'),
+      'client_side' => TRUE,
+      'identifier' => 'visitor_actions_test_form_first',
+      'event' => 'submit_client',
+      'pages' => '',
+    ),
+    'visitor_actions_test_base_form_submit' => array(
+      'plugin' => 'base_form',
+      'label' => t('Submits the test form'),
+      'client_side' => FALSE,
+      'identifier' => 'visitor_actions_test_form',
+      'event' => 'submit_server',
+      'pages' => '',
+    ),
+    // Test fixtures that are specifically for testing pages filters.
+    'node/13579' => array(
+      'plugin' => 'link',
+      'label' => t('node/13579'),
+      'client_side' => TRUE,
+      'pages' => 'node/13579',
+      'identifier' => '.click-test',
+      'event' => 'click'
+    ),
+    'node/*' => array(
+      'plugin' => 'link',
+      'label' => t('node/*'),
+      'client_side' => TRUE,
+      'pages' => 'node/*',
+      'identifier' => '.click-test',
+      'event' => 'click'
+    ),
+    'my_node_13579' => array(
+      'plugin' => 'link',
+      'label' => t('my_node_13579'),
+      'client_side' => TRUE,
+      'pages' => 'my_node_13579',
+      'identifier' => '.click-test',
+      'event' => 'click'
+    ),
+    'fr/node/13579' => array(
+      'plugin' => 'link',
+      'label' => t('fr/node/13579'),
+      'client_side' => TRUE,
+      'pages' => 'fr/node/13579',
+      'identifier' => '.click-test',
+      'event' => 'click'
+    ),
+    'fr/my_node_13579' => array(
+      'plugin' => 'link',
+      'label' => t('fr/my_node_13579'),
+      'client_side' => TRUE,
+      'pages' => 'fr/my_node_13579',
+      'identifier' => '.click-test',
+      'event' => 'click'
+    ),
+  );
+  return $actions;
+}
+
+/**
+ * Implements hook_visitor_action_subscribe().
+ */
+function visitor_actions_test_visitor_action_subscribe($name) {
+  $subscribers = array();
+  // We'll subscribe to our own action.
+  if ($name == 'visitor_actions_test_form_submit_server_side') {
+    $subscribers[] = 'visitor_actions_test_subscriber';
+  }
+  if ($name == 'visitor_actions_test_base_form_submit') {
+    $subscribers[] = 'visitor_actions_test_subscriber';
+  }
+
+  if ($name == 'form_submit') {
+    $subscribers[] = 'visitor_actions_test_subscriber';
+  }
+
+  return $subscribers;
+}
+
+function visitor_actions_test_subscriber($name, $context) {
+  if ($name == 'visitor_actions_test_form_submit_server_side') {
+    drupal_set_message('Test action "form" subscriber was fired!');
+  };
+
+  if ($name == 'visitor_actions_test_base_form_submit') {
+    drupal_set_message('Test action "base_form" subscriber was fired!');
+  };
+
+  if ($name == 'form_submit') {
+    drupal_set_message('Test action "form_submit" subscriber was fired!');
+  };
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function visitor_actions_test_ctools_plugin_api($owner, $api) {
+  if ($owner == 'visitor_actions' && $api == 'visitor_actions') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_visitor_actions_default_actions().
+ */
+function visitor_actions_test_visitor_actions_default_actions() {
+  $items = array();
+  $action = new stdClass();
+  $action->disabled = FALSE;
+  $action->api_version = 1;
+  $action->machine_name = 'test_action';
+  $action->plugin = 'link';
+  $action->label = 'My Test Action';
+  $action->identifier = 'div.some-class';
+  $action->event = 'click';
+  $action->client_side = 1;
+  $action->pages = '<front>';
+  $action->data = array();
+  $items["test_action"] = $action;
+
+  return $items;
+}

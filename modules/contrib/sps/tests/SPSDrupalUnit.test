@@ -1,0 +1,91 @@
+<?php
+class SPSDrupalUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Drupal Unit Tests',
+      'description' => 'Test the public interface to the Drupal Object',
+      'group' => 'SPS',
+    );
+  }
+
+  public function testDrupal_overrideWithMethod() {
+    $drupal = new \Drupal\sps\Drupal();
+
+    function org($param1) {
+      return $param1 +1;
+    }
+    function replacement($param1) {
+      return $param1 +2;
+    }
+
+
+    $this->assertEqual(
+      $drupal->org(5),
+      org(5),
+      '::METHOD should return the same as the function withthe METHOD name if there is no override'
+    );
+
+    $drupal->set('org', 'replacement');
+    $this->assertEqual(
+      $drupal->org(5),
+      replacement(5),
+      '::METHOD should return the value returned from the override function when it is set'
+    );
+  }
+
+  public function testDrupal_overrideWithArray() {
+    $drupal = new \Drupal\sps\Drupal();
+
+    function testDrupal_overrideWithArray_org($param1) {
+      return $param1 +1;
+    }
+    function testDrupal_overrideWithArray_replacemnt($param1) {
+      return $param1 +2;
+    }
+
+
+    $this->assertEqual(
+      $drupal->ref['testDrupal_overrideWithArray_org'](5),
+      testDrupal_overrideWithArray_org(5),
+      '::ref[METHOD] should return the same as the function with the METHOD name if there is no override'
+    );
+
+    $drupal->set('testDrupal_overrideWithArray_org', 'testDrupal_overrideWithArray_replacemnt');
+    $this->assertEqual(
+      $drupal->ref['testDrupal_overrideWithArray_org'](5),
+      testDrupal_overrideWithArray_replacemnt(5),
+      '::ref[METHOD] should return the value returned from the override function when it is set'
+    );
+  }
+  public function testDrupal_overrideWithArrayAndRef() {
+    $drupal = new \Drupal\sps\Drupal();
+
+    function testDrupal_overrideWithArrayAndRef_org(&$param1) {
+      $param1 ++;
+    }
+    function testDrupal_overrideWithArrayAndRef_replacement(&$param1) {
+      $param1  += 2;
+    }
+
+    $org = 3;
+    $replacement = 3;
+    $drupal->ref['testDrupal_overrideWithArrayAndRef_org']($org);
+    testDrupal_overrideWithArrayAndRef_org($replacement);
+    $this->assertEqual(
+      $org,
+      $replacement,
+      '::ref[METHOD] should modify the same params as the METHOD if there is no override'
+    );
+
+    $org = 3;
+    $replacement = 3;
+    $drupal->set('testDrupal_overrideWithArrayAndRef_org', 'testDrupal_overrideWithArrayAndRef_replacement');
+    $drupal->ref['testDrupal_overrideWithArrayAndRef_org']($org);
+    testDrupal_overrideWithArrayAndRef_replacement($replacement);
+    $this->assertEqual(
+      $org,
+      $replacement,
+      '::ref[METHOD] should modify the same params from the override function when it is set'
+    );
+  }
+}

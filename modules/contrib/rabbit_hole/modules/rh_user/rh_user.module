@@ -1,0 +1,92 @@
+<?php
+
+/**
+ * @file
+ * Main module file for Rabbit Hole users module.
+ *
+ * This module will add the Rabbit Hole functionality to users.
+ */
+
+/**
+ * Implements hook_rabbit_hole().
+ */
+function rh_user_rabbit_hole() {
+  return array(
+    'rh_user' => array(
+      'entity type' => 'user',
+      'base table' => 'users',
+      'view path' => 'user/%/view',
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This will add Rabbit Hole options to the account settings form. These
+ * settings will be used as default for every user.
+ */
+function rh_user_form_user_admin_settings_alter(&$form, $form_state) {
+  // Add the Rabbit Hole form.
+  rabbit_hole_form($form, 'user', 'user', 'rh_user');
+}
+
+/**
+ * Submit callback for the bundle form.
+ *
+ * This will set the values of the variables. Drupal will save these settings by
+ * default, but the name of those variables won't match our naming conventions,
+ * so we'll have to delete those after our variables has been saved.
+ */
+function rh_user_bundle_form_submit($form, $form_state) {
+  $values = $form_state['values'];
+
+  // Set the values of the variables.
+  variable_set('rh_user_override_user', $values['rh_user_override']);
+  variable_set('rh_user_action_user', $values['rh_user_action']);
+  variable_set('rh_user_redirect_user', $values['rh_user_redirect']);
+  variable_set('rh_user_redirect_response_user', $values['rh_user_redirect_response']);
+
+  // Delete the ones that are automatically saved by Drupal.
+  variable_del('rh_user_override');
+  variable_del('rh_user_action');
+  variable_del('rh_user_redirect');
+  variable_del('rh_user_redirect_response');
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function rh_user_form_user_profile_form_alter(&$form, &$form_state, $form_id) {
+  // Add the Rabbit Hole form.
+  rabbit_hole_form($form, 'user', 'user', 'rh_user', $form['#user']);
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function rh_user_form_user_register_form_alter(&$form, &$form_state, $form_id) {
+  // Add the Rabbit Hole form.
+  rabbit_hole_form($form, 'user', 'user', 'rh_user', $form['#user']);
+}
+
+/**
+ * Implements hook_user_view().
+ */
+function rh_user_user_view($account, $view_mode, $langcode) {
+  if ($view_mode != 'full') {
+    // The user isn't viewed using the full view mode, exit early.
+    return;
+  }
+
+  // Copy the behavior from the node_is_page() function to determine if the user
+  // is being viewed at its own page.
+  $page_user = menu_get_object('user');
+  $user_is_page = (!empty($page_user) ? $page_user->uid == $account->uid : FALSE);
+
+  // Execute Rabbit Hole, if the user is being viewed at its own page, and the
+  // current user isn't able to override Rabbit Hole.
+  if ($user_is_page && !user_access('bypass rh_user')) {
+    rabbit_hole_execute('user', $account);
+  }
+}

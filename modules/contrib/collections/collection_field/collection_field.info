@@ -1,0 +1,16 @@
+name = Collection Field
+description = A Field to attach a collection to an entity
+package = Administration
+core = 7.x
+
+dependencies[] = collection
+
+files[] = tests/*.test
+
+
+; Information added by drush on 2016-02-18
+version = "7.x-1.0-alpha3+7-dev"
+core = "7.x"
+project = "collections"
+datestamp = "1455828877"
+

@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the BP Taxonomy feature.
+ */
+
+include_once 'sbp_taxonomy.features.inc';

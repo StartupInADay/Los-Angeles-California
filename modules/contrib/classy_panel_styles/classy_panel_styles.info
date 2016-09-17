@@ -1,0 +1,16 @@
+name = Classy Panel Styles
+description = Allows themers to create simple, powerful styling options for editors of Panels pages.
+core = 7.x
+php = 5.3
+package = "Panels"
+configure = admin/config/content/classy_panel_styles
+dependencies[] = ctools
+dependencies[] = panels
+dependencies[] = page_manager
+
+; Information added by Drupal.org packaging script on 2015-07-20
+version = "7.x-1.0-alpha2"
+core = "7.x"
+project = "classy_panel_styles"
+datestamp = "1437428941"
+

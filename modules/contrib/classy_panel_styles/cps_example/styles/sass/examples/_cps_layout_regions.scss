@@ -1,0 +1,98 @@
+@import "cps_init";
+
+* {
+  box-sizing: border-box;
+}
+
+.panel-separator {
+  display: none;
+}
+
+
+// Region Styles: Layout
+#page #panels-dnd-main,
+#page {
+  .region-1col {
+    @include panel-pane-with-ipe {
+      @include l-region-1col;
+    }
+  }
+  .region-2col,
+  .three-quarters .region-2col {
+    @include panel-pane-with-ipe {
+      @include l-region-2col;
+    }
+  }
+  .three-quarters .region-2col {
+    @include panel-pane-with-ipe {
+      @include l-region-1col;
+
+      @include breakpoint($desktop) {
+        @include l-region-2col;
+      }
+    }
+  }
+
+  .region-2col-1x3 {
+    @include panel-pane-with-ipe {
+      @include l-region-2col-1x3;
+    }
+  }
+
+  .region-1col-2col {
+    @include equal-height;
+    @include panel-pane-with-ipe {
+      @include l-region-1col-2col;
+    }
+  }
+
+  .region-3col {
+    @include equal-height;
+    @include panel-pane-with-ipe {
+      @include l-region-3col;
+    }
+  }
+
+  .region-1col-3col {
+    @include equal-height;
+    @include panel-pane-with-ipe {
+      @include l-region-1col-3col;
+    }
+  }
+
+  .region-4col {
+    @include equal-height;
+    @include panel-pane-with-ipe {
+      @include l-region-4col;
+    }
+    .three-quarters .region-4col {
+      @include panel-pane-with-ipe {
+        @include l-region-2col;
+        @include breakpoint($desktop) {
+          @include l-region-4col;
+        }
+      }
+    }
+  }
+
+  .no-padding {
+    padding: 0;
+  }
+
+  .double-padding {
+    padding: $spacing-double;
+  }
+
+  .no-margin {
+    margin: 0;
+  }
+
+  .no-margin-top {
+    margin-top: 0;
+  }
+
+  .no-padding-no-margin {
+    margin: 0;
+    padding: 0;
+  }
+}

@@ -1,0 +1,103 @@
+<?php
+class SPSPreviewFormWebTest extends SPSBaseWebTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Preview Form Web Tests',
+      'description' => 'Test the preview form fetching and submission for Conditions.  BASE URL MUST BE SET.',
+      'group' => 'SPSInteractive',
+    );
+  }
+  /**
+   * This must be run from admin/config/development/testing to work properly.
+   * That is to say, it won't work from the command line - durpalPost doesn't work right.
+   */
+  public function testPreviewFormWorkflow() {
+    $config_controller = self::getConfig();
+    $manager = new Drupal\sps\Manager($config_controller);
+    $form = $manager->getPreviewForm();
+    $this->assertTrue(!empty($form['widget']), 'The manager should return the form from the condition using drupal_get_form');
+
+    variable_set('testPreviewFormWorkflow', $config_controller->default);
+    $rtn = <<<'RTN'
+  $config = variable_get("testPreviewFormWorkflow", array());
+  $config_controller = new Drupal\sps\Test\ConfigController();
+  $config_controller->default = $config;
+  $manager = new Drupal\sps\Manager($config_controller);
+  return $manager->getPreviewForm();
+RTN;
+    sps_test_call_set("testPreviewFormWorkflow", $rtn);
+    $values = array(
+      'widget[preview_time]' => '00:00:00',
+      'widget[preview_date][month]' => '7',
+      'widget[preview_date][year]' => '2012',
+      'widget[preview_date][day]' => '12',
+    );
+
+    $this->drupalPost('sps_test_call/testPreviewFormWorkflow', $values, t('Preview'));
+    $this->assertNoText(t('Invalid Date/Time given.'), 'The preview form should be accept good dates during validation.');
+
+    $values = array(
+      'widget[preview_time]' => 'lol',
+      'widget[preview_date][month]' => '12',
+      'widget[preview_date][year]' => '2012',
+      'widget[preview_date][day]' => '3',
+    );
+
+    $this->drupalPost('sps_test_call/testPreviewFormWorkflow', $values, t('Preview'));
+    $this->assertText(t('Invalid Date/Time given.'),
+      'The preview form should be reject bad dates during validation and fail with message "Invalid Date/Time given.".');
+  }
+
+  protected static function getConfig() {
+    $plugins = array(
+      'override' => array(
+        'test1' => array(
+          'name' => 'test1',
+          'condition' => 'basic',
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(
+            'type' => 'node',
+          ),
+        ),
+        'test2' => array(
+          'name' => 'test2',
+          'condition' => 'basic',
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(
+            'type' => 'box',
+          ),
+        ),
+        'test3' => array(
+          'name' => 'test3',
+          'condition' => 'client',
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(),
+        ),
+      ),
+      'condition' => array(
+        'basic' => array(
+          'name' => 'basic',
+          'class' => '\Drupal\sps\Plugins\Condition\BasicCondition',
+          'instance_settings' => array(
+            'widget' => 'basicWidget',
+            'name' => 'basic',
+          ),
+        ),
+      ),
+      'widget' => array(
+        'basicWidget' => array(
+          'name' => 'basicWidget',
+        'class' => '\Drupal\sps\Plugins\Widget\DateWidget',
+          'instance_settings' => array(),
+        ),
+      )
+    );
+
+    $config_controller = new Drupal\sps\Test\ConfigController();
+    $config_controller->default[SPS_CONFIG_ROOT_CONDITION] =  array('name' => 'basic');
+    $config_controller->default[SPS_CONFIG_PLUGIN_CONTROLLER]['instance_settings'] = $plugins;
+    $config_controller->default[SPS_CONFIG_HOOK_CONTROLLER]['class'] = '\Drupal\sps\DrupalHookController';
+
+    return $config_controller;
+  }
+}

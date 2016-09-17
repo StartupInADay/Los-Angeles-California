@@ -1,0 +1,16 @@
+diff --git a/text_hierarchical.module b/text_hierarchical.module
+index 084b3c2..fad08d8 100644
+--- a/text_hierarchical.module
++++ b/text_hierarchical.module
+@@ -456,6 +456,11 @@ function _text_hierarchical_field_form($name, $entity, &$form, $form_state) {
+  * Perform necessary operations on field data submitted by a form.
+  */
+ function _text_hierarchical_field_submit($name, $entity, $form, &$form_state) {
++
++  if (empty($form_state['values'][$name])) {
++    return;
++  }
++
+   foreach ($form_state['values'][$name] as $l => &$items) {
+     if (isset($items['add_more'])) {
+       unset($items['add_more']);

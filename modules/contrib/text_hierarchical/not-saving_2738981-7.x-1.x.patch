@@ -1,0 +1,14 @@
+diff --git a/text_hierarchical.install b/text_hierarchical.install
+index b7b4dd3..9510518 100644
+--- a/text_hierarchical.install
++++ b/text_hierarchical.install
+@@ -53,7 +53,7 @@ function text_hierarchical_field_schema($field) {
+     ),
+     'parent' => array(
+       'type' => 'int',
+-      'unsigned' => TRUE,
++      'unsigned' => FALSE,
+       'not null' => FALSE,
+     ),
+   );
+

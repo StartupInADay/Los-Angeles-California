@@ -1,0 +1,289 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function taxonomy_entity_index_menu() {
+  $items = array();
+  $items['admin/config/system/taxonomy-entity-index'] = array(
+    'title' => 'Taxonomy Entity Index',
+    'description' => 'Manage the Taxonomy Entity Index.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('taxonomy_entity_index_admin_form'),
+    'file' => 'taxonomy_entity_index.admin.inc',
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_field_delete_instance().
+ */
+function taxonomy_entity_index_field_delete_instance($instance) {
+  db_delete('taxonomy_entity_index')
+    ->condition('field_name', $instance['field_name'])
+    ->condition('entity_type', $instance['entity_type'])
+    ->condition('bundle', $instance['bundle'])
+    ->execute();
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function taxonomy_entity_index_entity_delete($entity, $entity_type) {
+  list($entity_id) = entity_extract_ids($entity_type, $entity);
+  db_delete('taxonomy_entity_index')
+    ->condition('entity_type', $entity_type)
+    ->condition('entity_id', $entity_id)
+    ->execute();
+}
+
+/**
+ * Implements hook_field_attach_delete_revision().
+ */
+function taxonomy_entity_index_field_attach_delete_revision($entity_type, $entity) {
+  list($entity_id, $revision_id) = entity_extract_ids($entity_type, $entity);
+
+  db_delete('taxonomy_entity_index')
+    ->condition('entity_type', $entity_type)
+    ->condition('entity_id', $entity_id)
+    ->condition('revision_id', $revision_id)
+    ->execute();
+}
+
+/**
+ * Implements hook_taxonomy_term_delete().
+ */
+function taxonomy_entity_index_taxonomy_term_delete($term) {
+  db_delete('taxonomy_entity_index')
+    ->condition('tid', $term->tid)
+    ->execute();
+}
+
+/**
+ * Return all the taxonomy field names for a given entity type and bundle.
+ */
+function taxonomy_entity_index_get_taxonomy_field_names($type = NULL, $bundle = NULL) {
+  $taxonomy_fields = &drupal_static(__FUNCTION__);
+
+  if (!isset($taxonomy_fields)) {
+    if ($cache = cache_get('entity-taxonomy-fields', 'cache_field')) {
+      $taxonomy_fields = $cache->data;
+    }
+    else {
+      $taxonomy_fields = array();
+      $fields = field_info_fields();
+
+      foreach ($fields as $field) {
+        if ($field['type'] != 'taxonomy_term_reference') {
+          continue;
+        }
+
+        foreach ($field['bundles'] as $entity_type => $bundles) {
+          foreach ($bundles as $entity_bundle) {
+            $taxonomy_fields[$entity_type][$entity_bundle][] = $field['field_name'];
+          }
+        }
+      }
+
+      cache_set('entity-taxonomy-fields', $taxonomy_fields, 'cache_field');
+    }
+  }
+
+  if (isset($bundle)) {
+    return isset($taxonomy_fields[$type][$bundle]) ? $taxonomy_fields[$type][$bundle] : array();
+  }
+  elseif (isset($type)) {
+    return isset($taxonomy_fields[$type]) ? $taxonomy_fields[$type] : array();
+  }
+  else {
+    return $taxonomy_fields;
+  }
+}
+
+/**
+ * Implements hook_field_attach_insert().
+ */
+function taxonomy_entity_index_field_attach_insert($entity_type, $entity) {
+  return taxonomy_entity_index_field_attach_update($entity_type, $entity);
+}
+
+/**
+ * Implements hook_field_attach_update().
+ */
+function taxonomy_entity_index_field_attach_update($entity_type, $entity) {
+  list($entity_id, $revision_id, $bundle) = entity_extract_ids($entity_type, $entity);
+
+  // The revision ID may be NULL.
+  if (!isset($revision_id)) {
+    $revision_id = $entity_id;
+  }
+
+  // Clear previous taxonomy index for the specific revision ID of the entity
+  // since we want to keep track of previous revisions.
+  db_delete('taxonomy_entity_index')
+    ->condition('entity_type', $entity_type)
+    ->condition('entity_id', $entity_id)
+    ->condition('revision_id', $revision_id)
+    ->execute();
+
+  $taxonomy_fields = taxonomy_entity_index_get_taxonomy_field_names($entity_type, $bundle);
+  if (empty($taxonomy_fields)) {
+    return;
+  }
+
+  $terms = array();
+  foreach ($taxonomy_fields as $field_name) {
+    if ($items = field_get_items($entity_type, $entity, $field_name)) {
+      foreach ($items as $delta => $item) {
+        $terms[] = array(
+          'tid' => $item['tid'],
+          'field_name' => $field_name,
+          'delta' => $delta,
+        );
+      }
+    }
+  }
+
+  if (!empty($terms)) {
+    $query = db_insert('taxonomy_entity_index');
+    $query->fields(array('entity_type', 'bundle', 'entity_id', 'revision_id', 'field_name', 'delta', 'tid'));
+
+    foreach ($terms as $term) {
+      $query->values(array(
+        'entity_type' => $entity_type,
+        'bundle' => $bundle,
+        'entity_id' => $entity_id,
+        'revision_id' => $revision_id,
+        'field_name' => $term['field_name'],
+        'delta' => $term['delta'],
+        'tid' => $term['tid'],
+      ));
+    }
+
+    $query->execute();
+  }
+}
+
+/**
+ * Batch callback; re-index all the terms for a given entity type.
+ */
+function taxonomy_entity_index_reindex_entity_type($entity_type, &$context) {
+  if (empty($context['sandbox'])) {
+    $context['sandbox'] = array();
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['current_id'] = 0;
+    $context['sandbox']['bundles'] = array_keys(taxonomy_entity_index_get_taxonomy_field_names($entity_type));
+
+    // Clear out any records for this type.
+    db_delete('taxonomy_entity_index')
+      ->condition('entity_type', $entity_type)
+      ->execute();
+
+    // Calculate the maximum number of entities.
+    if (!empty($context['sandbox']['bundles'])) {
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', $entity_type);
+      if ($entity_type != 'user') {
+        $query->entityCondition('bundle', $context['sandbox']['bundles'], 'IN');
+      }  
+      $query->entityCondition('entity_id', 0, '>');
+      $query->count();
+      $context['sandbox']['max'] = (int) $query->execute();
+    }
+    if (empty($context['sandbox']['max'])) {
+      $context['finished'] = TRUE;
+      return;
+    }
+  }
+
+  $limit = 25;
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', $entity_type);
+  if ($entity_type != 'user') {
+    $query->entityCondition('bundle', $context['sandbox']['bundles'], 'IN');
+  }
+  $query->entityCondition('entity_id', $context['sandbox']['current_id'], '>');
+  $query->entityOrderBy('entity_id', 'ASC');
+  $query->range(0, $limit);
+  $results = $query->execute();
+  $entities = entity_load($entity_type, array_keys($results[$entity_type]));
+
+  foreach ($entities as $id => $entity) {
+    taxonomy_entity_index_field_attach_update($entity_type, $entity);
+    $context['sandbox']['current_id'] = $id;
+    $context['message'] = t('Updating taxonomy entity index data for @type @id.', array('@type' => $entity_type, '@id' => $id));
+  }
+
+  // In case any of the entities fail to load, increase the progress by the
+  // stub entity count.
+  $context['sandbox']['progress'] += count($results[$entity_type]);
+
+  if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
+    $context['finished'] = ($context['sandbox']['progress'] >= $context['sandbox']['max']);
+  }
+}
+
+/**
+ * Batch 'finished' callback.
+ *
+ * @see taxonomy_entity_index_admin_form()
+ * @see taxonomy_entity_index_reindex_entity_type()
+ */
+function taxonomy_entity_index_reindex_finished($success, $results, $operations) {
+  if ($success) {
+    drupal_set_message(t('Taxonomy entity index rebuilt successfully.'));
+  }
+  else {
+    // An error occurred.
+    $error_operation = reset($operations);
+    drupal_set_message(t('An error occurred while processing the operation.'));
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function taxonomy_entity_index_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'taxonomy_entity_index') . '/includes/views',
+  );
+}
+
+/**
+ * Get all entity types, which can be used in the views integration.
+ *
+ * Therefore both the entity type has to be fieldable and the base table
+ * has already a views integration.
+ *
+ * @param $data
+ *   The views data, which can be used to check whether a base table
+ *   has a views integration.
+ *
+ * @param $entity_type
+ *   The entity type, e.g. node, for which the info shall be returned, or NULL
+ *   to return an array with info about all types.
+ *
+ * @return
+ *   Information about all entity types / a single entity type.
+ */
+function taxonomy_entity_index_entity_views_integrable($data, $entity_type = NULL) {
+  $entity_info = entity_get_info($entity_type);
+  if (!empty($entity_type)) {
+    $entity_info = array($entity_type => $entity_info);
+
+  }
+
+  foreach ($entity_info as $entity_type => $info) {
+    $base_table = $info['base table'];
+    // Filter out entity types which don't have a base table implementation
+    // or aren't fieldable.
+    if (!isset($data[$base_table]) || empty($info['fieldable'])) {
+      unset($entity_info[$entity_type]);
+    }
+  }
+
+  return $entity_info;
+}
+

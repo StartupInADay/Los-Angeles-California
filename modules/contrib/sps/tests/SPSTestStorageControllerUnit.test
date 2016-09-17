@@ -1,0 +1,20 @@
+<?php
+class SPSTestStorageControllerUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Test StorageController Unit Tests',
+      'description' => 'Test the public interface to the Test StorageController object',
+      'group' => 'SPS',
+    );
+  }
+
+  public function testTestStorageController() {
+    $control = new Drupal\sps\Test\StorageController();
+    $obj = new stdClass();
+    $obj->param = "PARAM";
+    $control->set("test", $obj);
+    $this->assertTrue($control->exists("test"), "Test StorageController is_set is True when a name has been set", "SPS"); 
+    $this->assertFalse($control->exists("not set"), "Test StorageController is_set is False when a name has been set", "SPS"); 
+    $this->assertEqual($control->get("test"), $obj, "Test StorageController's set and get should set and retrieve the same obj.", "SPS");
+  }
+}

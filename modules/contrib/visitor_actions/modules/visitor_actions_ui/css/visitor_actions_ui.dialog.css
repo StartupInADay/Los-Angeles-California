@@ -1,0 +1,35 @@
+/**
+ * @file visitor_actions_ui.module.css
+ */
+
+.visitor-actions-ui-dialog,
+.visitor-actions-ui-dialog textarea,
+.visitor-actions-ui-dialog input,
+.visitor-actions-ui-dialog select {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.visitor-actions-ui-dialog {
+  left: auto;
+  max-height: 100%;
+  position: absolute;
+  right: auto;
+  top: auto;
+  z-index: 99;
+}
+
+.visitor-actions-ui-dialog textarea,
+.visitor-actions-ui-dialog input,
+.visitor-actions-ui-dialog select {
+  max-width: 100%;
+}
+
+/* Force Firefox to make the fieldset fit within the parent. */
+@-moz-document url-prefix() {
+  .visitor-actions-ui-dialog fieldset {
+    display: table-cell;
+    margin-left: 0;
+  }
+}

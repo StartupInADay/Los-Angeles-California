@@ -1,0 +1,22 @@
+<?php
+class SPSTestStateControllerUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Test StateController Unit Tests',
+      'description' => 'Test the public interface to the Test StateController object',
+      'group' => 'SPS',
+    );
+  }
+
+  public function testTestStorageController() {
+    $control = new Drupal\sps\Test\StateController();
+    $obj = new stdClass();
+    $obj->param = "PARAM";
+    $this->assertFalse($control->exists(), "::exists is False before being set"); 
+    $control->set($obj);
+    $this->assertTrue($control->exists(), "::exists is True after a ::set is run"); 
+    $this->assertEqual($control->get(), $obj, '::get retrives what is set in ::set');
+    $control->clear();
+    $this->assertFalse($control->exists(), "::exists is False after running clear"); 
+  }
+}

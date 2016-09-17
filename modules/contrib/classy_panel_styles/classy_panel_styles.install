@@ -1,0 +1,143 @@
+<?php
+/**
+ * @file
+ * Install file for Classy Panels module.
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * Seeds the settings forms with initial values.
+ */
+function classy_panel_styles_install() {
+  // Set the CSS file path if not already defined.
+  if (!variable_get(CLASSY_PANEL_STYLES_CSS_PATH, FALSE)) {
+    $path = drupal_get_path('module', 'classy_panel_styles')
+      . '/cps_example/styles/css/classy_panel_styles.css';
+    variable_set(CLASSY_PANEL_STYLES_CSS_PATH, $path);
+  }
+  // Enable Classy Panels styling in the Panels editor.
+  if (FALSE === variable_get(CLASSY_PANEL_STYLES_EDITOR_STYLING, FALSE)) {
+    variable_set(CLASSY_PANEL_STYLES_EDITOR_STYLING, 1);
+  }
+  // Set the default region renderer.
+  if (FALSE === variable_get(CLASSY_PANEL_STYLES_REGION_STYLE, FALSE)) {
+    variable_set(CLASSY_PANEL_STYLES_REGION_STYLE,
+      'panels_default_style_render_region');
+  }
+  // Set CPS as the default style on new Display objects.
+  if (FALSE === variable_get(CLASSY_PANEL_STYLES_DISPLAY_DEFAULT, FALSE)) {
+    variable_set(CLASSY_PANEL_STYLES_DISPLAY_DEFAULT, 1);
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Deletes all Classy Panel Styles settings from Drupal variable storage.
+ */
+function classy_panel_styles_uninstall() {
+  module_load_include('module', 'classy_panel_styles');
+  $variables = array(
+    CLASSY_PANEL_STYLES_CSS_PATH,
+    CLASSY_PANEL_STYLES_EDITOR_STYLING,
+    CLASSY_PANEL_STYLES_REGION_STYLE,
+    CLASSY_PANEL_STYLES_DISPLAY_DEFAULT,
+  );
+  foreach ($variables as $variable) {
+    variable_del($variable);
+  }
+}
+
+/**
+ * Implements hook_schema().
+ */
+function classy_panel_styles_schema() {
+  $schema['classy_panel_styles'] = array(
+    'description' => 'Table storing Classy Panel Styles definitions.',
+    'export' => array(
+      'key' => 'name',
+      'key name' => 'Machine name',
+      'primary key' => 'cps_id',
+      'identifier' => 'style',
+      'default hook' => 'classy_panel_styles',
+      'api' => array(
+        'owner' => 'classy_panel_styles',
+        'api' => 'classy_panel_styles',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'cps_id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Primary ID field for the table. Not used for anything except internal lookups.',
+        'no export' => TRUE,
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Unique ID for the CPS style definition. Used to identify them programmatically.',
+      ),
+      'visibility' => array(
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'description' => 'Whether to apply the styles to panes and/or regions (bitmask).',
+      ),
+      'groups' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => TRUE,
+        'description' => 'A serialized array of the CPS groups (style plugins) to which the style belongs.',
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'A human readable name for the style.',
+      ),
+      'required' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'description' => 'Whether the style will be required on the settings form.',
+      ),
+      'description' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'description' => 'A description for the style on the settings form.',
+      ),
+      'options' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => TRUE,
+        'description' => 'A serialized array of options for the style selector.',
+      ),
+      'default_value' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'description' => 'Default selection of the style option set on the settings form.',
+      ),
+      'layouts_setting' => array(
+        'type' => 'int',
+        'size' => 'small',
+        'description' => 'Whether to show on all layouts (0), exclude some (1), or include some (2).',
+      ),
+      'layouts' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'description' => 'A serialized array of layouts to include or exclude.',
+      ),
+    ),
+    'primary key' => array('cps_id'),
+    'unique keys' => array(
+      'cps_id' => array('cps_id'),
+      'name' => array('name'),
+    ),
+  );
+  return $schema;
+}

@@ -1,0 +1,54 @@
+<?php
+class SPSEntityLoadReactionWebTest extends SPSBaseWebTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Entity Load Reaction Web Tests',
+      'description' => 'Test the public interface to Entity Load Reaction objects',
+      'group' => 'SPSInteractive',
+    );
+  }
+
+  public function testEntityLoadReaction_react() {
+    $manager =  new \Drupal\sps\Test\Manager();
+    $reaction = new \Drupal\sps\Plugins\Reaction\EntityLoadReaction(array(), $manager);
+    $data =  (object) array(
+      'base_id_key' => 'nid',
+      'revision_id_key' => 'vid',
+      'base_table' => db_query_temporary('SELECT 1 as nid, 11 as vid UNION SELECT 2 as nid, 21 as vid'),
+      'type' => 'node',
+      'ids' => array(1,2),
+    );
+    $override_controller = new \Drupal\sps\Test\SimpleCacheOverrideController(array(), $manager);
+    $override_controller->set(array(
+      array('id' => 1, 'revision_id' => 12, 'type' =>'node'),
+      array('id' => 3, 'revision_id' => 31, 'type' =>'node'),
+    ));
+    $this->assertEqual(
+      $reaction->react($data, $override_controller),
+      array(12,21),
+      "::react should return a revision id for all ids passed in, from the override if it is set otherwise the from the base table"
+    );
+  }
+  public function testEntityLoadReaction_react_no_overrides() {
+    $manager =  new \Drupal\sps\Test\Manager();
+    $reaction = new \Drupal\sps\Plugins\Reaction\EntityLoadReaction(array(), $manager);
+    $data =  (object) array(
+      'base_id_key' => 'nid',
+      'revision_id_key' => 'vid',
+      'base_table' => db_query_temporary('SELECT 4 as nid, 41 as vid UNION SELECT 2 as nid, 21 as vid'),
+      'type' => 'node',
+      'ids' => array('4,2'),
+    );
+    $override_controller = new \Drupal\sps\Test\SimpleCacheOverrideController(array(), $manager);
+    $override_controller->set(array(
+      array('id' => 1, 'revision_id' => 12, 'type' =>'node'),
+      array('id' => 3, 'revision_id' => 31, 'type' =>'node'),
+    ));
+    $this->assertEqual(
+      $reaction->react($data, $override_controller),
+      array(),
+      "::react should return a empty array if there are no overrides"
+    );
+  }
+
+}

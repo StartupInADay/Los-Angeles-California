@@ -1,0 +1,371 @@
+<?php
+
+/**
+ * @file personalize_test.module
+ * Provides some menu callbacks, an agent type plugin and a test agent.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function personalize_test_menu() {
+  $items = array();
+  $items['personalize-test/personalized-page'] = array(
+    'type' => MENU_CALLBACK,
+    'title' => 'Testing Option Sets',
+    'page callback' => 'personalize_test_personalized_page',
+    'access callback' => TRUE,
+  );
+  $items['personalize-test/multiple-renderings'] = array(
+    'type' => MENU_CALLBACK,
+    'title' => 'Testing Multiple Rendering of Option Sets',
+    'page callback' => 'personalize_test_multiple_os_renderings',
+    'access callback' => TRUE,
+  );
+  $items['personalize-test/goal'] = array(
+    'type' => MENU_CALLBACK,
+    'title' => 'Testing Goals',
+    'page callback' => 'personalize_test_goal',
+    'access callback' => TRUE,
+  );
+  $items['personalize-test/goal-form'] = array(
+    'type' => MENU_CALLBACK,
+    'title' => 'Testing Goals',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('personalize_test_form'),
+    'access callback' => TRUE,
+  );
+  $items['admin/personalize_test/form'] = array(
+    'type' => MENU_CALLBACK,
+    'title' => 'Testing Embedded Agent Form',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('personalize_test_embedded_agent_creation_form'),
+    'access arguments' => array('access administration pages'),
+  );
+  $items['personalize-test/send-goal/ajax'] = array(
+    'type' => MENU_CALLBACK,
+    'title' => 'Endpoint for receiving goals from the client',
+    'page callback' => 'personalize_test_goal_ajax',
+    'access arguments' => array('access content'),
+  );
+  return $items;
+}
+
+/**
+ * Menu callback for testing personalized pages.
+ *
+ * Depending on what is passed in, this callback will cause 1 or more
+ * option sets to be loaded on the page and 0 or more goals to be processed.
+ * This enables testing scenarios with multiple things related to personal-
+ * ization happening on the same page.
+ *
+ * @param string $personalized_content
+ *   A string of comma separated integer values, each representing an option
+ *   set to be output with that number of options, or a simple string representing
+ *   the name of a multi-variate test whose option sets should be output.
+ * @param string $goal_names
+ *   A string of comma-separated goal names, each representing a goal to be
+ *   set on the test-agent.
+ * @param boolean $use_multiple_agents
+ *   Pass in 1 to ensure that the first test-agent is used for the first option
+ *   set and goal and the second test agent will be used for all subsequent
+ *   option sets and goals.
+ *
+ * @see PersonalizeTest::testPersonalizePage()
+ */
+function personalize_test_personalized_page($personalized_content = NULL, $goal_names = NULL, $use_multiple_agents = FALSE) {
+  if ($personalized_content !== NULL) {
+    $personalized_content = explode(',', $personalized_content);
+  }
+  else {
+    $personalized_content = array(0 => 2);
+  }
+  $renderable = array(
+    'content_link' => array(
+      '#markup' => l('Test link', '', array('attributes' => array('class' => array('some-class'))))
+    )
+  );
+  $loaded_option_sets = array();
+  foreach ($personalized_content as $i => $value) {
+    if (!is_numeric($value)) {
+      // This is an MVT machine name
+      $mvt = personalize_mvt_load($value);
+      foreach ($mvt->option_sets as $osid => $option_set) {
+        $loaded_option_sets[$osid] = $option_set;
+      }
+    }
+    else {
+      $test_agent = $i == 0 ? 'test-agent' : ($use_multiple_agents ? 'test-agent-2' : 'test-agent');
+      $osid = 'test-os-' . ($i + 1);
+
+      $option_set = create_dummy_option_set($osid, $test_agent, $value, NULL, NULL);
+      $loaded_option_sets[$osid] = $option_set;
+    }
+  }
+  if (!empty($loaded_option_sets)) {
+    foreach ($loaded_option_sets as $osid => $option_set) {
+      $renderable['content_' . $osid] = create_renderable_from_option_set($option_set);
+    }
+  }
+
+  if ($goal_names !== NULL) {
+    $goal_names = explode(',', $goal_names);
+    foreach ($goal_names as $i => $goal_name) {
+      $test_agent = $i == 0 ? 'test-agent' : ($use_multiple_agents ? 'test-agent-2' : 'test-agent');
+      personalize_set_goal($test_agent, $goal_name, 1);
+    }
+  }
+  return $renderable;
+}
+
+/**
+ * Page callback to test multiple renderings of the same option set.
+ *
+ * @param int $num_option_sets
+ *   The number of distinct option sets to create.
+ * @param int $num_options
+ *   The number of options per option set.
+ * @param int $num_repetitions
+ *   The number of times to render each option set.
+ * @return array
+ *   A render array for the page.
+ */
+function personalize_test_multiple_os_renderings($num_option_sets = 1, $num_options = 2, $num_repetitions = 2) {
+  $renderable = array();
+  $loaded_option_sets = array();
+  for ($i = 0; $i < $num_option_sets; $i++) {
+    $agent = 'test-agent';
+    $osid = 'test-os-' . ($i + 1);
+
+    $option_set = create_dummy_option_set($osid, $agent, $num_options, NULL, NULL);
+    $loaded_option_sets[$osid] = $option_set;
+  }
+  if (!empty($loaded_option_sets)) {
+    foreach ($loaded_option_sets as $osid => $option_set) {
+      for ($j = 0; $j < $num_repetitions; $j++) {
+        $renderable['content_' . $osid . '_' . ($j + 1)] = create_renderable_from_option_set($option_set);
+      }
+    }
+  }
+  return $renderable;
+}
+
+/**
+ * Creates an option set object based on the passed in parameters.
+ *
+ * @param $id
+ *   The osid to use.
+ * @param $agent
+ *   The name of the agent.
+ * @param $num_options
+ *   The number of options to generated.
+ * @param string $mvt
+ *   (optional) The mvt name to use.
+ * @param null $decision_name
+ *   (optional) The decision name to use.
+ * @return
+ *   A stdClass object representing an option set.
+ */
+function create_dummy_option_set($osid, $agent, $num_options, $decision_name = NULL, $decision_point = NULL) {
+  $winner = variable_get('personalize_test_os_winner_' . $osid, NULL);
+
+  $option_set = array(
+    'osid' => $osid,
+    'plugin' => 'test',
+    'label' => 'Option Set ' . $osid,
+    'agent' => $agent,
+    'decision_name' => $decision_name ? $decision_name : $osid,
+    'decision_point' => $decision_point ? $decision_point : $osid,
+    'executor' => 'show',
+    'stateful' => 1,
+    'winner' => $winner
+  );
+  $options = array();
+  for ($i = 0; $i < $num_options; $i++) {
+    $options[$i] = array(
+      'option_id' => personalize_generate_option_id($i),
+      'option_label' => personalize_generate_option_label($i),
+    );
+  }
+  $option_set['options'] = $options;
+  return (object) $option_set;
+}
+
+/**
+ * Returns a render array representing an option set, with assets attached.
+ *
+ * @param $option_set
+ *   A stdClas object representing the option set to render.
+ * @return array
+ *   A render array.
+ */
+function create_renderable_from_option_set($option_set) {
+  $num_options = count($option_set->options);
+
+  for ($i = 0; $i < $num_options; $i++) {
+    $option_id = $option_set->options[$i]['option_id'];
+    $option_content = '<div ' . PERSONALIZE_OPTION_NAME_DATA_ATTR . '="' . $option_id . '">';
+    $option_content .= 'OHAI ' . $i;
+    $option_content .= '</div>';
+    $renderable['#personalize_options'][$option_id] = array(
+      '#markup' => $option_content,
+    );
+  }
+
+  $renderable['#personalize_option_set'] = $option_set;
+  $renderable['#theme_wrappers'] = array('personalize_options_wrapper');
+  personalize_element_with_option_set($renderable, $option_set, TRUE);
+  return $renderable;
+}
+/**
+ * Menu callback that sets a goal which will be processed
+ */
+function personalize_test_goal() {
+  personalize_set_goal('test-agent-3', 'my-goal', 2);
+  return 'goal set';
+}
+
+function personalize_test_form() {
+  $form = array();
+  $form['submit_form'] = array(
+    '#type' => 'submit',
+    '#value' => t('Send Goal'),
+  );
+  return $form;
+}
+
+/**
+ * Submit handler for personalize_test_form.
+ */
+function personalize_test_form_submit($form, &$form_state) {
+  personalize_set_goal('test-agent-3', 'some-goal', 4);
+  $form_state['redirect'] = '';
+}
+
+/**
+ * Receives a goal.
+ *
+ * @param $agent_name
+ * @param $session
+ * @param $goal_name
+ * @param $goal_value
+ */
+function personalize_test_goal_ajax($agent_name, $session, $goal_name, $goal_value) {
+  $current_goals = variable_get('personalize_test_goals_received', array());
+  if (!isset($current_goals[$agent_name])) {
+    $current_goals[$agent_name] = array();
+  }
+  if (!isset($current_goals[$agent_name][$goal_name])) {
+    $current_goals[$agent_name][$goal_name] = array();
+  }
+  if (!isset($current_goals[$agent_name][$goal_name][$session])) {
+    $current_goals[$agent_name][$goal_name][$session] = 0;
+  }
+  $current_goals[$agent_name][$goal_name][$session] += $goal_value;
+  variable_set('personalize_test_goals_received', $current_goals);
+  drupal_exit();
+}
+
+/**
+ * Provides a form that has the agent selection/creation form embedded in it.
+ */
+function personalize_test_embedded_agent_creation_form() {
+  $form = personalize_get_agent_selection_form('', TRUE, TRUE);
+  $form['some_other_field'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Test field'
+  );
+  $form['submit_form'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+  return $form;
+}
+
+/**
+ * Submit handler for the embedded agent creation form.
+ */
+function personalize_test_embedded_agent_creation_form_submit($form, &$form_state) {
+  if ($form_state['values']['agent_select'] == PERSONALIZE_NEW_AGENT_FORM_VALUE) {
+    personalize_save_agent_from_form_values($form_state['values']);
+    drupal_set_message('Agent saved');
+  }
+  else {
+    drupal_set_message($form_state['values']['some_other_field'] . ' ' . $form_state['values']['agent_select']);
+  }
+}
+
+/**
+ * Implements hook_personalize_agent_type().
+ */
+function personalize_test_personalize_agent_type() {
+  $info = array();
+  $path = drupal_get_path('module', 'personalize_test') . '/plugins';
+  $info['test_agent'] = array(
+    'path' => $path . '/agent_types',
+    'handler' => array(
+      'file' => 'PersonalizeTestAgent.inc',
+      'class' => 'PersonalizeTestAgent',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function personalize_test_ctools_plugin_api($owner, $api) {
+  if ($owner == 'personalize' && $api == 'personalize') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This form alter makes it possible to use the 'remove' buttons on the personalize
+ * blocks form during tests.
+ */
+function personalize_test_form_personalize_blocks_form_alter(&$form, &$form_state) {
+  $pblock = $form_state['pblock'];
+  foreach ($pblock->options as $delta => $block) {
+    foreach (array('#tag', '#text', '#theme_wrappers', '#attributes') as $key) {
+      unset($form['pblock_wrapper']['blocks'][$delta]['remove'][$key]);
+    }
+  }
+}
+
+/**
+ * Implements hook_personalize_default_agents().
+ */
+function personalize_test_personalize_default_agents() {
+  // Create some test agents.
+  $items = array();
+  $personalize_agent = new stdClass();
+  $personalize_agent->disabled = FALSE;
+  $personalize_agent->api_version = 1;
+  $personalize_agent->machine_name = 'test-agent';
+  $personalize_agent->plugin = 'test_agent';
+  $personalize_agent->label = 'My Test Agent';
+  $personalize_agent->data = array('use_client_side_goal_processing' => TRUE);
+  $items["test-agent"] = $personalize_agent;
+
+  $personalize_agent = new stdClass();
+  $personalize_agent->disabled = FALSE;
+  $personalize_agent->api_version = 1;
+  $personalize_agent->machine_name = 'test-agent-2';
+  $personalize_agent->plugin = 'test_agent';
+  $personalize_agent->label = 'My Second Test Agent';
+  $personalize_agent->data = array('use_client_side_goal_processing' => TRUE);
+  $items["test-agent-2"] = $personalize_agent;
+
+  $personalize_agent = new stdClass();
+  $personalize_agent->disabled = FALSE;
+  $personalize_agent->api_version = 1;
+  $personalize_agent->machine_name = 'test-agent-3';
+  $personalize_agent->plugin = 'test_agent';
+  $personalize_agent->label = 'My Third Test Agent';
+  $personalize_agent->data = array('use_client_side_goal_processing' => FALSE);
+  $items["test-agent-3"] = $personalize_agent;
+  return $items;
+}

@@ -1,0 +1,54 @@
+/*************************************
+*         Layout
+**************************************/
+
+.pane-bundle-three-column-cta > .pane-title {
+  font-size: 2em;
+  width: 90%;
+  padding: 0px 0px 0.8em;
+  font-family: "Merriweather", serif;
+  font-weight: 900;
+  color: #0f2940;
+  margin-bottom: 0;
+}
+
+.three-col-body {
+  font-size: 1.429em;
+  line-height: 1.4em;
+  font-family: "Roboto", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: #163549;
+  margin-top: 25px;
+  margin-bottom: 25px;
+}
+
+.three-col-wrapper {
+  $zen-column-count: 3;
+  @include zen-grid-container;
+  margin: auto;
+  max-width: $max-site-width;
+  padding: 1em 25px;
+  @include window_size(desktop) {
+    //@include wrapper(90%);
+    //padding: 1em 0 6em;
+  }
+
+  .panel__section {
+    margin-top: 2em;
+    @include window_size(tab-wide-up) {
+      @include zen-grid-flow-item(1, 3, false, true);
+      @include zen-float(left);
+      margin-top: 0;
+      margin-right: 0;
+    }
+  }
+
+  .panel__icon_header {
+    min-height: 30px;
+  }
+
+  .panel__icon {
+    margin-bottom: .5em;
+  }
+}
+

@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * @file
+ * Tests for Personalize Taxonomy Context module.
+ */
+
+class PersonalizeTaxonomyContextTest extends DrupalWebTestCase {
+  private $adminUser;
+  private $vocabulary;
+  private $terms;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Personalize Taxonomy Context Tests'),
+      'description' => t('Tests basic functionality of Personalize Taxonomy Context module.'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('personalize_test', 'personalize_taxonomy_context'));
+    $this->adminUser = $this->drupalCreateUser(array('create article content', 'administer content types', 'administer taxonomy'));
+    $this->drupalLogin($this->adminUser);
+    $taxonomyWebTestCase = new TaxonomyWebTestCase();
+    $this->vocabulary = $taxonomyWebTestCase->createVocabulary();
+    $term1 = $taxonomyWebTestCase->createTerm($this->vocabulary);
+    $this->terms[$term1->vid] = $term1;
+    $term2 = $taxonomyWebTestCase->createTerm($this->vocabulary);
+    $this->terms[$term2->vid] = $term2;
+  }
+
+  /**
+   * @todo Assert the terms are correctly collected on the page settings.
+   */
+//  function testTaxonomyPageSettings() {
+//  }
+}

@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * @file personalize_url_context.module
+ * Provides a visitor context plugin for querystring params.
+ */
+
+/**
+ * Implements hook_personalize_visitor_context().
+ */
+function personalize_test_visitor_context_personalize_visitor_context() {
+  $info = array();
+  $path = drupal_get_path('module', 'personalize_test_visitor_context') . '/plugins';
+  $info['personalize_test_visitor_context'] = array(
+    'path' => $path . '/visitor_context',
+    'handler' => array(
+      'file' => 'TestVisitorContext.inc',
+      'class' => 'TestVisitorContext',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function personalize_test_visitor_context_ctools_plugin_api($owner, $api) {
+  if ($owner == 'personalize' && $api == 'personalize') {
+    return array('version' => 1);
+  }
+}

@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the SBP Resources & Incentives feature.
+ */
+
+include_once 'sbp_resources_incentives.features.inc';

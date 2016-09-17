@@ -1,0 +1,29 @@
+name = Entity Embed
+description = Allows entities to be embedded using a text editor.
+package = Media
+core = 7.x
+
+dependencies[] = ctools
+dependencies[] = editor_ckeditor
+dependencies[] = dialog
+dependencies[] = entity
+dependencies[] = entityreference
+dependencies[] = filter
+dependencies[] = jquery_update
+
+test_dependencies[] = media
+test_dependencies[] = uuid
+
+files[] = includes/EntityEmbedEntityNotFoundException.inc
+files[] = includes/EntityEmbedRecursiveRenderingException.inc
+
+files[] = entity_embed.test
+
+configure = admin/config/content/embed-button
+
+
+; Information added by drush on 2016-02-18
+version = ""
+project = "entity_embed"
+datestamp = "1455828873"
+

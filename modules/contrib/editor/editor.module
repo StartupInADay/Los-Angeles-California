@@ -1,0 +1,788 @@
+<?php
+
+/**
+ * @file
+ * Allows rich text fields to be edited using WYSIWYG client-side editors.
+ */
+
+// AJAX commands.
+require_once dirname(__FILE__) . '/includes/editor.commands.inc';
+
+// File usage tracking.
+require_once dirname(__FILE__) . '/includes/editor.file_usage.inc';
+
+// Hooks and functions missing from the core filter.module.
+require_once dirname(__FILE__) . '/includes/editor.filter.inc';
+
+// Filter hooks and callbacks.
+require_once dirname(__FILE__) . '/includes/editor.filters.inc';
+
+// Replace the core filter.module administration pages.
+require_once dirname(__FILE__) . '/includes/editor.admin.inc';
+
+/**
+ * Implements hook_init().
+ */
+function editor_init() {
+  $path = drupal_get_path('module', 'editor');
+  // Add the CSS for this module. These aren't in editor.info, because they
+  // need to be in the CSS_SYSTEM group rather than the CSS_DEFAULT group.
+  drupal_add_css($path . '/css/components/align.module.css', array('group' => CSS_SYSTEM, 'every_page' => TRUE));
+  drupal_add_css($path . '/css/components/resize.module.css', array('group' => CSS_SYSTEM, 'every_page' => TRUE));
+  drupal_add_css($path . '/css/filter/filter.caption.css', array('group' => CSS_SYSTEM, 'every_page' => TRUE));
+}
+
+/**
+ * Implements hook_css_alter().
+ */
+function editor_css_alter(&$css) {
+  $bartik_style_css = drupal_get_path('theme', 'bartik') . '/css/style.css';
+
+  // Add caption CSS to the Bartik theme.
+  if (isset($css[$bartik_style_css])) {
+    $bartik_caption_css = drupal_get_path('module', 'editor') . '/css/components/bartik.captions.css';
+
+    $css[$bartik_caption_css] = $css[$bartik_style_css];
+    $css[$bartik_caption_css]['data'] = $bartik_caption_css;
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function editor_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'element_info_alter') {
+    // Move the editor.module implementation of hook_element_info_alter() to the
+    // end of the list so that other modules can work with the default
+    // filter.module text_format #process function before it is replaced.
+    // module_implements() iterates through $implementations with a foreach loop
+    // which PHP iterates in the order that the items were added, so to move an
+    // item to the end of the array, we remove it and then add it.
+    $group = $implementations['editor'];
+    unset($implementations['editor']);
+    $implementations['editor'] = $group;
+  }
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function editor_menu_alter(&$items) {
+  // Modify the formats page title and description to reflect the addition of
+  // WYSIWYG editors.
+  if (!empty($items['admin/config/content/formats'])) {
+    $items['admin/config/content/formats']['title'] = 'Text editors and formats';
+    $items['admin/config/content/formats']['description'] = 'Configure WYSIWYG and text editors on the site. Restrict or allow certain HTML tags to be used in content.';
+  }
+
+  // Disable tips for individual filter formats.
+  if (!empty($items['filter/tips/%filter_format'])) {
+    $items['filter/tips/%filter_format']['access callback'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function editor_theme_registry_alter(&$theme_registry) {
+  // Drop textarea.js in favor of CSS3 resize.
+  // @see https://www.drupal.org/node/1465840
+  if (isset($theme_registry['textarea'])) {
+    $path = drupal_get_path('module', 'editor');
+
+    $theme_registry['textarea']['file'] = 'editor.theme.inc';
+    $theme_registry['textarea']['theme path'] = $path . '/includes';
+    $theme_registry['textarea']['function'] = 'editor_textarea';
+    $theme_registry['textarea']['includes'][] = $theme_registry['textarea']['theme path'] . '/' . $theme_registry['textarea']['file'];
+  }
+
+  // Add an 'editor' column to the text format overview form.
+  if (isset($theme_registry['filter_admin_overview'])) {
+    $path = drupal_get_path('module', 'editor');
+
+    $theme_registry['filter_admin_overview']['file'] = 'editor.theme.inc';
+    $theme_registry['filter_admin_overview']['theme path'] = $path . '/includes';
+    $theme_registry['filter_admin_overview']['function'] = 'editor_admin_overview';
+
+    // Locate the default filter.module include.
+    $filter_include = array_search('modules/filter/filter.admin.inc', $theme_registry['filter_admin_overview']['includes']);
+
+    // Replace it with the editor.module include.
+    array_splice($theme_registry['filter_admin_overview']['includes'], $filter_include, 1, $theme_registry['filter_admin_overview']['theme path'] . '/' . $theme_registry['filter_admin_overview']['file']);
+  }
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function editor_hook_info() {
+  $hooks = array(
+    'editor_info',
+    'editor_info_alter',
+  );
+
+  return array_fill_keys($hooks, array('group' => 'editor'));
+}
+
+/**
+ * Implements hook_theme().
+ */
+function editor_theme() {
+  return array(
+    'editor_caption' => array(
+      'variables' => array('item' => NULL, 'caption' => '', 'attributes' => array()),
+      'file' => 'includes/editor.theme.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_library().
+ */
+function editor_library() {
+  $libraries['drupal.editor'] = array(
+    'title' => 'Drupal Editor',
+    'website' => 'http://www.drupal.org',
+    'version' => VERSION,
+    'js' => array(
+      drupal_get_path('module', 'editor') . '/js/editor.js' => array(
+        'weight' => 2,
+      ),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('dialog', 'drupal.dialog'),
+    ),
+  );
+
+  $libraries['drupal.editor.dialog'] = array(
+    'title' => 'Drupal Editor Dialog',
+    'website' => 'http://www.drupal.org',
+    'version' => VERSION,
+    'js' => array(
+      drupal_get_path('module', 'editor') . '/js/editor.dialog.js' => array(
+        'weight' => 2,
+      ),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'drupal.ajax'),
+      array('dialog', 'drupal.dialog'),
+    ),
+  );
+
+  $libraries['quickedit.inPlaceEditor.formattedText'] = array(
+    'title' => 'CKEditor formatted text in-place editor',
+    'version' => VERSION,
+    'js' => array(
+      drupal_get_path('module', 'editor') . '/js/editor.formattedTextEditor.js' => array('weight' => 3, 'scope' => 'footer'),
+      array(
+        'type' => 'setting',
+        'data' => array(
+          'quickedit' => array(
+            'ckeditor' => array(
+              'getUntransformedTextURL' => url('quickedit/ckeditor/!entity_type/!id/!field_name/!langcode/!view_mode'),
+            ),
+          )
+        )
+      ),
+    ),
+    'dependencies' => array(
+      array('quickedit', 'quickedit'),
+      array('editor', 'drupal.editor'),
+      array('system', 'drupal.ajax'),
+    ),
+  );
+
+  $libraries['caption'] = array(
+    'title' => 'Caption',
+    'website' => 'http://www.drupal.org',
+    'version' => VERSION,
+    'css' => array(
+      drupal_get_path('module', 'editor') . '/css/filter.caption.css' => array(),
+    ),
+  );
+
+  $libraries['align'] = array(
+    'title' => 'Align',
+    'website' => 'http://www.drupal.org',
+    'version' => VERSION,
+    'css' => array(
+      drupal_get_path('module', 'editor_ckeditor') . '/css/plugins/drupalimagecaption/editor_ckeditor.drupalimagecaption.css' => array(),
+    ),
+    'dependencies' => array(
+      array('editor', 'caption'),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_element_info_alter().
+ */
+function editor_element_info_alter(&$type) {
+  // Replace the default text_format #process function in order to add support
+  // for editors.
+  if (isset($type['text_format'])) {
+    // Locate the default file.module #process function.
+    $filter_process_format_location = array_search('filter_process_format', $type['text_format']['#process']);
+
+    // Replace it with the editor.module #process function.
+    array_splice($type['text_format']['#process'], $filter_process_format_location, 1, 'editor_process_format');
+  }
+
+  // Editor drops textarea.js in favor of CSS3 resizing of textareas.
+  // Change the default value of #resizeable for textarea accordingly.
+  if (isset($type['textarea'])) {
+    $type['textarea']['#resizable'] = 'vertical';
+  }
+}
+
+/**
+ * A copy of filter_process_format() which adds support for editors.
+ *
+ * Expands an element into a base element with text format selector attached.
+ *
+ * The form element will be expanded into two separate form elements, one
+ * holding the original element, and the other holding the text format selector:
+ * - value: Holds the original element, having its #type changed to the value of
+ *   #base_type or 'textarea' by default.
+ * - format: Holds the text format fieldset and the text format selection, using
+ *   the text format id specified in #format or the user's default format by
+ *   default, if NULL.
+ *
+ * The resulting value for the element will be an array holding the value and
+ * the format. For example, the value for the body element will be:
+ * @code
+ *   $form_state['values']['body']['value'] = 'foo';
+ *   $form_state['values']['body']['format'] = 'foo';
+ * @endcode
+ *
+ * @param array $element
+ *   The form element to process. Properties used:
+ *   - #base_type: The form element #type to use for the 'value' element.
+ *     'textarea' by default.
+ *   - #format: (optional) The text format ID to preselect. If NULL or not set,
+ *     the default format for the current user will be used.
+ *
+ * @return array
+ *   The expanded element.
+ *
+ * @see filter_process_format()
+ */
+function editor_process_format($element) {
+  global $user;
+
+  // Ensure that children appear as subkeys of this element.
+  $element['#tree'] = TRUE;
+  $blacklist = array(
+    // Make form_builder() regenerate child properties.
+    '#parents',
+    '#id',
+    '#name',
+    // Do not copy this #process function to prevent form_builder() from
+    // recursing infinitely.
+    '#process',
+    // Description is handled by theme_text_format_wrapper().
+    '#description',
+    // Ensure proper ordering of children.
+    '#weight',
+    // Properties already processed for the parent element.
+    '#prefix',
+    '#suffix',
+    '#attached',
+    '#processed',
+    '#theme_wrappers',
+  );
+
+  // Move this element into sub-element 'value'.
+  unset($element['value']);
+
+  foreach (element_properties($element) as $key) {
+    if (!in_array($key, $blacklist)) {
+      $element['value'][$key] = $element[$key];
+    }
+  }
+
+  $element['value']['#type'] = $element['#base_type'];
+  $element['value'] += element_info($element['#base_type']);
+
+  // Get a list of formats to which the current user has access.
+  $formats = filter_formats($user);
+
+  // JavaScript settings are not idempotent in Drupal 7 which causes editor
+  // configuration information to be added once per text area, resulting in
+  // duplicate toolbars, plugins, etc.
+  // @see https://www.drupal.org/node/1911578
+  static $has_run = FALSE;
+
+  // Ensure that editor attachments are only added once by tracking whether or
+  // not they have already been attached.
+  if (!$has_run) {
+    // Turn original element into a text format wrapper.
+    $element['#attached'] = editor_get_attached($formats);
+
+    $has_run = TRUE;
+  }
+
+  // Attach Editor module's (this module) library.
+  $element['#attached']['library'][] = array('filter', 'filter');
+  $element['#attached']['library'][] = array('editor', 'drupal.editor');
+  $element['#attached']['library'][] = array('editor', 'drupal.editor.dialog');
+
+  // Use the default format for this user if none was selected.
+  if (!isset($element['#format'])) {
+    $element['#format'] = filter_default_format($user);
+  }
+
+  // Remove the Plain text format if not set and other options are available.
+  $fallback_format = variable_get('filter_fallback_format');
+
+  if (($element['#format'] != $fallback_format) && (count($formats) > 1) && array_key_exists($fallback_format, $formats)) {
+    unset($formats[$fallback_format]);
+  }
+
+  // Setup child container for the text format widget.
+  $element['format'] = array(
+    '#type' => 'fieldset',
+    '#attributes' => array('class' => array('filter-wrapper')),
+  );
+
+  // Prepare text format guidelines.
+  $element['format']['guidelines'] = array(
+    '#type' => 'container',
+    '#attributes' => array('class' => array('filter-guidelines')),
+    '#weight' => 20,
+  );
+
+  foreach ($formats as $format) {
+    $options[$format->format] = $format->name;
+    $element['format']['guidelines'][$format->format] = array(
+      '#theme' => 'filter_guidelines',
+      '#format' => $format,
+    );
+  }
+
+  // If there are multiple options OR if the current text format is no
+  // longer available to the current user, then show as a select.
+  if (count($options) > 1 || !array_key_exists($element['#format'], $options)) {
+    $element['format']['format'] = array(
+      '#type' => 'select',
+      '#title' => t('Editor'),
+      '#options' => $options,
+      '#default_value' => $element['#format'],
+      '#weight' => 10,
+      '#attributes' => array('class' => array('filter-list')),
+      '#parents' => array_merge($element['#parents'], array('format')),
+    );
+  }
+  else {
+    $element['format']['format'] = array(
+      '#type' => 'hidden',
+      '#value' => $element['#format'],
+      '#default_value' => $element['#format'],
+      '#attributes' => array('class' => array('filter-list')),
+      '#parents' => array_merge($element['#parents'], array('format')),
+    );
+  }
+
+  $all_formats = filter_formats();
+  $format_exists = isset($all_formats[$element['#format']]);
+  $user_has_access = isset($formats[$element['#format']]);
+  $user_is_admin = user_access('administer filters');
+
+  // If the stored format does not exist, administrators have to assign a new
+  // format.
+  if (!$format_exists && $user_is_admin) {
+    $element['format']['format']['#required'] = TRUE;
+    $element['format']['format']['#default_value'] = NULL;
+    // Force access to the format selector (it may have been denied above if
+    // the user only has access to a single format).
+    $element['format']['format']['#access'] = TRUE;
+  }
+  // Disable this widget, if the user is not allowed to use the stored format,
+  // or if the stored format does not exist. The 'administer filters' permission
+  // only grants access to the filter administration, not to all formats.
+  elseif (!$user_has_access || !$format_exists) {
+    // Overload default values into #value to make them unalterable.
+    $element['value']['#value'] = $element['value']['#default_value'];
+    $element['format']['format']['#value'] = $element['format']['format']['#default_value'];
+
+    // Prepend #pre_render callback to replace field value with user notice
+    // prior to rendering.
+    $element['value'] += array('#pre_render' => array());
+    array_unshift($element['value']['#pre_render'], 'filter_form_access_denied');
+
+    // Cosmetic adjustments.
+    if (isset($element['value']['#rows'])) {
+      $element['value']['#rows'] = 3;
+    }
+
+    $element['value']['#disabled'] = TRUE;
+    $element['value']['#resizable'] = 'none';
+
+    // Hide the text format selector and any other child element (such as text
+    // field's summary).
+    foreach (element_children($element) as $key) {
+      if ($key != 'value') {
+        $element[$key]['#access'] = FALSE;
+      }
+    }
+  }
+
+  return $element;
+}
+
+/**
+ * Adds filter configuration information to the page for access by JavaScript.
+ *
+ * @param array $formats
+ *   An array of formats as returned by filter_formats(), whose settings should
+ *   be added to the page.
+ *
+ * @return array
+ *   An array of attached libraries, CSS, and JS that can be set to an element's
+ *   #attached property.
+ */
+function editor_get_attached($formats) {
+  $attached = array();
+
+  foreach ($formats as $format_name => $format_info) {
+    if (!isset($format_info->editor)) {
+      $format_info->editor = NULL;
+    }
+
+    if (isset($added[$format_name])) {
+      unset($formats[$format_name]);
+    }
+    else {
+      // Add the library associated with a format's editor if needed.
+      if ($format_info->editor && ($editor = editor_load($format_info->editor))) {
+        $attached['library'][] = $editor['library'];
+      }
+    }
+  }
+
+  if (!empty($formats)) {
+    $settings = editor_get_js_settings($formats);
+    $attached['js'][] = array(
+      'type' => 'setting',
+
+      'data' => array('editor' => array('formats' => $settings)),
+    );
+  }
+
+  return $attached;
+}
+
+/**
+ * Get a complete list of allowed and forbidden tags for a text format.
+ *
+ * @param object $format
+ *   The text format object for which the list will be generated.
+ *
+ * @return array|TRUE
+ *   An array of allowed HTML with the following keys:
+ *   - allowed: A list of allowed tags keyed by tag name. The value is an array
+ *     of attributes.
+ *   - forbidden: An unindexed array of tags that are not allowed.
+ *   For the full documentation on the return values of these two properties,
+ *   see callback_filter_allowed_html().
+ *   If TRUE is returned, then there are no restrictions on this format's HTML
+ *   content.
+ *
+ * @see callback_filter_allowed_html()
+ */
+function editor_format_allowed_html($format) {
+  $all_filter_info = filter_get_filters();
+  $all_html_allowed = TRUE;
+  $restrictions = array(
+    'allowed' => array(),
+    'forbidden' => array(),
+  );
+
+  foreach ($format->filters as $filter_name => $filter) {
+    // Skip disabled filters.
+    if (!$filter->status) {
+      continue;
+    }
+
+    // Skip non-existent filters.
+    if (!isset($all_filter_info[$filter_name])) {
+      continue;
+    }
+
+    // We're only concerned with filters that specify an allowed HTML callback.
+    $filter_info = $all_filter_info[$filter_name];
+
+    if (!isset($filter_info['allowed html callback'])) {
+      continue;
+    }
+
+    $allowed_html_callback = $filter_info['allowed html callback'];
+    $filter_restrictions = $allowed_html_callback($filter, $format);
+
+    if ($filter_restrictions) {
+      $all_html_allowed = FALSE;
+    }
+    else {
+      continue;
+    }
+
+    // Forbidden tags are simple in that they have no attributes to track, it's
+    // just a list of tags that are not allowed.
+    if (isset($filter_restrictions['forbidden'])) {
+      $restrictions['forbidden'] = array_unique(array_merge($restrictions['forbidden'], $filter_restrictions['forbidden']));
+    }
+
+    // Add any allowed tags that have not yet been specified and build a list
+    // of any that need to be intersected.
+    $intersected_tags = array();
+
+    foreach ($filter_restrictions['allowed'] as $tag => $attributes) {
+      if (!isset($restrictions['allowed'][$tag])) {
+        $restrictions['allowed'][$tag] = $attributes;
+      }
+      else {
+        $intersected_tags[$tag] = $attributes;
+      }
+    }
+
+    // Allowed tags are more complicated as different filters may allow
+    // different individual attributes. Track the intersection of all allowed
+    // attributes for each tag.
+    foreach ($intersected_tags as $tag => $attributes) {
+      $intersection = NULL;
+      $current_attributes = isset($restrictions['allowed'][$tag]) ? $restrictions['allowed'][$tag] : array();
+      $new_attributes = $filter_restrictions['allowed'][$tag];
+
+      // The current intersection does not allow any attributes, never allow.
+      if (!is_array($current_attributes) && $current_attributes == FALSE) {
+        continue;
+      }
+      // The new filter allows fewer attributes (all -> list or none).
+      elseif (!is_array($current_attributes) && $current_attributes == TRUE && ($new_attributes == FALSE || is_array($new_attributes))) {
+        $intersection = $new_attributes;
+      }
+      // The new filter allows fewer attributes (list -> none).
+      elseif (is_array($current_attributes) && $new_attributes == FALSE) {
+        $intersection = $new_attributes;
+      }
+      // The new filter allows more attributes; retain current.
+      elseif (is_array($current_attributes) && $new_attributes == TRUE) {
+        continue;
+      }
+      // The new filter allows the same attributes; retain current.
+      elseif ($current_attributes == $new_attributes) {
+        continue;
+      }
+      // Both list an array of attribute values; do an intersection,
+      // where we take into account that a value of:
+      // - TRUE means the attribute value is allowed;
+      // - FALSE means the attribute value is forbidden;
+      // hence we keep the ANDed result.
+      else {
+        $intersection = array_intersect_key($current_attributes, $new_attributes);
+
+        foreach (array_keys($intersection) as $attribute_value) {
+          $intersection[$attribute_value] = $intersection[$attribute_value] && $new_attributes[$attribute_value];
+        }
+      }
+      if (isset($intersection)) {
+        $restrictions['allowed'][$tag] = $intersection;
+      }
+    }
+  }
+
+  // Simplification: if we have both a (intersected) whitelist and a (unioned)
+  // blacklist, then remove any tags from the whitelist that also exist in the
+  // blacklist. Now the whitelist alone expresses all tag-level restrictions,
+  // and we can delete the blacklist.
+  if (isset($restrictions['allowed']) && isset($restrictions['forbidden'])) {
+    foreach ($restrictions['forbidden'] as $tag) {
+      if (isset($restrictions['allowed'][$tag])) {
+        unset($restrictions['allowed'][$tag]);
+      }
+    }
+
+    $restrictions['forbidden'] = array();
+  }
+
+  // Simplification: if the only remaining allowed tag is the asterisk (which
+  // contains attribute restrictions that apply to all tags), and only
+  // whitelisting filters were used, then effectively nothing is allowed.
+  if (isset($restrictions['allowed'])) {
+    if (count($restrictions['allowed']) === 1 && array_key_exists('*', $restrictions['allowed']) && !isset($restrictions['forbidden'])) {
+      $restrictions['allowed'] = array();
+    }
+  }
+
+  // If no filters specified restrictions, change the allowed values to be
+  // a Boolean.
+  if ($all_html_allowed) {
+    $restrictions = TRUE;
+  }
+
+  return $restrictions;
+}
+
+/**
+ * Checks a user's access to a particular text format.
+ *
+ * @param object $format
+ *   A text format object.
+ *
+ * @return bool
+ *   TRUE if the text format can be used by the current user, FALSE otherwise.
+ */
+function editor_format_access($format) {
+  $permission = filter_permission_name($format);
+
+  return ($format->format === filter_fallback_format()) || user_access($permission);
+}
+
+/**
+ * Loads an individual editor's information.
+ *
+ * @param string|FALSE $editor_name
+ *   The internal editor name of the editor to load.
+ */
+function editor_load($editor_name) {
+  $editors = editor_get_editors();
+
+  return isset($editors[$editor_name]) ? $editors[$editor_name] : FALSE;
+}
+
+/**
+ * Returns a list of text editors that are used with 'text_format' elements.
+ *
+ * @return array
+ *   An associative array of editors keyed by the internal name of the editor.
+ *   Each editor may contain the following elements (all are optional except as
+ *   noted):
+ *   - title: (required) A human readable name for the editor.
+ *   - settings callback: The name of a function that returns configuration
+ *     form elements for the editor. See hook_editor_EDITOR_settings() for
+ *     details.
+ *   - default settings: An associative array containing default settings for
+ *     the editor, to be applied when the editor has not been configured yet.
+ *   - js settings callback: The name of a function that returns configuration
+ *     options that should be added to the page via JavaScript for use on the
+ *     client side. See hook_editor_EDITOR_js_settings() for details.
+ *
+ * @see filter_example.module
+ * @see hook_filter_info()
+ * @see hook_filter_info_alter()
+ */
+function editor_get_editors() {
+  $editors = &drupal_static(__FUNCTION__, NULL);
+
+  if (!isset($editors)) {
+    $editors = array();
+    $modules = module_implements('editor_info');
+
+    foreach ($modules as $module) {
+      $module_editors = module_invoke($module, 'editor_info');
+
+      foreach ($module_editors as $editor_name => $editor) {
+        $editor['module'] = $module;
+        $editors[$editor_name] = $editor;
+      }
+    }
+
+    drupal_alter('editor_info', $editors);
+  }
+
+  return $editors;
+}
+
+/**
+ * Retrieve JavaScript settings that should be added by each filter.
+ *
+ * @param array $formats
+ *   An array of formats as returned by filter_formats().
+ *
+ * @return array
+ *   An array of JavaScript settings representing the configuration of the
+ *   filters.
+ */
+function editor_get_js_settings($formats) {
+  $settings = array();
+  $filter_info = filter_get_filters();
+  $editor_info = editor_get_editors();
+
+  foreach ($formats as $format_name => $format) {
+    editor_format_ensure_additional_properties($format);
+
+    // Don't add settings for formats that don't have associated editors.
+    if (!$format->editor) {
+      continue;
+    }
+
+    $filter_settings = array();
+
+    foreach ($format->filters as $filter_name => $filter) {
+      if ($filter->status && isset($filter_info[$filter_name]['js settings callback'])) {
+        $function = $filter_info[$filter_name]['js settings callback'];
+        $filter_settings += $function($filter, $format);
+      }
+    }
+
+    $settings[$format_name] = array(
+      'format' => $format,
+      'filterSettings' => $filter_settings,
+      'editor' => $format->editor,
+      'editorSettings' => array(),
+    );
+
+    if ($format->editor && isset($editor_info[$format->editor]['js settings callback'])) {
+      $function = $editor_info[$format->editor]['js settings callback'];
+      $settings[$format_name]['editorSettings'] = $function($format, $settings);
+    }
+  }
+
+  drupal_alter('filter_js_settings', $settings, $formats);
+
+  return $settings;
+}
+
+/**
+ * Ensures that a text format has the additional properties added by Editor.
+ *
+ * This is required when interacting with a format freshly loaded with
+ * filter_format_load() because filter.module does not provide a way to load
+ * additional data when a format is retrieved from the database.
+ *
+ * @param object $format
+ *   An object representing the text format.
+ *
+ * @todo Remove this when we can alter filter_format_load() or filter_formats().
+ */
+function editor_format_ensure_additional_properties($format) {
+  if (empty($format->editor)) {
+    $format->editor = NULL;
+  }
+
+  if (empty($format->editor_settings)) {
+    $format->editor_settings = array();
+  }
+  else {
+    // Unserialize the editor settings when necessary.
+    $editor_settings = $format->editor_settings;
+
+    if ($editor_settings == serialize(false) || @unserialize($editor_settings) !== false) {
+      $format->editor_settings = unserialize($editor_settings);
+    }
+  }
+
+  if (empty($format->filters)) {
+    $format->filters = array();
+
+    $filters = filter_list_format($format->format);
+
+    foreach($filters as $name => $filter) {
+      $format->filters[$name] = $filter;
+    }
+  }
+}

@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function collection_schema() {
+  $schema = array();
+
+  $schema['collection'] = array(
+    'description' => t('Collection'),
+    'fields' => array(
+      'cid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique collection ID.',
+      ),
+      'name' => array(
+        'description' => 'The name of the collection.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'label' => array(
+        'description' => 'The name of the collection.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'status' => array(
+        'description' => 'The status of the collection.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'module' => array(
+        'description' => 'The status of the collection.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('cid'),
+    'unique keys' => array(
+      'cid' => array('cid'),
+    ),
+    'indexes' => array(
+      'name' => array('name'),
+      'status' => array('status'),
+      'module' => array('module'),
+      'module-status' => array('module', 'status'),
+    ),
+  );
+
+  return $schema;
+}

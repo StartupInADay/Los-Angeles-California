@@ -1,0 +1,327 @@
+<?php
+/**
+ * @file
+ * Module file for Classy Panel Styles.
+ */
+
+// Drupal variable: Location of the CSS file containing CPS class definitions.
+const CLASSY_PANEL_STYLES_CSS_PATH = 'classy_panel_styles__css_path';
+
+// Drupal variable: Enable/Disable application of styles in the backend editor.
+const CLASSY_PANEL_STYLES_EDITOR_STYLING = 'classy_panel_styles__editor_styling';
+
+// Drupal variable: The base style to use when rendering regions.
+const CLASSY_PANEL_STYLES_REGION_STYLE = 'classy_panel_styles__base_region_style';
+
+// Drupal variable: Whether to use CPS as default region style on new panels.
+const CLASSY_PANEL_STYLES_DISPLAY_DEFAULT = 'classy_panel_styles__default_region_style';
+
+// Bitmasks for the "Pane/Region/Both" value.
+const CLASSY_PANEL_STYLES_PANE_MASK    = 1;
+const CLASSY_PANEL_STYLES_REGION_MASK  = 2;
+
+// Layout options.
+const CLASSY_PANEL_STYLES_LAYOUTS_ALL     = 0;
+const CLASSY_PANEL_STYLES_LAYOUTS_EXCLUDE = 1;
+const CLASSY_PANEL_STYLES_LAYOUTS_INCLUDE = 2;
+
+// Form element name for the custom class list.
+const CLASSY_PANEL_STYLES_CUSTOM_CLASSES = 'cps_custom_classes';
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ *
+ * Specifies the plugin directory for our ctools plugins.
+ */
+function classy_panel_styles_ctools_plugin_directory($module, $plugin) {
+  if (($module == 'panels' && $plugin == 'styles') ||
+      ($module == 'ctools' && $plugin == 'export_ui')) {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function classy_panel_styles_permission() {
+  return array(
+    'administer classy panel styles' => array(
+      'title' => t('Administer Classy Panel Styles'),
+      'description' => t('Create new Classy Panel Styles and adjust module settings.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function classy_panel_styles_menu() {
+  $items['admin/config/content/classy_panel_styles/settings'] = array(
+    'title' => 'Settings',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classy_panel_styles_admin_settings_form'),
+    'access arguments' => array('administer classy panel styles'),
+    'file' => 'classy_panel_styles.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for ctools_export_ui_edit_item_wizard().
+ *
+ * Performs alterations to the Mini Panels edit forms.
+ */
+function classy_panel_styles_form_ctools_export_ui_edit_item_wizard_form_alter(&$form, &$form_state, $form_id) {
+  // Only for Mini Panels objects.
+  if ($form_state['item']->table !== 'panels_mini') {
+    return;
+  }
+
+  // Different actions depending on the step.
+  switch ($form_state['step']) {
+
+    // On the layout step, set the style on the Display object.
+    case 'layout':
+      _classy_panel_styles_set_display_style($form_state['display']);
+      break;
+
+    // On the content step, apply styles to backend editor.
+    case 'content':
+      _classy_panel_styles_attach($form);
+      _classy_panel_styles_apply_all($form_state);
+      break;
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function classy_panel_styles_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+
+    // Add a custom submit handler to the panels "edit style settings" form.
+    case 'panels_edit_style_settings_form':
+      $form['#submit'][] = 'classy_panel_styles_plugin_settings_form_submit';
+      break;
+
+    // Set CPS to be default style on the display object.
+    case 'panels_panel_context_edit_choose':
+      _classy_panel_styles_set_display_style($form_state['display']);
+      break;
+
+    // Attach custom CSS and javascript. Apply Classy Panel Styles to editor.
+    case 'panels_ipe_edit_control_form':
+    case 'panelizer_edit_content_form':
+    case 'panels_panel_context_edit_content':
+      _classy_panel_styles_attach($form);
+      _classy_panel_styles_apply_all($form_state);
+      break;
+  }
+}
+
+/**
+ * Updates the applied CPS styles after submitting "edit style settings" form.
+ */
+function classy_panel_styles_plugin_settings_form_submit($form, &$form_state) {
+  _classy_panel_styles_apply_all($form_state);
+}
+
+/**
+ * Sets default style of the Display object to be CPS.
+ *
+ * @param object $display
+ *   The Panels display object.
+ */
+function _classy_panel_styles_set_display_style($display) {
+  if (variable_get(CLASSY_PANEL_STYLES_DISPLAY_DEFAULT)) {
+    $display->panel_settings['style'] = 'classy_panel_styles:cps_default';
+  }
+}
+
+/**
+ * Attaches our custom css and js to a form.
+ *
+ * @param array $form
+ *   The Drupal Form API form array.
+ */
+function _classy_panel_styles_attach(array &$form) {
+  // Add custom CSS file.
+  $css_path = variable_get(CLASSY_PANEL_STYLES_CSS_PATH, FALSE);
+  if ($css_path && file_exists($css_path)) {
+    $form['#attached']['css'][] = $css_path;
+  }
+
+  // Get path to Classy Panel Styles module.
+  $module_path = drupal_get_path('module', 'classy_panel_styles');
+
+  // Attach admin CSS file.
+  $form['#attached']['css'][]
+    = $module_path . '/admin_styles/css/classy_panel_styles.admin.css';
+
+  // Attach JS file.
+  $form['#attached']['js'][] = $module_path . '/js/classy_panel_styles.js';
+}
+
+/**
+ * Applies Classy Panel Styles to backend Panels pages via Javascript.
+ *
+ * @param array $form_state
+ *   The form state passed into hook_form_alter(), form submit callbacks, etc.
+ */
+function _classy_panel_styles_apply_all(array $form_state) {
+  // Don't apply styles if the setting is turned off.
+  if (!variable_get(CLASSY_PANEL_STYLES_EDITOR_STYLING, TRUE)) {
+    return;
+  }
+
+  // Get the display object.
+  $display = $form_state['display'];
+
+  // Get the renderer class.
+  $renderer_class = get_class($form_state['renderer']);
+
+  // Add pane style settings to the Drupal.settings javascript object.
+  foreach ($display->content as $pid => $pane) {
+    // Make sure we actually have a pane.
+    if (empty($pane->pid)) {
+      continue;
+    }
+    $style = isset($pane->style['style']) ? $pane->style['style'] : NULL;
+    $conf  = isset($pane->style['settings']) ? $pane->style['settings'] : array();
+    _classy_panel_styles_apply('pane', $pid, $style, $conf, $renderer_class);
+  }
+
+  // Get shortcuts to the data we'll need below.
+  $panel_settings = $display->panel_settings;
+  $style_settings = $panel_settings['style_settings'];
+
+  // Get the default style settings (set on the display object).
+  $display_style
+    = isset($panel_settings['style']) ? $panel_settings['style'] : NULL;
+  $display_settings
+    = isset($style_settings['default']) ? $style_settings['default'] : array();
+
+  // Remove default settings from the list.
+  unset($style_settings['default']);
+
+  // Add region style settings to the Drupal.settings JS object.
+  foreach (array_keys($display->panels) as $region) {
+    if (isset($panel_settings[$region]['style']) && $panel_settings[$region]['style'] != -1) {
+      $style = $panel_settings[$region]['style'];
+      $conf  = isset($style_settings[$region]) ? $style_settings[$region] : array();
+    }
+    else {
+      $style = $display_style;
+      $conf  = $display_settings;
+    }
+    _classy_panel_styles_apply('region', $region, $style, $conf, $renderer_class);
+  }
+}
+
+/**
+ * Adds Classy Panel Styles to the Drupal.settings javascript object.
+ *
+ * @param string $type
+ *   One of 'pane' or 'region'.
+ * @param mixed $item_id
+ *   Pane ID (int) or Region ID (string).
+ * @param string $style
+ *   The name of the currently selected style.
+ * @param array $conf
+ *   The associative array of style settings.
+ */
+function _classy_panel_styles_apply($type, $item_id, $style = NULL, array $conf = array(), $renderer_class = 'panels_renderer_editor') {
+  // Calculate the HTML id of the region/pane div in the markup.
+  switch ($type) {
+    case 'pane':
+      switch ($renderer_class) {
+        // Standard editor.
+        case 'panels_renderer_editor':
+          $id = 'panel-pane-' . $item_id;
+          break(2);
+
+        // IPE.
+        case 'panels_renderer_ipe':
+          $id = 'panels-ipe-paneid-' . $item_id;
+          break(2);
+
+        default:
+          // If neither IPE nor standard editor, do nothing.
+          return;
+      }
+
+    case 'region':
+      switch ($renderer_class) {
+        // Standard editor.
+        case 'panels_renderer_editor':
+          $id = 'panel-region-' . $item_id;
+          break(2);
+
+        // IPE.
+        case 'panels_renderer_ipe':
+          $id = 'panels-ipe-regionid-' . $item_id;
+          break(2);
+
+        default:
+          // If neither IPE nor standard editor, do nothing.
+          return;
+      }
+
+    default:
+      // If not a pane or region, don't do anything.
+      return;
+  }
+
+  // Get the array of classes to add. If not using classy_panel_styles, send an
+  // empty array to clear any previously applied classy_panel_styles classes.
+  $classes = _classy_panel_styles_is($style) ? _classy_panel_styles_filter_conf($conf) : array();
+
+  // Add to the Drupal.settings object. Note that subsequent (ajax) calls have
+  // some wonky behavior... When adding a value for an existing element, it
+  // neither replaces nor merges: Your element will turn into an array with
+  // two subelements, both of which have the new value. And no matter how many
+  // times you call it, the element always has exactly two subelements.
+  drupal_add_js(
+    array(
+      'classyPanels' => array(
+        $id => implode(' ', $classes),
+      ),
+    ),
+    'setting'
+  );
+}
+
+/**
+ * Filters out disabled CPS styles.
+ *
+ * @param array $conf
+ *   The CPS settings configuration array.
+ *
+ * @return array
+ *   The array of classes with disabled, empty, and duplicate styles removed.
+ */
+function _classy_panel_styles_filter_conf(array $conf) {
+  ctools_include('export');
+  $type    = empty($conf) ? 'all' : 'names';
+  $styles  = ctools_export_load_object('classy_panel_styles', $type, array_keys($conf));
+  $classes = array();
+  foreach ($conf as $cps_id => $item) {
+    // Don't add the class if the CPS style setting is disabled.
+    if (!empty($styles[$cps_id]->disabled) || empty($item)) {
+      continue;
+    }
+    // Some styles may actually contain more than one class.
+    foreach (explode(' ', $item) as $class) {
+      $classes[] = drupal_html_class($class);
+    }
+  }
+  return array_unique($classes);
+}
+
+/**
+ * Determines whether the given style (parent:substyle) is a CPS substyle.
+ */
+function _classy_panel_styles_is($name) {
+  return 'classy_panel_styles' === substr($name, 0, strpos($name, ':'));
+}

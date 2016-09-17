@@ -1,0 +1,136 @@
+<?php
+
+/**
+ * @file
+ * Main module file for Rabbit Hole files module.
+ *
+ * This module will add the Rabbit Hole functionality to files.
+ */
+
+/**
+ * Implements hook_rabbit_hole().
+ */
+function rh_file_rabbit_hole() {
+  return array(
+    'rh_file' => array(
+      'entity type' => 'file',
+      'base table' => 'file_managed',
+      'view path' => 'file/%',
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This will add Rabbit Hole options to the file type form. These settings will
+ * be used as default for every file of this file type.
+ */
+function rh_file_form_file_entity_file_type_form_alter(&$form, $form_state) {
+  // Add the Rabbit Hole form.
+  rabbit_hole_form($form, 'file', $form['#file_type']->type, 'rh_file');
+}
+
+/**
+ * Submit callback for the bundle form.
+ *
+ * This will set the values of the variables.
+ */
+function rh_file_bundle_form_submit($form, $form_state) {
+  $values = $form_state['values'];
+
+  // Set the values of the variables.
+  variable_set('rh_file_override_' . $values['type'], $values['rh_file_override']);
+  variable_set('rh_file_action_' . $values['type'], $values['rh_file_action']);
+  variable_set('rh_file_redirect_' . $values['type'], $values['rh_file_redirect']);
+  variable_set('rh_file_redirect_response_' . $values['type'], $values['rh_file_redirect_response']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This will add Rabbit Hole options to the file form when adding a new file.
+ * The user will be able to override the default Rabbit Hole options.
+ */
+function rh_file_form_file_entity_add_upload_alter(&$form, $form_state) {
+  if (!isset($form['#entity'])) {
+    // Don't add the form if the file hasn't been uploaded yet.
+    return;
+  }
+
+  // Add the Rabbit Hole form.
+  rabbit_hole_form($form, 'file', $form['#entity']->type, 'rh_file', $form['#entity']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This will add Rabbit Hole options to the file form when editing a file. The
+ * user will be able to override the default Rabbit Hole options.
+ */
+function rh_file_form_file_entity_edit_alter(&$form, $form_state) {
+  // Add the Rabbit Hole form, and add an extra javascript file that's needed
+  // for the fieldset summary.
+  rabbit_hole_form($form, 'file', $form['#entity']->type, 'rh_file', $form['#entity']);
+  $form['#attached']['js'][] = drupal_get_path('module', 'rh_file') . '/rh-file.js';
+
+  // Add a custom submit function. This is used to disable the redirect to
+  // file/123 if Rabbit Hole is enabled and the user doesn't have the bypass
+  // rh_file permission.
+  if (!user_access('bypass rh_file')) {
+    $form['actions']['submit']['#submit'][] = 'rh_file_entity_edit_submit';
+  }
+}
+
+/**
+ * Custom submit function for the file entity edit form.
+ *
+ * This will fire after the regular submit function, and it's purpose is to make
+ * sure that the user doesn't get redirected to file/123 after saving the file,
+ * if any Rabbit Hole action is enabled. This works by redirecting the user to
+ * file/123/edit, if a destination parameter hasn't been set.
+ *
+ * @see node_form_submit()
+ */
+function rh_file_entity_edit_submit($form, &$form_state) {
+  // Get the action. Either the one specified for this file, or the default
+  // value for the file type.
+  $action = isset($form_state['values']['rh_action']) && $form_state['values']['rh_action'] != RABBIT_HOLE_USE_DEFAULT ? $form_state['values']['rh_action'] : rabbit_hole_get_action_bundle('file', $form['#entity']->type);
+
+  // If the action says anything else than to display the content, make sure
+  // that the user doesn't land on the file view page. We'll check if a custom
+  // redirect path has been set, otherwise, we'll redirect the user to the edit
+  // page again.
+  if ($action != RABBIT_HOLE_DISPLAY_CONTENT && $form_state['redirect'] == 'file/' . $form_state['values']['fid']) {
+    $form_state['redirect'] = 'file/' . $form_state['values']['fid'] . '/edit';
+  }
+}
+
+/**
+ * Implements hook_file_view().
+ */
+function rh_file_file_view($file, $view_mode, $langcode) {
+  if ($view_mode != 'full') {
+    // The file isn't viewed using the full view mode, exit early.
+    return;
+  }
+
+  // Determine whether or not the file is being viewed at it's own page. The
+  // logics for this has been taken from node_is_page().
+  $page_file = menu_get_object('file');
+  $file_is_page = (!empty($page_file) ? $page_file->fid == $file->fid : FALSE);
+
+  // Execute Rabbit Hole, if the file is being viewed at its own page, and the
+  // current user isn't able to override Rabbit Hole.
+  if ($file_is_page && !user_access('bypass rh_file')) {
+    rabbit_hole_execute('file', $file);
+  }
+}
+
+/**
+ * Implements hook_file_type_delete().
+ */
+function rh_file_file_type_delete($file) {
+  // Delete variables connected to this file type.
+  rabbit_hole_delete_variables('file', $file->type);
+}

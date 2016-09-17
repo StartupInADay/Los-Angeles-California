@@ -1,0 +1,624 @@
+<?php
+
+/**
+ * @file
+ * Tests for Personalize Elements module.
+ */
+
+class PersonalizeElementsTest extends PersonalizeBaseTest {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Personalize Elements Tests'),
+      'description' => t('Tests basic functionality of Personalize Elements module.'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('personalize_elements', 'personalize_test'));
+  }
+
+  function testPersonalizeElementsPermissions() {
+    // Log in as a user with permission to do personalization but without the permission
+    // to use the advanced Personalize Elements stuff.
+    $marketer = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'manage personalized content'));
+    $this->drupalLogin($marketer);
+    $this->drupalGet('admin/config/content/personalize/personalize-elements');
+    $this->assertResponse(403);
+    $this->drupalGet('admin/structure/personalize/variations/personalize-elements/add');
+    // Find the "Variation type" select list and confirm that 'runJS' is not one of
+    // the options.
+    $elements = $this->xpath('//select[@id=:id]', array(':id' => 'edit-variation-type'));
+    $options = array();
+    foreach ($elements as $field) {
+      $items = $this->getAllOptions($field);
+      foreach ($items as $item) {
+        $options[] = $item['value'];
+      }
+    }
+    $this->assertFalse(in_array('runJS', $options));
+
+    // Now log in as a user who does have permission to do the advanced Personalize Elements
+    // stuff.
+    $this->drupalLogout();
+    $advanced_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'manage personalized content', 'use advanced personalize elements features'));
+    $this->drupalLogin($advanced_user);
+    $this->drupalGet('admin/config/content/personalize/personalize-elements');
+    $this->assertResponse(200);
+    $this->drupalGet('admin/structure/personalize/variations/personalize-elements/add');
+    $elements = $this->xpath('//select[@id=:id]', array(':id' => 'edit-variation-type'));
+
+    $options = array();
+    foreach ($elements as $field) {
+      $items = $this->getAllOptions($field);
+      foreach ($items as $item) {
+        $options[] = $item['value'];
+      }
+    }
+    $this->assertTrue(in_array('runJS', $options));
+  }
+
+  /**
+   * Tests adding and editing Personalize Elements Option Sets.
+   */
+  function testPersonalizeElementsAdmin() {
+    // Remember the first option in the form should always be the control.
+    $options_count_error = t('You must have at least 2 variations for a content variation set.');
+    $success_message = t('The variation set was saved.');
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    $edit = array(
+      'agent_select' => 'test-agent',
+      'title' => $this->randomName(),
+      'selector' => '#some-id',
+      'add_control_option' => FALSE,
+    );
+    $this->drupalPost('admin/structure/personalize/variations/personalize-elements/add', $edit, $this->getButton('save'));
+    $this->assertText('You must choose an operation');
+
+    $edit['variation_type'] = 'editText';
+    $this->assertFieldByName('options[0][option_label]', PERSONALIZE_CONTROL_OPTION_LABEL);
+    $this->drupalPost('admin/structure/personalize/variations/personalize-elements/add', $edit, $this->getButton('save'));
+    $this->assertText($options_count_error);
+    $this->assertNoText($success_message);
+    $edit['add_control_option'] = TRUE;
+    $edit['options[1][option_label]'] = 'first-option';
+    $edit['options[1][personalize_elements_content]'] = 'text changes';
+    $this->drupalPost(NULL, $edit, $this->getButton('save'));
+    $this->assertNoText($options_count_error);
+    $this->assertText($success_message);
+    $option_sets = personalize_option_set_load_multiple(FALSE, array(), TRUE);
+    $option_set = reset($option_sets);
+    $this->assertEqual(2, count($option_set->options));
+    personalize_option_set_delete($option_set->osid);
+    $this->resetAll();
+
+    $this->drupalGet('admin/structure/personalize/variations/personalize-elements/add');
+    $edit = array(
+      'agent_select' => 'test-agent',
+      'title' => $this->randomName(),
+      'selector' => '#some-id',
+      'add_control_option' => FALSE,
+      'variation_type' => 'appendHtml',
+    );
+    $this->drupalPost(NULL, array(), $this->getButton('add_another'));
+    $this->assertFieldByName('options[2][option_label]', personalize_generate_option_label(1));
+    $edit['options[1][option_label]'] = 'first-option';
+    $edit['options[1][personalize_elements_content]'] = '<p>some content</p>';
+    $edit['options[2][option_label]'] = 'second-option';
+    $edit['options[2][personalize_elements_content]'] = '<div>other content</div>';
+    $this->drupalPost(NULL, $edit, $this->getButton('save'));
+    $this->assertNoText($options_count_error);
+    $this->assertText($success_message);
+
+    $option_sets = personalize_option_set_load_multiple(FALSE, array(), TRUE);
+    $option_set = reset($option_sets);
+    $this->assertEqual(2, count($option_set->options));
+    $edit = array();
+    $edit['add_control_option'] = TRUE;
+    $this->drupalPost("admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/edit", $edit, $this->getButton('save'));
+
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $this->assertEqual(3, count($option_set->options));
+
+    // Add another element with a script tag.
+    $this->drupalGet("admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/edit");
+    $this->assertFieldByName('options[0][option_label]', PERSONALIZE_CONTROL_OPTION_LABEL);
+    $this->drupalPost(NULL, array(), $this->getButton('add_another'));
+    $edit = array();
+    $edit['options[3][personalize_elements_content]'] = '<script type="text/javascript">alert("xss");</script>';
+    $this->drupalPost(NULL, $edit, $this->getButton('save'));
+    $this->assertText(t('Disallowed HTML tags were removed from 1 variation.'));
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $control_option = array(
+      'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
+      'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
+      'personalize_elements_content' => '',
+    );
+    $expected = array(
+      0 => $control_option,
+      1 => array(
+        'option_id' => 'first-option',
+        'option_label' => 'first-option',
+        'personalize_elements_content' => '<p>some content</p>',
+      ),
+      2 => array(
+        'option_id' => 'second-option',
+        'option_label' => 'second-option',
+        'personalize_elements_content' => '<div>other content</div>',
+      ),
+      3 => array(
+        'option_id' => 'option-c',
+        'option_label' => 'Option C',
+        'personalize_elements_content' => 'alert("xss");',
+      ),
+    );
+    $this->assertEqual(count($expected), count($option_set->options));
+    foreach ($expected as $i => $option) {
+      $this->assertEqual($option, $option_set->options[$i]);
+    }
+
+    // Remove one of the options by setting content to nothing.
+    $edit = array();
+    $edit['options[2][personalize_elements_content]'] = '';
+    $this->drupalPost("admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/edit", $edit, $this->getButton('save'));
+    unset($expected[2]);
+    $expected = array_values($expected);
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $this->assertEqual(count($expected), count($option_set->options));
+    foreach ($expected as $i => $option) {
+      $this->assertEqual($option, $option_set->options[$i]);
+    }
+
+    // Remove the control option.
+    $edit = array();
+    $edit['add_control_option'] = FALSE;
+    $this->drupalPost("admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/edit", $edit, $this->getButton('save'));
+    unset($expected[0]);
+    $expected = array_values($expected);
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $this->assertEqual(count($expected), count($option_set->options));
+    foreach ($expected as $i => $option) {
+      $this->assertEqual($option, $option_set->options[$i]);
+    }
+
+    // Try removing another option, should fail validation.
+    $edit = array();
+    $edit['options[1][personalize_elements_content]'] = '';
+    $this->drupalPost('admin/structure/personalize/variations/personalize-elements/manage/1/edit', $edit, $this->getButton('save'));
+    $this->assertText($options_count_error);
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $this->assertEqual(count($expected), count($option_set->options));
+    foreach ($expected as $i => $option) {
+      $this->assertEqual($option, $option_set->options[$i]);
+    }
+
+    // Add back the control option.
+    $edit = array();
+    $edit['add_control_option'] = TRUE;
+    $this->drupalPost("admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/edit", $edit, $this->getButton('save'));
+    array_unshift($expected, $control_option);
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $this->assertEqual(count($expected), count($option_set->options));
+    foreach ($expected as $i => $option) {
+      $this->assertEqual($option, $option_set->options[$i]);
+    }
+
+    // When indicating that content applies to all pages, ignore specific pages
+    // entered.
+    $edit = array(
+      'pages_all' => 1,
+      'pages' => 'node',
+    );
+    $this->drupalPost("admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/edit", $edit, $this->getButton('save'));
+    $this->drupalGet("admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/edit");
+    $this->assertFieldByName('pages', '');
+
+    $edit['pages_all'] = 0;
+    $this->drupalPost(NULL, $edit, $this->getButton('save'));
+    $this->drupalGet("admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/edit");
+    $this->assertFieldByName('pages', 'node');
+
+    // Now edit  and specify '<front>' as the path.
+    $edit = array(
+      'pages' => '<front>',
+    );
+    $this->drupalPost("admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/edit", $edit, $this->getButton('save'));
+    $this->assertNoText('You have specified an invalid path for Pages');
+    // Now edit the action and specify an invalid path.
+    $edit = array(
+      'pages' => 'some invalid url',
+    );
+    $this->drupalPost("admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/edit", $edit, $this->getButton('save'));
+    $this->assertText('You have specified an invalid path for Pages');
+
+    // Now delete an option via the delete callback.
+    $this->drupalPost('admin/structure/personalize/variations/personalize-elements/manage/' . $option_set->osid . '/option-c/delete', array(), t('Delete'));
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $this->assertEqual(2, count($option_set->options));
+    $has_option_c = FALSE;
+    foreach ($option_set->options as $option) {
+      if ($option['option_id'] == 'option-c') {
+        $has_option_c = TRUE;
+        break;
+      }
+    }
+    $this->assertFalse($has_option_c);
+  }
+
+  /**
+   * Tests cross site scripting filter for Personalize Elements Option Sets.
+   */
+  function testPersonalizeElementsAdminFilter() {
+    $control_option = array(
+      'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
+      'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
+      'personalize_elements_content' => '',
+    );
+    // Our marketer user's content should be filtered as they don't have the
+    // "advanced" permission.
+    $marketer_user = $this->drupalCreateUser(array('access administration pages', 'access content', 'manage personalized content'));
+    $this->drupalLogin($marketer_user);
+    // Create an option set that should be filtered.
+    $edit = array(
+      'agent_select' => 'test-agent',
+      'title' => $this->randomName(),
+      'selector' => '#some-id',
+      'variation_type' => 'appendHtml',
+      'options[1][option_label]' => 'first-option',
+      'options[1][personalize_elements_content]' => '<script type="text/javascript">alert("xss");</script>',
+    );
+    $this->drupalPost('admin/structure/personalize/variations/personalize-elements/add', $edit, $this->getButton('save'));
+    $this->assertText(t('Disallowed HTML tags were removed from 1 variation.'));
+    $option_sets = personalize_option_set_load_multiple(FALSE, array(), TRUE);
+    $option_set = end($option_sets);
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $expected = array(
+      0 => $control_option,
+      1 => array(
+        'option_id' => 'first-option',
+        'option_label' => 'first-option',
+        'personalize_elements_content' => 'alert("xss");',
+      ),
+    );
+    $this->assertEqual(count($expected), count($option_set->options));
+    foreach ($expected as $i => $option) {
+      $this->assertEqual($option, $option_set->options[$i]);
+    }
+    $this->drupalLogout();
+    // The admin user should be able to create html content that does not get
+    // filtered at all.
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'manage personalized content', 'use advanced personalize elements features'));
+    $this->drupalLogin($admin_user);
+
+    // Create an option set that should be filtered.
+    $edit = array(
+      'agent_select' => 'test-agent',
+      'title' => $this->randomName(),
+      'selector' => '#some-id',
+      'variation_type' => 'appendHtml',
+      'options[1][option_label]' => 'first-option',
+      'options[1][personalize_elements_content]' => '<script type="text/javascript">alert("xss");</script>',
+    );
+    $this->drupalPost('admin/structure/personalize/variations/personalize-elements/add', $edit, $this->getButton('save'));
+    $this->assertNoText(t('Disallowed HTML tags were removed from 1 variation.'));
+    $option_sets = personalize_option_set_load_multiple(FALSE, array(), TRUE);
+    $option_set = end($option_sets);
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $expected = array(
+      0 => $control_option,
+      1 => array(
+        'option_id' => 'first-option',
+        'option_label' => 'first-option',
+        'personalize_elements_content' => '<script type="text/javascript">alert("xss");</script>',
+      ),
+    );
+    $this->assertEqual(count($expected), count($option_set->options));
+    foreach ($expected as $i => $option) {
+      $this->assertEqual($option, $option_set->options[$i]);
+    }
+
+    // JS should not be filtered either.
+    $edit = array(
+      'agent_select' => 'test-agent',
+      'title' => $this->randomName(),
+      'selector' => '#some-id',
+      'variation_type' => 'runJS',
+      'options[1][option_label]' => 'first-option',
+      'options[1][personalize_elements_content]' => '<script type="text/javascript">alert("xss");</script>',
+    );
+    $this->drupalPost('admin/structure/personalize/variations/personalize-elements/add', $edit, $this->getButton('save'));
+    $this->assertNoText(t('Disallowed HTML tags were removed from 1 variation.'));
+    $option_sets = personalize_option_set_load_multiple(FALSE, array(), TRUE);
+    $option_set = end($option_sets);
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $control_option = array(
+      'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
+      'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
+      'personalize_elements_content' => '',
+    );
+    $expected = array(
+      0 => $control_option,
+      1 => array(
+        'option_id' => 'first-option',
+        'option_label' => 'first-option',
+        'personalize_elements_content' => '<script type="text/javascript">alert("xss");</script>',
+      ),
+    );
+    $this->assertEqual(count($expected), count($option_set->options));
+    foreach ($expected as $i => $option) {
+      $this->assertEqual($option, $option_set->options[$i]);
+    }
+  }
+
+  function testPersonalizeElementsNewCampaign() {
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    // Now choose to add a new agent instead of selecting an existing one.
+    $agent_name = $this->randomName();
+    $machine_name = personalize_generate_machine_name($agent_name, 'personalize_agent_machine_name_exists');
+    $edit = array(
+      'agent_select' => PERSONALIZE_NEW_AGENT_FORM_VALUE,
+      'agent_basic_info[title]' => $agent_name,
+      'title' => $this->randomName(),
+      'variation_type' => 'appendHtml',
+      'selector' => '#some-id',
+      'add_control_option' => TRUE,
+      'options[1][option_label]' => 'first-option',
+      'options[1][personalize_elements_content]' => 'some content'
+    );
+    $this->drupalPost('admin/structure/personalize/variations/personalize-elements/add', $edit, $this->getButton('save'));
+    $this->resetAll();
+    if ($agent = personalize_agent_load_agent($machine_name)) {
+      $this->assertTrue($agent instanceof PersonalizeTestAgent);
+    }
+    else {
+      $this->fail("The agent was not saved");
+    }
+    $option_sets = personalize_option_set_load_multiple(FALSE, array(), TRUE);
+    $option_set = end($option_sets);
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $this->assertEqual(2, count($option_set->options));
+    $this->assertEqual($machine_name, $option_set->agent);
+  }
+
+  function testPersonalizeElementsConfig() {
+    $marketer_user = $this->drupalCreateUser(array('access administration pages', 'access content', 'manage personalized content'));
+    $this->drupalLogin($marketer_user);
+    $option_set = $this->createPersonalizedElement(array(
+      'options[1][personalize_elements_content]' => '<div class="stuff">ohai</div>',
+      'options[2][personalize_elements_content]' => '<a href="/">kthxbai</a>',
+    ), FALSE);
+    $this->assertEqual('<div class="stuff">ohai</div>', $option_set->options[1]['personalize_elements_content']);
+    $this->assertEqual('<a href="/">kthxbai</a>', $option_set->options[2]['personalize_elements_content']);
+    $this->drupalLogout();
+    // Log in as an admin and change the allowed html tags.
+    $advanced_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'manage personalized content', 'use advanced personalize elements features'));
+    $this->drupalLogin($advanced_user);
+    $this->drupalPost('admin/config/content/personalize/personalize-elements', array('personalize_elements_allowed_html' => '<a> <em>'), t('Save configuration'));
+    $allowed_tags = variable_get('personalize_elements_allowed_html', array());
+    $this->assertEqual('<a> <em>', $allowed_tags);
+    $this->drupalLogout();
+
+    // Log back in as the marketer user.
+    $this->drupalLogin($marketer_user);
+    // Resave the personalized element and confirm that disallowed tags are stripped out.
+    $this->drupalPost('admin/structure/personalize/variations/personalize-elements/manage/1/edit', array(), t('Save'));
+    $option_set = personalize_option_set_load(1, TRUE);
+    $this->assertEqual('ohai', $option_set->options[1]['personalize_elements_content']);
+    $this->assertEqual('<a href="/">kthxbai</a>', $option_set->options[2]['personalize_elements_content']);
+  }
+
+  /**
+   * Tests that inactive variation types are only available for backwards
+   * compatibility.
+   */
+  function testPersonalizeElementsStatus() {
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+
+    // First verify that the retired variation type is not available in a
+    // new form.
+    $this->drupalGet('admin/structure/personailze/variations/personalize-elements/add');
+    $this->assertNoRaw('<option value="replaceHtml">Replace the html</option>');
+
+    // Create an option set of an inactive variation type.
+    $option_set = array(
+      'label' => $this->randomName(),
+      'plugin' => 'elements',
+      'agent' => 'test-agent',
+      'executor' => 'personalizeElements',
+      'options' => array(
+        array(
+          'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
+          'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
+          'personalize_elements_content' => '',
+        ),
+        array(
+          'option_id' => personalize_generate_option_label(1),
+          'option_label' => $this->randomName(),
+          'personalize_elements_content' => $this->randomString(),
+        ),
+      ),
+      'data' => array(
+        'personalize_elements_selector' => '.some-class-name',
+        'personalize_elements_type' => 'replaceHtml',
+        'pages' => '',
+      ),
+    );
+    $option_set = personalize_option_set_save((object) $option_set);
+
+    // Edit the option set and verify that the inactive type is available in the
+    // variation type select list.
+    $this->drupalGet('admin/structure/personalize/variations/personalize-elements/manage/' . $option_set->osid . '/edit');
+    $this->assertOptionSelected('edit-variation-type', 'replaceHtml');
+
+    // Create a new element with an active variation type and verify that the
+    // edit page does not include the inactive variation type.
+    $active_option_set = $this->createPersonalizedElement(array('selector' => '.some-other-class-name', 'variation_type' => 'addClass'));
+    $this->drupalGet('admin/structure/personalize/variations/personalize-elements/manage/' . $active_option_set->osid . '/edit');
+    $this->assertNoRaw('<option value="replaceHtml">Replace the html</option>');
+  }
+
+  /**
+   * Tests that the correct settings are added when Personalize Elements
+   * are configured.
+   */
+  function testPersonalizeElements() {
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    $selector = '#my-id .my-class';
+    $variation_type = 'addClass';
+    $option_set = $this->createPersonalizedElement(array('selector' => $selector, 'variation_type' => $variation_type));
+    $this->drupalGet('');
+    // Make sure the expected js settings are there.
+    $settings = $this->drupalGetSettings();
+    $personalize_elements_settings = $settings['personalize_elements'];
+    $js_id = $js_id = personalize_stringify_osid($option_set->osid);
+    $expected = array(
+      $js_id => array(
+        'selector' => $selector,
+        'variation_type' => $variation_type,
+        'previewable' => TRUE,
+      )
+    );
+    $this->assertEqual($expected, $personalize_elements_settings['elements']);
+    // Now edit the option set and specify that it should only apply to the user page.
+    $edit = array(
+      'pages_all' => 0,
+      'pages' => "user\r\nuser/*"
+    );
+    $this->drupalPost("admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/edit", $edit, $this->getButton('save'));
+    $this->resetAll();
+
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    // There should be no settings on the home page.
+    $this->assertFalse(isset($settings['personalize_elements']['elements']));
+
+    $this->drupalGet('user');
+    // The settings should show up on the user page.
+    $settings = $this->drupalGetSettings();
+    $personalize_elements_settings = $settings['personalize_elements'];
+    $this->assertEqual($expected, $personalize_elements_settings['elements']);
+
+    // Check for the contextual settings for a few of the variation types.
+    $this->assertEqual(t("Add CSS class"), $personalize_elements_settings['contextualVariationTypes']['addClass']['name']);
+    $this->assertFalse(isset($personalize_elements['contextualVariationTypes']['runJS']));
+  }
+
+  function testPersonalizeElementsCompletedCampaign() {
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    $selector = '#my-id .my-class';
+    $variation_type = 'addClass';
+    $option_set = $this->createPersonalizedElement(array('selector' => $selector, 'variation_type' => $variation_type));
+    personalize_agent_set_status($option_set->agent, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+    $this->drupalGet('');
+    // Make sure the expected js settings are there.
+    $settings = $this->drupalGetSettings();
+    $personalize_elements_settings = $settings['personalize_elements'];
+    $personalize_settings = $settings['personalize'];
+    $js_id = $js_id = personalize_stringify_osid($option_set->osid);
+    $expected = array(
+      $js_id => array(
+        'selector' => $selector,
+        'variation_type' => $variation_type,
+        'previewable' => TRUE,
+      )
+    );
+    $this->assertEqual($expected, $personalize_elements_settings['elements']);
+    // Assert that the option set settings are there.
+    $this->assertOptionSetSettings($personalize_settings, $js_id, $js_id, $js_id, $option_set->agent, 2, $option_set->options);
+    $this->assertTrue($personalize_settings['agent_map'][$option_set->agent]['active']);
+
+    // Now set the campaign's status to completed and confirm that the js settings are still there.
+    personalize_agent_set_status($option_set->agent, PERSONALIZE_STATUS_COMPLETED);
+    $this->resetAll();
+    $this->drupalGet('');
+    // Make sure the expected js settings are still there.
+    $settings = $this->drupalGetSettings();
+    $personalize_elements_settings = $settings['personalize_elements'];
+    $personalize_settings = $settings['personalize'];
+    $this->assertEqual($expected, $personalize_elements_settings['elements']);
+    // Assert that the option set settings are there.
+    $this->assertOptionSetSettings($personalize_settings, $js_id, $js_id, $js_id, $option_set->agent, 2, $option_set->options);
+    $this->assertTrue(isset($personalize_settings['agent_map'][$option_set->agent]['active']));
+    $this->assertFalse($personalize_settings['agent_map'][$option_set->agent]['active']);
+  }
+
+  /**
+   * Helper method to create a Personalize Elements Option Set.
+   *
+   * @param array $edit
+   *   An array of values for the creation form.
+   * @param bool $assertResult
+   *   Whether to assert the results of option set creation.
+   * @param int $num_options
+   *   Number of options being created. (Any options beyond the first two need
+   *   to be supplied in the edit array.)
+   * @return mixed
+   *   A stdClass object representing the created option set.
+   */
+  protected function createPersonalizedElement($edit = array(), $assertResult = TRUE, $num_options = 2) {
+    $this->drupalGet('admin/structure/personalize/variations/personalize-elements/add');
+    // Only fields for the first option will be available when the form is loaded.
+    // For the second and subsequent options, we need to hit the "Add another" button.
+    for ($i = 1; $i < $num_options; $i++) {
+      $this->drupalPost(NULL, array(), $this->getButton('add_another'));
+    }
+    $edit += array(
+      'agent_select' => 'test-agent',
+      'title' => $this->randomName(),
+      'selector' => '#some-id',
+      'variation_type' => 'appendHtml',
+      'add_control_option' => TRUE,
+      'pages' => '',
+      'options[1][option_label]' => personalize_generate_option_label(1),
+      'options[1][personalize_elements_content]' => $this->randomName(),
+      'options[2][option_label]' => personalize_generate_option_label(2),
+      'options[2][personalize_elements_content]' => $this->randomName(),
+    );
+
+    $this->drupalPost(NULL, $edit, $this->getButton('save'));
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('label' => $edit['title']), TRUE);
+    $option_set = reset($option_sets);
+    if ($assertResult) {
+      $this->assertTRUE(!empty($option_set) && $option_set->label == $edit['title']);
+      $this->assertText($edit['title']);
+
+      $this->drupalGet('admin/structure/personalize/variations/personalize-elements/manage/' . $option_set->osid . '/edit');
+
+      $this->assertRaw($edit['title']);
+      $this->assertRaw($edit['options[1][option_label]']);
+      $this->assertRaw($edit['options[2][option_label]']);
+      $this->assertRaw($edit['options[1][personalize_elements_content]']);
+      $this->assertRaw($edit['options[2][personalize_elements_content]']);
+    }
+    return $option_set;
+  }
+
+  /**
+   * Helper function to retrieve the text of a form submit button.
+   *
+   * @param $type
+   *   The type of button to retrieve.
+   * @return string
+   *   The text of the button
+   */
+  protected function getButton($type = '', $context = array()) {
+    switch ($type) {
+      case 'add_another':
+        return t('Add variation');
+      case 'save':
+        return t('Save');
+      default:
+        return parent::getButton($type, $context);
+    }
+  }
+
+
+
+}

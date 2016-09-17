@@ -1,0 +1,117 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for Rabbit Hole.
+ */
+
+/**
+ * Enable Rabbit Hole nodes, and migrate the old data to the new module.
+ *
+ * This involves changing database fields names, permissions and existing
+ * variables.
+ */
+function rabbit_hole_update_7001() {
+  // Change the name of the database fields.
+  $fields['rabbit_hole_action'] = array(
+    'name' => 'rh_action',
+    'spec' => array(
+      'description' => 'Specifies which action that Rabbit Hole should take.',
+      'type' => 'int',
+      'default' => NULL,
+    ),
+  );
+  $fields['rabbit_hole_redirect'] = array(
+    'name' => 'rh_redirect',
+    'spec' => array(
+      'description' => 'The path to where the user should get redirected to.',
+      'type' => 'varchar',
+      'default' => NULL,
+      'length' => 255,
+    ),
+  );
+  $fields['rabbit_hole_redirect_response'] = array(
+    'name' => 'rh_redirect_response',
+    'spec' => array(
+      'description' => 'Specifies the HTTP response code that should be used when perform a redirect.',
+      'type' => 'int',
+      'default' => NULL,
+    ),
+  );
+  foreach ($fields as $name => $changes) {
+    if (db_field_exists('node', $name)) {
+      db_change_field('node', $name, $changes['name'], $changes['spec']);
+    }
+  }
+
+  // Enable the Rabbit Hole nodes module.
+  if (!module_exists('rh_node')) {
+    module_enable(array('rh_node'));
+  }
+
+  // Update the permissions.
+  $administer_rabbit_hole = user_roles(FALSE, 'administer rabbit hole');
+  foreach ($administer_rabbit_hole as $rid => $name) {
+    user_role_change_permissions($rid, array(
+      'administer rabbit hole' => FALSE,
+      'administer rh_node' => TRUE,
+    ));
+  }
+  $bypass_rabbit_hole = user_roles(FALSE, 'bypass rabbit hole');
+  foreach ($bypass_rabbit_hole as $rid => $name) {
+    user_role_change_permissions($rid, array(
+      'bypass rabbit hole' => FALSE,
+      'bypass rh_node' => TRUE,
+    ));
+  }
+
+  // Change the name of the variables.
+  $node_types = array_keys(node_type_get_types());
+  foreach ($node_types as $node_type) {
+    $action = variable_get('rabbit_hole_action_' . $node_type, NULL);
+    if (isset($action)) {
+      variable_set('rh_node_action_' . $node_type, $action);
+      variable_del('rabbit_hole_action_' . $node_type);
+    }
+
+    $redirect = variable_get('rabbit_hole_redirect_' . $node_type, NULL);
+    if (isset($redirect)) {
+      variable_set('rh_node_redirect_' . $node_type, $redirect);
+      variable_del('rabbit_hole_redirect_' . $node_type);
+    }
+
+    $redirect_response = variable_get('rabbit_hole_redirect_response_' . $node_type, NULL);
+    if (isset($redirect_response)) {
+      variable_set('rh_node_redirect_response_' . $node_type, $redirect_response);
+      variable_del('rabbit_hole_redirect_response_' . $node_type);
+    }
+  }
+}
+
+/**
+ * Change the rh_redirect field from varchar to text.
+ */
+function rabbit_hole_update_7002() {
+  // Get the Rabbit Hole fields.
+  $fields = rabbit_hole_schema_fields();
+
+  // Get the modules that are implementing hook_rabbit_hole(), and change the
+  // rh_redirect field.
+  $modules = module_invoke_all('rabbit_hole');
+  foreach ($modules as $module => $info) {
+    db_change_field($info['base table'], 'rh_redirect', 'rh_redirect', $fields['rh_redirect']);
+  }
+}
+
+/**
+ * Set the new override setting to TRUE for existing bundles.
+ */
+function rabbit_hole_update_7003() {
+  $modules = module_invoke_all('rabbit_hole');
+  foreach ($modules as $module => $info) {
+    $entity_info = entity_get_info($info['entity type']);
+    foreach ($entity_info['bundles'] as $bundle => $bundle_info) {
+      variable_set('rh_' . $info['entity type'] . '_override_' . $bundle, TRUE);
+    }
+  }
+}

@@ -1,0 +1,14 @@
+<?php
+/**
+ * Implements hook_sps_override_plugins().
+ *
+ * Provide some basic overrides for workflow modules.
+ */
+function sps_ers_sps_override_plugins() {
+  return array(
+    'ers_override'=> array(
+      'class' => 'Drupal\sps_ers\ERSOverride',
+      'condition' => 'date_condition',
+    ),
+  );
+}

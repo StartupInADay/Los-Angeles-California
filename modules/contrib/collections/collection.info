@@ -1,0 +1,18 @@
+name = Collections
+description = A collection of content
+package = Administration
+core = 7.x
+
+dependencies[] = entity
+dependencies[] = xautoload
+
+files[] = tests/CollectionWebTestCase.php
+files[] = tests/*.test
+
+
+; Information added by drush on 2016-02-18
+version = "7.x-1.0-alpha3+7-dev"
+core = "7.x"
+project = "collections"
+datestamp = "1455828877"
+

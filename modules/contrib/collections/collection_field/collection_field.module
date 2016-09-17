@@ -1,0 +1,416 @@
+<?php
+
+/**
+ * Implements of hook_field_info().
+ */
+function collection_field_field_info() {
+  return array(
+    'collection' => array(
+      'label' => t('Collection'),
+      'description' => t(''),
+      'default_widget' => 'collection',
+      'default_formatter' => 'hidden',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function collection_field_widget_info() {
+  return array(
+    'collection' => array(
+      'label' => t('Collection'),
+      'field types' => array('collection'),
+      'settings' => array(
+        'size' => 60,
+        'autocomplete_path' => 'collection/autocomplete',
+      ),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_DEFAULT,
+        'default value' => FIELD_BEHAVIOR_NONE,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function collection_field_formatter_info() {
+  return array(
+    'collection' => array(
+      'label' => t('Text'),
+      'field types' => array('collection'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view()
+ */
+function collection_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $output = array();
+  if (!empty($items)) {
+    foreach ($items as $item) {
+      $output[] = $item['value'];
+    }
+    return array(array('#markup' => implode(', ', $output)));
+  }
+
+  return '';
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function collection_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  /*$element['value'] = array(
+    '#title' => t('Collection'),
+    '#type' => 'textfield',
+    '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : '',
+    '#autocomplete_path' => $instance['widget']['settings']['autocomplete_path'],
+    '#size' => $instance['widget']['settings']['size'],
+    '#element_validate' => array('collection_field_validate_autocomplete'),
+    '#weight' => 1,
+  );*/
+
+  $options = collection_get_collection_list();
+  array_unshift($options, t('Select'));
+
+  $element['value'] = array(
+    '#title' => $instance['label'],
+    '#type' => 'select',
+    '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : '',
+    '#element_validate' => array('collection_field_validate_autocomplete'),
+    '#weight' => 1,
+    '#options' => $options,
+  );
+
+  $element['overwrite'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Remove collection from previous revision'),
+    '#weight' => 2,
+  );
+
+  return $element;
+}
+
+/**
+ * Validate function for tag widget
+ */
+function collection_field_validate_autocomplete(&$element, &$form_state) {
+  // No commas or quotes
+  $value = $element['#value'];
+  $value = str_replace(chr(34), '', $value);
+  $value = str_replace(chr(39), '', $value);
+  $value = str_replace(chr(44), '', $value);
+  $value = array('value' => $value);
+
+  form_set_value($element, $value, $form_state);
+
+  if (!empty($element["#entity"])) {
+    $current_collections = collection_field_get_collections($element["#entity_type"],
+      $element['#bundle'],
+      $element['#field_name']);
+
+    $parents = $element['#array_parents'];
+    array_pop($parents);
+    array_push($parents, 'overwrite');
+    $overwrite = drupal_array_get_nested_value($form_state['values'], $parents);
+
+    if (empty($overwrite) && in_array($value, $current_collections)) {
+      form_error($element,
+        t('There is another revisions that is using the %collection collection.', array( '%collection' => $value)));
+    }
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function collection_field_field_is_empty($item, $field) {
+  if (empty($item) && empty($item['value']) && (string) $item['value'] !== '0') {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Get the collections for an entity
+ *
+ * @param $entity_type
+ * @param $bundle
+ * @param $field_name
+ *
+ * @return array
+ */
+function collection_field_get_collections($entity_type, $bundle, $field_name) {
+  // Yes we call this function twice in one page call.
+  $static = &drupal_static(__FUNCTION__, array());
+
+  $key = "$entity_type::$bundle::$field_name";
+  if (empty($static[$key])) {
+    $query = _collection_field_build_query($field_name);
+    $column_name = collection_field_get_table_info('column', $field_name);
+
+    $static[$key] = $query->fields('c', array($column_name))
+      ->distinct(TRUE)
+      ->condition('entity_type', $entity_type)
+      ->condition('bundle', $bundle)
+      ->condition('deleted', 0)
+      ->execute()
+      ->fetchCol();
+  }
+
+  return $static[$key];
+}
+
+/**
+ * Get a list of id => vid for a collection
+ *
+ * @param $collection \Drupal\collection\Collection
+ */
+function collection_field_get_revisions(\Drupal\collection\Collection $collection) {
+  $collection_usage = collection_field_collection_usage();
+
+  $return = array();
+
+  foreach ($collection_usage as $field_name => $info) {
+    $query = _collection_field_build_revision_query($field_name);
+    $column_name = collection_field_get_table_info('column', $field_name);
+
+    $return[$field_name] = $query->fields('c', array('entity_id', 'revision_id', 'entity_type', 'bundle'))
+      ->condition('deleted', 0)
+      ->condition($column_name, $collection->identifier())
+      ->execute();
+  }
+
+  return $return;
+}
+
+/**
+ * Get all the entity information for a collection
+ *
+ * @param $collection
+ *  The colleciton to search for
+ *
+ * @return array
+ *  An array containing the entity_type, id and revision
+ */
+function collection_field_get_entity_rev_info($collection, $field_name) {
+  $column_name = collection_field_get_table_info('column', $field_name);
+  return _collection_field_build_revision_query($field_name)
+    ->condition($column_name, $collection)
+    ->fields('c', array('entity_id', 'revision_id', 'entity_type'))
+    ->execute()
+    -fetchAll();
+
+}
+
+/**
+ * Get the table info for the field
+ *
+ * @param $type
+ *  either table name or column name.
+ */
+function collection_field_get_table_info($type, $field_name) {
+  $info = &drupal_static(__FUNCTION__);
+  if (empty($info[$field_name])) {
+    if ($field_info = field_info_field($field_name)) {
+      $info[$field_name]['revision_table'] = _field_sql_storage_revision_tablename($field_info);
+      $info[$field_name]['table'] = _field_sql_storage_tablename($field_info);
+      $info[$field_name]['column'] = _field_sql_storage_columnname($field_name, 'value');
+    }
+  }
+
+  return isset($info[$field_name][$type]) ? $info[$field_name][$type] : NULL;
+}
+
+/**
+ * Build a query based up on the field
+ *
+ * @return query object with table alias of etc
+ */
+function _collection_field_build_query($field_name) {
+  if ($field_info = field_info_field($field_name)) {
+    $table_name = collection_field_get_table_info('table', $field_name);
+    return db_select($table_name, 'c');
+  }
+
+  return FALSE;
+}
+
+/**
+ * Build a query based up on the field
+ *
+ * @return query object with table alias of etc
+ */
+function _collection_field_build_revision_query($field_name) {
+  if ($field_info = field_info_field($field_name)) {
+    $table_name = collection_field_get_table_info('revision_table', $field_name);
+    return db_select($table_name, 'c');
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_field_presave().
+ */
+function collection_field_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  $current_collections = collection_field_get_collections($entity_type,
+    $instance['bundle'],
+    $instance['field_name']);
+
+  if (!empty($current_collections)) {
+    foreach ($items as $delta => &$item) {
+      // Overwrite is set
+      if (!empty($item['overwrite']) && in_array($item['value'], $current_collections)) {
+        collection_field_remove_collection_from_revisions(
+          $item['value'], $instance['field_name'], $entity_type, $entity);
+      }
+      elseif (empty($item['overwrite']) && in_array($item['value'], $current_collections)) {
+        $item['value'] = '';
+      }
+    }
+  }
+}
+
+/**
+ * Remove collection from revisions
+ */
+function collection_field_remove_collection_from_revisions($collection, $field_name, $entity_type, $entity) {
+  list($entity_id, $revision_id, $bundle) = entity_extract_ids($entity_type, $entity);
+
+  $table = collection_field_get_table_info('table', $field_name);
+  $rev_table = collection_field_get_table_info('revision_table', $field_name);
+  $col = collection_field_get_table_info('column', $field_name);
+
+  db_update($table)
+    ->condition($col, $collection)
+    ->condition('entity_id', $entity_id)
+    ->condition('entity_type', $entity_type)
+  ->fields(array(
+      $col => '',
+    ))
+  ->execute();
+
+  db_update($rev_table)
+    ->condition($col, $collection)
+    ->condition('entity_id', $entity_id)
+    ->condition('entity_type', $entity_type)
+  ->fields(array(
+      $col => '',
+    ))
+    ->execute();
+}
+
+/**
+ * Get all of the fields that implement the collection field
+ */
+function collection_field_collection_usage() {
+  $return = &drupal_static(__FUNCTION__, array());
+
+  if (empty($return)) {
+    // Get the field settings for the entity
+    $info = _field_info_collate_fields();
+
+    foreach ($info['instances'] as $entity_type => $bundle_info) {
+      foreach ($bundle_info as $instance_info) {
+        foreach ($instance_info as $field_instance_info) {
+          if (is_array($field_instance_info)) {
+            if ($field_info = field_info_field($field_instance_info['field_name'])) {
+              if ($field_info['type'] == 'collection') {
+                $return[$field_instance_info['field_name']] = array(
+                  'field_info' => $field_info,
+                  'instance_info' => $field_instance_info,
+                  'field_name' => $field_instance_info['field_name'],
+                );
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return $return;
+}
+
+/**
+ * Callback for usage page
+ *
+function collection_field_view_collection_usage($collection, $entity_type, $field_names) {
+  $build = array();
+  // @TODO something should go here
+/*
+  foreach ($field_names as $field_name) {
+    $query = _collection_field_build_query($field_name);
+    $column_name = collection_field_get_table_info('column', $field_name);
+
+    $result = $query->fields('c', array($column_name, 'revision_id', 'entity_id'))
+      ->distinct(TRUE)
+      ->condition('entity_type', $entity_type)
+      ->condition('bundle', $bundle_key)
+      ->condition('deleted', 0)
+      ->execute();
+
+    foreach ($result as $row) {
+      $id = "{$row->$column_name}-{$row->entity_id}-{$row->revision_id}";
+      $build[$id] = array(
+        '#type' => 'markup',
+        '#markup' => l()
+      )
+    }
+  }*/
+
+  //return $build;
+//}
+
+/**
+ * hook_node_revision_filters()
+ *
+ * Define the filters to display on the node revision page
+ *
+ * @return array
+ *  The form element to use
+ */
+function collection_field_node_revision_filters() {
+  $options = collection_get_collection_list();
+
+  array_unshift($options, t('any'));
+
+  $filters['collection'] = array(
+    'form' => array(
+      '#title' => t('Collection'),
+      '#type' => 'select',
+      '#options' => $options,
+    ),
+  );
+
+  return $filters;
+}
+
+
+/**
+ * Implements hook_query_node_revision_alter()
+ *
+ * Then implement a hook to alter the query
+ *
+ * Example from state_flow module
+ */
+function collection_field_query_node_revision_alter(QueryAlterableInterface $query) {
+  // Get the filter form the session
+  $filters = $query->getMetaData('filters');
+  if ($filter = isset($filters['collection']) ? $filters['collection'] : NULL) {
+    foreach (collection_field_collection_usage() as $field_name => $usage_info) {
+      if ($usage_info['instance_info']['entity_type']  == 'node') {
+        $table = collection_field_get_table_info('revision_table', $field_name);
+        $column = collection_field_get_table_info('column', $field_name);
+        $query->join($table, $table, "nr.vid = $table.revision_id");
+        $query->condition("$table.$column", $filter);
+      }
+    }
+  }
+}

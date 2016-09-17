@@ -1,0 +1,17 @@
+/**
+ * @file
+ * Styles for Personalize Blocks administrative interfaces.
+ */
+
+/* Handle large rows when adding new blocks */
+#personalized-block-variations table tr,
+#personalized-block-variations table tr td {
+  vertical-align: top;
+}
+
+.personalize-blocks-inline,
+.personalize-blocks-inline label,
+.personalize-blocks-inline div,
+.personalize-blocks-inline input {
+  display: inline-block;
+}

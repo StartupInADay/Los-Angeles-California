@@ -1,0 +1,14 @@
+name = Editor CKEditor
+description = Adds CKEditor as a supported editor.
+package = User interface
+core = 7.x
+
+dependencies[] = dialog
+dependencies[] = editor
+
+; Information added by Drupal.org packaging script on 2016-01-04
+version = "7.x-1.0-alpha6"
+core = "7.x"
+project = "editor"
+datestamp = "1451879342"
+

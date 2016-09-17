@@ -1,0 +1,1295 @@
+<?php
+
+/**
+ * @file
+ * Tests for Editor module.
+ */
+
+/**
+ * Copy of FilterCRUDTestCase.
+ */
+class EditorFilterCRUDTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Editor filter CRUD operations',
+      'description' => 'Test creation, loading, updating, deleting of text formats and filters.',
+      'group' => 'Editor',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('editor', 'editor_ckeditor', 'filter_test');
+  }
+
+  /**
+   * Tests CRUD operations for text formats and filters.
+   */
+  function testTextFormatCRUD() {
+    // Add a text format with minimum data only.
+    $format = new stdClass();
+    $format->format = 'empty_format';
+    $format->name = 'Empty format';
+    filter_format_save($format);
+    $this->verifyTextFormat($format);
+    $this->verifyFilters($format);
+
+    // Add another text format specifying all possible properties.
+    $format = new stdClass();
+    $format->format = 'custom_format';
+    $format->name = 'Custom format';
+    $format->filters = array(
+      'filter_url' => array(
+        'status' => 1,
+        'settings' => array(
+          'filter_url_length' => 30,
+        ),
+      ),
+    );
+    $format->editor = 'ckeditor';
+    $format->editor_settings = array();
+    filter_format_save($format);
+    $this->verifyTextFormat($format);
+    $this->verifyFilters($format);
+
+    // Alter some text format properties and save again.
+    $format->name = 'Altered format';
+    $format->filters['filter_url']['status'] = 0;
+    $format->filters['filter_autop']['status'] = 1;
+    $format->editor = '';
+    $format->editorsettings = array();
+    filter_format_save($format);
+    $this->verifyTextFormat($format);
+    $this->verifyFilters($format);
+
+    // Add a uncacheable filter and save again.
+    $format->filters['filter_test_uncacheable']['status'] = 1;
+    filter_format_save($format);
+    $this->verifyTextFormat($format);
+    $this->verifyFilters($format);
+
+    // Disable the text format.
+    filter_format_disable($format);
+
+    $db_format = db_query("SELECT * FROM {filter_format} WHERE format = :format", array(':format' => $format->format))->fetchObject();
+    $this->assertFalse($db_format->status, 'Database: Disabled text format is marked as disabled.');
+    $formats = filter_formats();
+    $this->assertTrue(!isset($formats[$format->format]), 'filter_formats: Disabled text format no longer exists.');
+
+    // Add a new format to check for Xss in format name.
+    $format = new stdClass();
+    $format->format = 'xss_format';
+    $format->name = '<script>alert(123)</script>';
+    filter_format_save($format);
+    user_role_change_permissions(DRUPAL_ANONYMOUS_RID, array(filter_permission_name($format) => 1));
+    $this->drupalGet('filter/tips');
+    $this->assertNoRaw($format->name, 'Text format name contains no xss.');
+  }
+
+  /**
+   * Verifies that a text format is properly stored.
+   */
+  function verifyTextFormat($format) {
+    $t_args = array('%format' => $format->name);
+    // Verify text format database record.
+    $db_format = db_select('filter_format', 'ff')
+      ->fields('ff')
+      ->condition('format', $format->format)
+      ->execute()
+      ->fetchObject();
+    editor_format_ensure_additional_properties($db_format);
+    $this->assertEqual($db_format->format, $format->format, format_string('Database: Proper format id for text format %format.', $t_args));
+    $this->assertEqual($db_format->name, $format->name, format_string('Database: Proper title for text format %format.', $t_args));
+    $this->assertEqual($db_format->cache, $format->cache, format_string('Database: Proper cache indicator for text format %format.', $t_args));
+    $this->assertEqual($db_format->weight, $format->weight, format_string('Database: Proper weight for text format %format.', $t_args));
+    $this->assertEqual($db_format->editor, $format->editor, format_string('Database: Proper editor for text format %format.', $t_args));
+    $this->assertEqual($db_format->editor_settings, $format->editor_settings, format_string('Database: Proper editor settings for text format %format.', $t_args));
+
+    // Verify filter_format_load().
+    $filter_format = filter_format_load($format->format);
+    editor_format_ensure_additional_properties($filter_format);
+    $this->assertEqual($filter_format->format, $format->format, format_string('filter_format_load: Proper format id for text format %format.', $t_args));
+    $this->assertEqual($filter_format->name, $format->name, format_string('filter_format_load: Proper title for text format %format.', $t_args));
+    $this->assertEqual($filter_format->cache, $format->cache, format_string('filter_format_load: Proper cache indicator for text format %format.', $t_args));
+    $this->assertEqual($filter_format->weight, $format->weight, format_string('filter_format_load: Proper weight for text format %format.', $t_args));
+    $this->assertEqual($filter_format->editor, $format->editor, format_string('filter_format_load: Proper editor for text format %format.', $t_args));
+    $this->assertEqual($filter_format->editor_settings, $format->editor_settings, format_string('filter_format_load: Proper editor settings for text format %format.', $t_args));
+
+    // Verify the 'cache' text format property according to enabled filters.
+    $filter_info = filter_get_filters();
+    $filters = filter_list_format($filter_format->format);
+    $cacheable = TRUE;
+    foreach ($filters as $name => $filter) {
+      // If this filter is not cacheable, update $cacheable accordingly, so we
+      // can verify $format->cache after iterating over all filters.
+      if ($filter->status && isset($filter_info[$name]['cache']) && !$filter_info[$name]['cache']) {
+        $cacheable = FALSE;
+        break;
+      }
+    }
+    $this->assertEqual($filter_format->cache, $cacheable, 'Text format contains proper cache property.');
+  }
+
+  /**
+   * Verifies that filters are properly stored for a text format.
+   */
+  function verifyFilters($format) {
+    // Verify filter database records.
+    $filters = db_query("SELECT * FROM {filter} WHERE format = :format", array(':format' => $format->format))->fetchAllAssoc('name');
+    $format_filters = $format->filters;
+    foreach ($filters as $name => $filter) {
+      $t_args = array('%format' => $format->name, '%filter' => $name);
+
+      // Verify that filter status is properly stored.
+      $this->assertEqual($filter->status, $format_filters[$name]['status'], format_string('Database: Proper status for %filter in text format %format.', $t_args));
+
+      // Verify that filter settings were properly stored.
+      $this->assertEqual(unserialize($filter->settings), isset($format_filters[$name]['settings']) ? $format_filters[$name]['settings'] : array(), format_string('Database: Proper filter settings for %filter in text format %format.', $t_args));
+
+      // Verify that each filter has a module name assigned.
+      $this->assertTrue(!empty($filter->module), format_string('Database: Proper module name for %filter in text format %format.', $t_args));
+
+      // Remove the filter from the copy of saved $format to check whether all
+      // filters have been processed later.
+      unset($format_filters[$name]);
+    }
+    // Verify that all filters have been processed.
+    $this->assertTrue(empty($format_filters), 'Database contains values for all filters in the saved format.');
+
+    // Verify filter_list_format().
+    $filters = filter_list_format($format->format);
+    $format_filters = $format->filters;
+    foreach ($filters as $name => $filter) {
+      $t_args = array('%format' => $format->name, '%filter' => $name);
+
+      // Verify that filter status is properly stored.
+      $this->assertEqual($filter->status, $format_filters[$name]['status'], format_string('filter_list_format: Proper status for %filter in text format %format.', $t_args));
+
+      // Verify that filter settings were properly stored.
+      $this->assertEqual($filter->settings, isset($format_filters[$name]['settings']) ? $format_filters[$name]['settings'] : array(), format_string('filter_list_format: Proper filter settings for %filter in text format %format.', $t_args));
+
+      // Verify that each filter has a module name assigned.
+      $this->assertTrue(!empty($filter->module), format_string('filter_list_format: Proper module name for %filter in text format %format.', $t_args));
+
+      // Remove the filter from the copy of saved $format to check whether all
+      // filters have been processed later.
+      unset($format_filters[$name]);
+    }
+    // Verify that all filters have been processed.
+    $this->assertTrue(empty($format_filters), 'filter_list_format: Loaded filters contain values for all filters in the saved format.');
+  }
+}
+
+/**
+ * Copy of FilterAdminTestCase.
+ */
+class EditorFilterAdminTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Editor filter administration functionality',
+      'description' => 'Thoroughly test the administrative interface of the filter module.',
+      'group' => 'Editor',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('editor', 'editor_ckeditor');
+
+    // Create users.
+    $filtered_html_format = filter_format_load('filtered_html');
+    $full_html_format = filter_format_load('full_html');
+    $this->admin_user = $this->drupalCreateUser(array(
+      'administer filters',
+      filter_permission_name($filtered_html_format),
+      filter_permission_name($full_html_format),
+    ));
+
+    $this->web_user = $this->drupalCreateUser(array('create page content', 'edit own page content'));
+    $this->drupalLogin($this->admin_user);
+  }
+
+  /**
+   * Tests the format administration functionality.
+   */
+  function testFormatAdmin() {
+    // Add text format.
+    $this->drupalGet('admin/config/content/formats');
+    $this->clickLink('Add text format');
+    $format_id = drupal_strtolower($this->randomName());
+    $name = $this->randomName();
+    $edit = array(
+      'format' => $format_id,
+      'name' => $name,
+    );
+    $this->drupalPost(NULL, $edit, t('Save configuration'));
+
+    // Verify default weight of the text format.
+    $this->drupalGet('admin/config/content/formats');
+    $this->assertFieldByName("formats[$format_id][weight]", 0, 'Text format weight was saved.');
+
+    // Change the weight of the text format.
+    $edit = array(
+      "formats[$format_id][weight]" => 5,
+    );
+    $this->drupalPost('admin/config/content/formats', $edit, t('Save changes'));
+    $this->assertFieldByName("formats[$format_id][weight]", 5, 'Text format weight was saved.');
+
+    // Edit text format.
+    $this->drupalGet('admin/config/content/formats');
+    $this->assertLinkByHref('admin/config/content/formats/' . $format_id);
+    $this->drupalGet('admin/config/content/formats/' . $format_id);
+    $this->drupalPost(NULL, array(), t('Save configuration'));
+
+    // Verify that the custom weight of the text format has been retained.
+    $this->drupalGet('admin/config/content/formats');
+    $this->assertFieldByName("formats[$format_id][weight]", 5, 'Text format weight was retained.');
+
+    // Disable text format.
+    $this->assertLinkByHref('admin/config/content/formats/' . $format_id . '/disable');
+    $this->drupalGet('admin/config/content/formats/' . $format_id . '/disable');
+    $this->drupalPost(NULL, array(), t('Disable'));
+
+    // Verify that disabled text format no longer exists.
+    $this->drupalGet('admin/config/content/formats/' . $format_id);
+    $this->assertResponse(404, 'Disabled text format no longer exists.');
+
+    // Attempt to create a format of the same machine name as the disabled
+    // format but with a different human readable name.
+    $edit = array(
+      'format' => $format_id,
+      'name' => 'New format',
+    );
+    $this->drupalPost('admin/config/content/formats/add', $edit, t('Save configuration'));
+    $this->assertText('The machine-readable name is already in use. It must be unique.');
+
+    // Attempt to create a format of the same human readable name as the
+    // disabled format but with a different machine name.
+    $edit = array(
+      'format' => 'new_format',
+      'name' => $name,
+    );
+    $this->drupalPost('admin/config/content/formats/add', $edit, t('Save configuration'));
+    $this->assertRaw(t('Text format names must be unique. A format named %name already exists.', array(
+      '%name' => $name,
+    )));
+  }
+
+  /**
+   * Tests filter administration functionality.
+   */
+  function testFilterAdmin() {
+    // URL filter.
+    $first_filter = 'filter_url';
+    // Line filter.
+    $second_filter = 'filter_autop';
+
+    $filtered = 'filtered_html';
+    $full = 'full_html';
+    $plain = 'plain_text';
+
+    // Check that the fallback format exists and cannot be disabled.
+    $this->assertTrue($plain == filter_fallback_format(), 'The fallback format is set to plain text.');
+    $this->drupalGet('admin/config/content/formats');
+    $this->assertNoRaw('admin/config/content/formats/' . $plain . '/disable', 'Disable link for the fallback format not found.');
+    $this->drupalGet('admin/config/content/formats/' . $plain . '/disable');
+    $this->assertResponse(403, 'The fallback format cannot be disabled.');
+
+    // Verify access permissions to Full HTML format.
+    $this->assertTrue(filter_access(filter_format_load($full), $this->admin_user), 'Admin user may use Full HTML.');
+    $this->assertFalse(filter_access(filter_format_load($full), $this->web_user), 'Web user may not use Full HTML.');
+
+    // Add an additional tag.
+    $edit = array();
+    $edit['filters[filter_html][settings][allowed_html]'] = '<a> <em> <strong> <cite> <code> <ul> <ol> <li> <dl> <dt> <dd> <quote>';
+    $this->drupalPost('admin/config/content/formats/' . $filtered, $edit, t('Save configuration'));
+    $this->drupalGet('admin/config/content/formats/' . $filtered);
+    $this->assertFieldByName('filters[filter_html][settings][allowed_html]', $edit['filters[filter_html][settings][allowed_html]'], 'Allowed HTML tag added.');
+
+    $result = db_query('SELECT * FROM {cache_filter}')->fetchObject();
+    $this->assertFalse($result, 'Cache cleared.');
+
+    $elements = $this->xpath('//select[@name=:first]/following::select[@name=:second]', array(
+      ':first' => 'filters[' . $first_filter . '][weight]',
+      ':second' => 'filters[' . $second_filter . '][weight]',
+    ));
+    $this->assertTrue(!empty($elements), 'Order confirmed in admin interface.');
+
+    // Reorder filters.
+    $edit = array();
+    $edit['filters[' . $second_filter . '][weight]'] = 1;
+    $edit['filters[' . $first_filter . '][weight]'] = 2;
+    $this->drupalPost(NULL, $edit, t('Save configuration'));
+    $this->drupalGet('admin/config/content/formats/' . $filtered);
+    $this->assertFieldByName('filters[' . $second_filter . '][weight]', 1, 'Order saved successfully.');
+    $this->assertFieldByName('filters[' . $first_filter . '][weight]', 2, 'Order saved successfully.');
+
+    $elements = $this->xpath('//select[@name=:first]/following::select[@name=:second]', array(
+      ':first' => 'filters[' . $second_filter . '][weight]',
+      ':second' => 'filters[' . $first_filter . '][weight]',
+    ));
+    $this->assertTrue(!empty($elements), 'Reorder confirmed in admin interface.');
+
+    $result = db_query('SELECT * FROM {filter} WHERE format = :format ORDER BY weight ASC', array(':format' => $filtered));
+    $filters = array();
+    foreach ($result as $filter) {
+      if ($filter->name == $second_filter || $filter->name == $first_filter) {
+        $filters[] = $filter;
+      }
+    }
+    $this->assertTrue(($filters[0]->name == $second_filter && $filters[1]->name == $first_filter), 'Order confirmed in database.');
+
+    // Add format.
+    $edit = array();
+    $edit['format'] = drupal_strtolower($this->randomName());
+    $edit['name'] = $this->randomName();
+    $edit['roles[' . DRUPAL_AUTHENTICATED_RID . ']'] = 1;
+    $edit['filters[' . $second_filter . '][status]'] = TRUE;
+    $edit['filters[' . $first_filter . '][status]'] = TRUE;
+    $this->drupalPost('admin/config/content/formats/add', $edit, t('Save configuration'));
+    $this->assertRaw(t('Added text format %format.', array('%format' => $edit['name'])), 'New filter created.');
+
+    drupal_static_reset('filter_formats');
+    $format = filter_format_load($edit['format']);
+    $this->assertNotNull($format, 'Format found in database.');
+    $this->drupalGet('admin/config/content/formats/' . $edit['format']);
+
+    $this->assertFieldByName('editor', '', 'Editor found.');
+    $this->assertFieldByName('roles[' . DRUPAL_AUTHENTICATED_RID . ']', '', 'Role found.');
+    $this->assertFieldByName('filters[' . $second_filter . '][status]', '', 'Line break filter found.');
+    $this->assertFieldByName('filters[' . $first_filter . '][status]', '', 'Url filter found.');
+
+    // Disable new filter.
+    $this->drupalPost('admin/config/content/formats/' . $format->format . '/disable', array(), t('Disable'));
+    $this->assertRaw(t('Disabled text format %format.', array('%format' => $edit['name'])), 'Format successfully disabled.');
+
+    // Enable CKEditor for full HTML.
+    $format = filter_format_load($full);
+    $edit = array();
+    $edit['editor'] = 'ckeditor';
+    $this->drupalPost('admin/config/content/formats/' . $full, $edit, t('Save configuration'));
+    $this->assertRaw(t('Updated text format %format.', array('%format' => $format->name)), 'Full HTML format successfully updated.');
+
+    // Allow authenticated users on full HTML.
+    $format = filter_format_load($full);
+    $edit = array();
+    $edit['roles[' . DRUPAL_ANONYMOUS_RID . ']'] = 0;
+    $edit['roles[' . DRUPAL_AUTHENTICATED_RID . ']'] = 1;
+    $this->drupalPost('admin/config/content/formats/' . $full, $edit, t('Save configuration'));
+    $this->assertRaw(t('Updated text format %format.', array('%format' => $format->name)), 'Full HTML format successfully updated.');
+
+    // Switch user.
+    $this->drupalLogout();
+    $this->drupalLogin($this->web_user);
+
+    $this->drupalGet('node/add/page');
+    // Assure Full HTML is allowed.
+    $this->assertRaw('<option value="' . $full . '">Full HTML</option>', 'Full HTML filter accessible.');
+
+    // Switch user.
+    $this->drupalLogout();
+    $this->drupalLogin($this->admin_user);
+
+    // Clean up.
+    // Allowed tags.
+    $edit = array();
+    $edit['filters[filter_html][settings][allowed_html]'] = '<a> <em> <strong> <cite> <code> <ul> <ol> <li> <dl> <dt> <dd>';
+    $this->drupalPost('admin/config/content/formats/' . $filtered, $edit, t('Save configuration'));
+    $this->drupalGet('admin/config/content/formats/' . $filtered);
+    $this->assertFieldByName('filters[filter_html][settings][allowed_html]', $edit['filters[filter_html][settings][allowed_html]'], 'Changes reverted.');
+
+    // Full HTML.
+    $edit = array();
+    $edit['roles[' . DRUPAL_AUTHENTICATED_RID . ']'] = FALSE;
+    $this->drupalPost('admin/config/content/formats/' . $full, $edit, t('Save configuration'));
+    $this->assertRaw(t('Updated text format %format.', array('%format' => $format->name)), 'Full HTML format successfully reverted.');
+    $this->drupalGet('admin/config/content/formats/' . $full);
+    $this->assertFieldByName('roles[' . DRUPAL_AUTHENTICATED_RID . ']', $edit['roles[' . DRUPAL_AUTHENTICATED_RID . ']'], 'Changes reverted.');
+
+    // Filter order.
+    $edit = array();
+    $edit['filters[' . $second_filter . '][weight]'] = 2;
+    $edit['filters[' . $first_filter . '][weight]'] = 1;
+    $this->drupalPost('admin/config/content/formats/' . $filtered, $edit, t('Save configuration'));
+    $this->drupalGet('admin/config/content/formats/' . $filtered);
+    $this->assertFieldByName('filters[' . $second_filter . '][weight]', $edit['filters[' . $second_filter . '][weight]'], 'Changes reverted.');
+    $this->assertFieldByName('filters[' . $first_filter . '][weight]', $edit['filters[' . $first_filter . '][weight]'], 'Changes reverted.');
+
+    // Switch user.
+    $this->drupalLogout();
+    $this->drupalLogin($this->web_user);
+
+    // Use filtered HTML and see if it removes tags that are not allowed.
+    $body = '<em>' . $this->randomName() . '</em>';
+    $extra_text = 'text';
+    $text = $body . '<random>' . $extra_text . '</random>';
+
+    $edit = array();
+    $langcode = LANGUAGE_NONE;
+    $edit["title"] = $this->randomName();
+    $edit["body[$langcode][0][value]"] = $text;
+    $edit["body[$langcode][0][format]"] = $filtered;
+    $this->drupalPost('node/add/page', $edit, t('Save'));
+    $this->assertRaw(t('Basic page %title has been created.', array('%title' => $edit["title"])), 'Filtered node created.');
+
+    $node = $this->drupalGetNodeByTitle($edit["title"]);
+    $this->assertTrue($node, 'Node found in database.');
+
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertRaw($body . $extra_text, 'Filter removed invalid tag.');
+
+    // Use plain text and see if it escapes all tags, whether allowed or not.
+    foreach (filter_formats() as $format) {
+      if ($format->format != filter_fallback_format()) {
+        filter_format_disable($format);
+      }
+    }
+
+    $edit = array();
+    $langcode = LANGUAGE_NONE;
+    $edit["title"] = $this->randomName();
+    $edit["body[$langcode][0][value]"] = $text;
+    $this->drupalPost('node/add/page', $edit, t('Save'));
+    $this->assertText(check_plain($text), 'The "Plain text" text format escapes all HTML tags.');
+  }
+
+  /**
+   * Tests the URL filter settings form is properly validated.
+   */
+  function testUrlFilterAdmin() {
+    // The form does not save with an invalid filter URL length.
+    $edit = array(
+      'filters[filter_url][settings][filter_url_length]' => $this->randomName(4),
+    );
+    $this->drupalPost('admin/config/content/formats/filtered_html', $edit, t('Save configuration'));
+    $this->assertNoRaw(t('The text format %format has been updated.', array('%format' => 'Filtered HTML')));
+  }
+}
+
+/**
+ * Copy of FilterFormatAccessTestCase.
+ */
+class EditorFilterFormatAccessTestCase extends DrupalWebTestCase {
+  /**
+   * A user with administrative permissions.
+   *
+   * @var object
+   */
+  protected $admin_user;
+
+  /**
+   * A user with 'administer filters' permission.
+   *
+   * @var object
+   */
+  protected $filter_admin_user;
+
+  /**
+   * A user with permission to create and edit own content.
+   *
+   * @var object
+   */
+  protected $web_user;
+
+  /**
+   * An object representing an allowed text format.
+   *
+   * @var object
+   */
+  protected $allowed_format;
+
+  /**
+   * An object representing a disallowed text format.
+   *
+   * @var object
+   */
+  protected $disallowed_format;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Editor filter format access',
+      'description' => 'Tests access to text formats.',
+      'group' => 'Editor',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('editor');
+
+    // Create a user who can administer text formats, but does not have
+    // specific permission to use any of them.
+    $this->filter_admin_user = $this->drupalCreateUser(array(
+      'administer filters',
+      'create page content',
+      'edit any page content',
+    ));
+
+    // Create two text formats.
+    $this->drupalLogin($this->filter_admin_user);
+    $formats = array();
+    for ($i = 0; $i < 2; $i++) {
+      $edit = array(
+        'format' => drupal_strtolower($this->randomName()),
+        'name' => $this->randomName(),
+      );
+      $this->drupalPost('admin/config/content/formats/add', $edit, t('Save configuration'));
+      $this->resetFilterCaches();
+      $formats[] = filter_format_load($edit['format']);
+    }
+    list($this->allowed_format, $this->disallowed_format) = $formats;
+    $this->drupalLogout();
+
+    // Create a regular user with access to one of the formats.
+    $this->web_user = $this->drupalCreateUser(array(
+      'create page content',
+      'edit any page content',
+      filter_permission_name($this->allowed_format),
+    ));
+
+    // Create an administrative user who has access to use both formats.
+    $this->admin_user = $this->drupalCreateUser(array(
+      'administer filters',
+      'create page content',
+      'edit any page content',
+      filter_permission_name($this->allowed_format),
+      filter_permission_name($this->disallowed_format),
+    ));
+  }
+
+  /**
+   * Tests the Filter format access permissions functionality.
+   */
+  function testFormatPermissions() {
+    // Make sure that a regular user only has access to the text format they
+    // were granted access to, as well to the fallback format.
+    $this->assertTrue(filter_access($this->allowed_format, $this->web_user), 'A regular user has access to a text format they were granted access to.');
+    $this->assertFalse(filter_access($this->disallowed_format, $this->web_user), 'A regular user does not have access to a text format they were not granted access to.');
+    $this->assertTrue(filter_access(filter_format_load(filter_fallback_format()), $this->web_user), 'A regular user has access to the fallback format.');
+
+    // Perform similar checks as above, but now against the entire list of
+    // available formats for this user.
+    $this->assertTrue(in_array($this->allowed_format->format, array_keys(filter_formats($this->web_user))), 'The allowed format appears in the list of available formats for a regular user.');
+    $this->assertFalse(in_array($this->disallowed_format->format, array_keys(filter_formats($this->web_user))), 'The disallowed format does not appear in the list of available formats for a regular user.');
+    $this->assertTrue(in_array(filter_fallback_format(), array_keys(filter_formats($this->web_user))), 'The fallback format appears in the list of available formats for a regular user.');
+
+    // Make sure that a regular user only has permission to use the format
+    // they were granted access to.
+    $this->assertTrue(user_access(filter_permission_name($this->allowed_format), $this->web_user), 'A regular user has permission to use the allowed text format.');
+    $this->assertFalse(user_access(filter_permission_name($this->disallowed_format), $this->web_user), 'A regular user does not have permission to use the disallowed text format.');
+
+    // Make sure that the allowed format appears on the node form and that
+    // the disallowed format does not.
+    $this->drupalLogin($this->web_user);
+    $this->drupalGet('node/add/page');
+    $langcode = LANGUAGE_NONE;
+    $elements = $this->xpath('//select[@name=:name]/option', array(
+      ':name' => "body[$langcode][0][format]",
+      ':option' => $this->allowed_format->format,
+    ));
+    $options = array();
+    foreach ($elements as $element) {
+      $options[(string) $element['value']] = $element;
+    }
+    $this->assertTrue(isset($options[$this->allowed_format->format]), 'The allowed text format appears as an option when adding a new node.');
+    $this->assertFalse(isset($options[$this->disallowed_format->format]), 'The disallowed text format does not appear as an option when adding a new node.');
+    $this->assertFalse(isset($options[filter_fallback_format()]), 'The fallback format does not appear as an option when adding a new node.');
+  }
+
+  /**
+   * Tests if text format is available to a role.
+   */
+  function testFormatRoles() {
+    // Get the role ID assigned to the regular user; it must be the maximum.
+    $rid = max(array_keys($this->web_user->roles));
+
+    // Check that this role appears in the list of roles that have access to an
+    // allowed text format, but does not appear in the list of roles that have
+    // access to a disallowed text format.
+    $this->assertTrue(in_array($rid, array_keys(filter_get_roles_by_format($this->allowed_format))), 'A role which has access to a text format appears in the list of roles that have access to that format.');
+    $this->assertFalse(in_array($rid, array_keys(filter_get_roles_by_format($this->disallowed_format))), 'A role which does not have access to a text format does not appear in the list of roles that have access to that format.');
+
+    // Check that the correct text format appears in the list of formats
+    // available to that role.
+    $this->assertTrue(in_array($this->allowed_format->format, array_keys(filter_get_formats_by_role($rid))), 'A text format which a role has access to appears in the list of formats available to that role.');
+    $this->assertFalse(in_array($this->disallowed_format->format, array_keys(filter_get_formats_by_role($rid))), 'A text format which a role does not have access to does not appear in the list of formats available to that role.');
+
+    // Check that the fallback format is always allowed.
+    $this->assertEqual(filter_get_roles_by_format(filter_format_load(filter_fallback_format())), user_roles(), 'All roles have access to the fallback format.');
+    $this->assertTrue(in_array(filter_fallback_format(), array_keys(filter_get_formats_by_role($rid))), 'The fallback format appears in the list of allowed formats for any role.');
+  }
+
+  /**
+   * Tests editing a page using a disallowed text format.
+   *
+   * Verifies that regular users and administrators are able to edit a page, but
+   * not allowed to change the fields which use an inaccessible text format.
+   * Also verifies that fields which use a text format that does not exist can
+   * be edited by administrators only, but that the administrator is forced to
+   * choose a new format before saving the page.
+   */
+  function testFormatWidgetPermissions() {
+    $langcode = LANGUAGE_NONE;
+    $title_key = "title";
+    $body_value_key = "body[$langcode][0][value]";
+    $body_format_key = "body[$langcode][0][format]";
+
+    // Create node to edit.
+    $this->drupalLogin($this->admin_user);
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit[$body_value_key] = $this->randomName(16);
+    $edit[$body_format_key] = $this->disallowed_format->format;
+    $this->drupalPost('node/add/page', $edit, t('Save'));
+    $node = $this->drupalGetNodeByTitle($edit['title']);
+
+    // Try to edit with a less privileged user.
+    $this->drupalLogin($this->web_user);
+    $this->drupalGet('node/' . $node->nid);
+    $this->clickLink(t('Edit'));
+
+    // Verify that body field is read-only and contains replacement value.
+    $this->assertFieldByXPath("//textarea[@name='$body_value_key' and @disabled='disabled']", t('This field has been disabled because you do not have sufficient permissions to edit it.'), 'Text format access denied message found.');
+
+    // Verify that title can be changed, but preview displays original body.
+    $new_edit = array();
+    $new_edit['title'] = $this->randomName(8);
+    $this->drupalPost(NULL, $new_edit, t('Preview'));
+    $this->assertText($edit[$body_value_key], 'Old body found in preview.');
+
+    // Save and verify that only the title was changed.
+    $this->drupalPost(NULL, $new_edit, t('Save'));
+    $this->assertNoText($edit['title'], 'Old title not found.');
+    $this->assertText($new_edit['title'], 'New title found.');
+    $this->assertText($edit[$body_value_key], 'Old body found.');
+
+    // Check that even an administrator with "administer filters" permission
+    // cannot edit the body field if they do not have specific permission to
+    // use its stored format. (This must be disallowed so that the
+    // administrator is never forced to switch the text format to something
+    // else.)
+    $this->drupalLogin($this->filter_admin_user);
+    $this->drupalGet('node/' . $node->nid . '/edit');
+    $this->assertFieldByXPath("//textarea[@name='$body_value_key' and @disabled='disabled']", t('This field has been disabled because you do not have sufficient permissions to edit it.'), 'Text format access denied message found.');
+
+    // Disable the text format used above.
+    filter_format_disable($this->disallowed_format);
+    $this->resetFilterCaches();
+
+    // Log back in as the less privileged user and verify that the body field
+    // is still disabled, since the less privileged user should not be able to
+    // edit content that does not have an assigned format.
+    $this->drupalLogin($this->web_user);
+    $this->drupalGet('node/' . $node->nid . '/edit');
+    $this->assertFieldByXPath("//textarea[@name='$body_value_key' and @disabled='disabled']", t('This field has been disabled because you do not have sufficient permissions to edit it.'), 'Text format access denied message found.');
+
+    // Log back in as the filter administrator and verify that the body field
+    // can be edited.
+    $this->drupalLogin($this->filter_admin_user);
+    $this->drupalGet('node/' . $node->nid . '/edit');
+    $this->assertNoFieldByXPath("//textarea[@name='$body_value_key' and @disabled='disabled']", NULL, 'Text format access denied message not found.');
+    $this->assertFieldByXPath("//select[@name='$body_format_key']", NULL, 'Text format selector found.');
+
+    // Verify that trying to save the node without selecting a new text format
+    // produces an error message, and does not result in the node being saved.
+    $old_title = $new_edit['title'];
+    $new_title = $this->randomName(8);
+    $edit = array('title' => $new_title);
+    $this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
+    $this->assertText(t('!name field is required.', array('!name' => t('Editor'))), 'Error message is displayed.');
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertText($old_title, 'Old title found.');
+    $this->assertNoText($new_title, 'New title not found.');
+
+    // Now select a new text format and make sure the node can be saved.
+    $this->drupalLogin($this->admin_user);
+    $edit[$body_format_key] = $this->allowed_format->format;
+    $this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
+    $this->assertUrl('node/' . $node->nid);
+    $this->assertText($new_title, 'New title found.');
+    $this->assertNoText($old_title, 'Old title not found.');
+
+    // Then disable that format and all other formats on the site (leaving only
+    // the fallback format).
+    $this->drupalLogin($this->admin_user);
+    foreach (filter_formats() as $format) {
+      if ($format->format != filter_fallback_format()) {
+        filter_format_disable($format);
+      }
+    }
+
+    // Since there is now only one available text format, the widget for
+    // selecting a text format would normally not display when the content is
+    // edited. However, we need to verify that the filter administrator still
+    // is forced to make a conscious choice to reassign the text to a different
+    // format.
+    $this->drupalLogin($this->filter_admin_user);
+    $old_title = $new_title;
+    $new_title = $this->randomName(8);
+    $edit = array('title' => $new_title);
+    $this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
+    $this->assertText(t('!name field is required.', array('!name' => t('Editor'))), 'Error message is displayed.');
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertText($old_title, 'Old title found.');
+    $this->assertNoText($new_title, 'New title not found.');
+    $edit[$body_format_key] = filter_fallback_format();
+    $this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
+    $this->assertUrl('node/' . $node->nid);
+    $this->assertText($new_title, 'New title found.');
+    $this->assertNoText($old_title, 'Old title not found.');
+  }
+
+  /**
+   * Rebuilds text format and permission caches in the thread running the tests.
+   */
+  protected function resetFilterCaches() {
+    filter_formats_reset();
+    $this->checkPermissions(array(), TRUE);
+  }
+}
+
+/**
+ * Copy of FilterDefaultFormatTestCase.
+ */
+class EditorFilterDefaultFormatTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Editor default text format functionality',
+      'description' => 'Test the default text formats for different users.',
+      'group' => 'Editor',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('editor');
+  }
+
+  /**
+   * Tests if the default text format is accessible to users.
+   */
+  function testDefaultTextFormats() {
+    // Create two text formats, and two users. The first user has access to
+    // both formats, but the second user only has access to the second one.
+    $admin_user = $this->drupalCreateUser(array('administer filters'));
+    $this->drupalLogin($admin_user);
+    $formats = array();
+    for ($i = 0; $i < 2; $i++) {
+      $edit = array(
+        'format' => drupal_strtolower($this->randomName()),
+        'name' => $this->randomName(),
+      );
+      $this->drupalPost('admin/config/content/formats/add', $edit, t('Save configuration'));
+      $this->resetFilterCaches();
+      $formats[] = filter_format_load($edit['format']);
+    }
+    list($first_format, $second_format) = $formats;
+    $first_user = $this->drupalCreateUser(array(filter_permission_name($first_format), filter_permission_name($second_format)));
+    $second_user = $this->drupalCreateUser(array(filter_permission_name($second_format)));
+
+    // Adjust the weights so that the first and second formats (in that order)
+    // are the two lowest weighted formats available to any user.
+    $minimum_weight = db_query("SELECT MIN(weight) FROM {filter_format}")->fetchField();
+    $edit = array();
+    $edit['formats[' . $first_format->format . '][weight]'] = $minimum_weight - 2;
+    $edit['formats[' . $second_format->format . '][weight]'] = $minimum_weight - 1;
+    $this->drupalPost('admin/config/content/formats', $edit, t('Save changes'));
+    $this->resetFilterCaches();
+
+    // Check that each user's default format is the lowest weighted format that
+    // the user has access to.
+    $this->assertEqual(filter_default_format($first_user), $first_format->format, "The first user's default format is the lowest weighted format that the user has access to.");
+    $this->assertEqual(filter_default_format($second_user), $second_format->format, "The second user's default format is the lowest weighted format that the user has access to, and is different than the first user's.");
+
+    // Reorder the two formats, and check that both users now have the same
+    // default.
+    $edit = array();
+    $edit['formats[' . $second_format->format . '][weight]'] = $minimum_weight - 3;
+    $this->drupalPost('admin/config/content/formats', $edit, t('Save changes'));
+    $this->resetFilterCaches();
+    $this->assertEqual(filter_default_format($first_user), filter_default_format($second_user), 'After the formats are reordered, both users have the same default format.');
+  }
+
+  /**
+   * Rebuilds text format and permission caches in the thread running the tests.
+   */
+  protected function resetFilterCaches() {
+    filter_formats_reset();
+    $this->checkPermissions(array(), TRUE);
+  }
+}
+
+/**
+ * Copy of FilterSettingsTestCase.
+ */
+class EditorFilterSettingsTestCase extends DrupalWebTestCase {
+  /**
+   * The installation profile to use with this test class.
+   *
+   * @var string
+   */
+  protected $profile = 'testing';
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Editor filter settings',
+      'description' => 'Tests filter settings.',
+      'group' => 'Editor',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('editor');
+  }
+
+  /**
+   * Tests explicit and implicit default settings for filters.
+   */
+  function testFilterDefaults() {
+    $filter_info = array();
+    $filter_info += filter_filter_info();
+    $filter_info += editor_filter_info();
+    $filters = array_fill_keys(array_keys($filter_info), array());
+
+    // Create text format using filter default settings.
+    $filter_defaults_format = (object) array(
+      'format' => 'filter_defaults',
+      'name' => 'Filter defaults',
+      'filters' => $filters,
+    );
+    filter_format_save($filter_defaults_format);
+
+    // Verify that default weights defined in hook_filter_info() were applied.
+    $saved_settings = array();
+    foreach ($filter_defaults_format->filters as $name => $settings) {
+      $expected_weight = (isset($filter_info[$name]['weight']) ? $filter_info[$name]['weight'] : 0);
+      $this->assertEqual($settings['weight'], $expected_weight, format_string('@name filter weight %saved equals %default', array(
+        '@name' => $name,
+        '%saved' => $settings['weight'],
+        '%default' => $expected_weight,
+      )));
+      $saved_settings[$name]['weight'] = $expected_weight;
+    }
+
+    // Re-save the text format.
+    filter_format_save($filter_defaults_format);
+    // Reload it from scratch.
+    filter_formats_reset();
+    $filter_defaults_format = filter_format_load($filter_defaults_format->format);
+    $filter_defaults_format->filters = filter_list_format($filter_defaults_format->format);
+
+    // Verify that saved filter settings have not been changed.
+    foreach ($filter_defaults_format->filters as $name => $settings) {
+      $this->assertEqual($settings->weight, $saved_settings[$name]['weight'], format_string('@name filter weight %saved equals %previous', array(
+        '@name' => $name,
+        '%saved' => $settings->weight,
+        '%previous' => $saved_settings[$name]['weight'],
+      )));
+    }
+  }
+}
+
+/**
+ * Base test class for editors.
+ */
+class EditorTestBase extends DrupalWebTestCase {
+  protected $profile = 'testing';
+
+  /**
+   * The admin user.
+   */
+  protected $admin_user;
+
+  /**
+   * The test user.
+   */
+  protected $webUser;
+
+  function setUp() {
+    $modules = func_get_args();
+    if (isset($modules[0]) && is_array($modules[0])) {
+      $modules = $modules[0];
+    }
+    $modules[] = 'editor';
+    $modules[] = 'node';
+    parent::setUp($modules);
+
+    // Create a page content type.
+    $content_type = $this->drupalCreateContentType(array('type' => 'page', 'name' => 'Basic page'));
+    node_add_body_field($content_type);
+
+    // Create an article content type.
+    $content_type = $this->drupalCreateContentType(array('type' => 'article', 'name' => 'Article'));
+    node_add_body_field($content_type);
+
+    // Create Filtered HTML text format.
+    $format = new stdClass();
+    $format->format = 'custom_format';
+    $format->name = 'Custom format';
+    filter_format_save($format);
+
+    // Reset permissions so that permissions for the filter are available.
+    $this->checkPermissions(array(), TRUE);
+
+    // Create a user with required permissions.
+    $this->webUser = $this->drupalCreateUser(array(
+      'access content',
+      'create page content',
+      'use text format custom_format',
+    ));
+
+    // Create and log in as the admin user.
+    $this->admin_user = $this->drupalCreateUser(array(
+      'administer filters',
+      'access administration pages',
+      'access content',
+      'administer nodes',
+      'create article content',
+    ));
+  }
+}
+
+/**
+ * Tests editor functionality.
+ */
+class EditorTestCase extends EditorTestBase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Editor',
+      'description' => 'Check the functionality of Editor module.',
+      'group' => 'Editor',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp('editor_ckeditor');
+
+    $this->drupalLogin($this->admin_user);
+  }
+
+  /**
+   * Test the addition of the library to the page when configured.
+   *
+   * With no JavaScript level testing, we can only ensure the library is present
+   * on the page.
+   */
+  function testLibrary() {
+    $this->drupalGet('admin/config/content/formats');
+    $this->clickLink(t('Add text format'));
+
+    // Select CKEditor and refresh the page.
+    $this->drupalPost(NULL, array(
+      'name' => 'CKEditor',
+      'format' => 'ckeditor',
+      'editor' => 'ckeditor',
+      'roles[' . DRUPAL_AUTHENTICATED_RID . ']' => TRUE,
+    ), t('Configure editor'));
+
+    $toolbar = array(
+      // First row.
+      array(
+        array(
+          'name' => 'Formatting',
+          'items' => array('Bold', 'Italic', 'Underline', 'Strike'),
+        ),
+        array(
+          'name' => 'Alignment',
+          'items' => array('JustifyLeft', 'JustifyCenter', 'JustifyRight'),
+        ),
+        array(
+          'name' => 'Lists',
+          'items' => array('BulletedList', 'NumberedList'),
+        ),
+        array(
+          'name' => 'Media',
+          'items' => array('Blockquote', 'DrupalImage', 'Styles'),
+        ),
+      ),
+    );
+
+    $this->drupalPost(NULL, array(
+      'editor_settings[toolbar]' => json_encode($toolbar),
+      'editor_settings[plugins][style][style_list]' => "h1.title|Title\np.custom-class|Custom class\n",
+      'filters[filter_autop][status]' => TRUE,
+      'filters[editor_align][status]' => TRUE,
+      'filters[editor_caption][status]' => TRUE,
+    ), t('Save configuration'));
+
+    $this->drupalGet('node/add/article');
+    $this->assertRaw('editor/modules/editor_ckeditor/css/ckeditor.css');
+    $this->assertRaw('editor/modules/editor_ckeditor/lib/ckeditor/ckeditor.js');
+    $this->assertRaw('editor/modules/editor_ckeditor/js/ckeditor.js');
+    $settings = $this->drupalGetSettings();
+    $format_settings = $settings['editor']['formats']['ckeditor'];
+    $this->assertEqual($format_settings['editorSettings']['toolbar'], $toolbar[0], 'CKEditor toolbar settings saved and added correctly.');
+    $this->assertEqual($format_settings['editorSettings']['extraPlugins'], 'drupalimagecaption,drupalimage', 'Added custom plugins include custom image caption support.');
+    $style_list = array(
+      array('name' => 'Title', 'element' => 'h1', 'attributes' => array('class' => 'title')),
+      array('name' => 'Custom class', 'element' => 'p', 'attributes' => array('class' => 'custom-class')),
+    );
+    $this->assertEqual($format_settings['editorSettings']['stylesSet'], $style_list, 'Style list settings correct');
+  }
+}
+
+/**
+ * Tests file usage.
+ */
+class EditorFileUsageTest extends EditorTestBase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Editor file usage test',
+      'description' => 'Tests usage tracking of embedded file entities.',
+      'group' => 'Editor',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp();
+
+    $this->drupalLogin($this->webUser);
+  }
+
+  /**
+   * Tests usage tracking of embedded files.
+   */
+  function testFileUsage() {
+    // Create a file.
+    $files = $this->drupalGetTestFiles('image');
+    $file = file_save($files[0]);
+    $fid = $file->fid;
+
+    // The file should start without any usage.
+    $file_uses = file_usage_list($file);
+    $this->assertEqual(empty($file_uses), TRUE, t('Created a new file without any usage.'));
+
+    // Create a node with an embedded file.
+    $content = '<img src="awesome-llama.jpg" data-entity-type="file" data-entity-id="' . $fid . '" />';
+    $settings = array();
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $nid = $node->nid;
+
+    // Verify that file usage increased.
+    $file_uses = file_usage_list($file);
+    $this->assertEqual($file_uses['editor']['node'][$nid], 1, t('File usage increases after embedding a file in a new node.'));
+
+    // Create a new revision of the node that has the file on it.
+    $node = node_load($nid);
+    $node->revision = TRUE;
+    node_save($node);
+
+    $node = node_load($nid);
+    $file_uses = file_usage_list($file);
+    $revisions = count(node_revision_list($node));
+
+    // Keep track of this VID to test deletion later on.
+    $delete_one = $node->vid;
+
+    // Verify that there are two revisions of the node.
+    // File should now be used twice.
+    $this->assertEqual($revisions, 2, t('Node save created a second revision'));
+    $this->assertEqual($file_uses['editor']['node'][$nid], 2, t('File usage incremented with a new node revision.'));
+
+    // Create a new revision of the node that has the file on it.
+    // Embed two instances of the file.
+    $node = node_load($nid);
+    $content = '';
+    $content .= '<img src="awesome-llama.jpg" data-entity-type="file" data-entity-id="' . $fid . '" />';
+    $content .= '<img src="awesome-llama.jpg" data-entity-type="file" data-entity-id="' . $fid . '" />';
+    $node->body[LANGUAGE_NONE][0]['value'] = $content;
+    $node->revision = TRUE;
+    node_save($node);
+
+    $node = node_load($nid);
+    $file_uses = file_usage_list($file);
+    $revisions = count(node_revision_list($node));
+
+    // Keep track of this VID to test deletion later on.
+    $delete_two = $node->vid;
+
+    // Verify that there are three revisions of the node.
+    // File should now be used four times.
+    $this->assertEqual($revisions, 3, t('Node save created a third revision.'));
+    $this->assertEqual($file_uses['editor']['node'][$nid], 4, t('File usage incremented with multiple files and a new node revision.'));
+
+    // Create a new revision of the node that has the file on it.
+    // Remove all embedded files.
+    $node = node_load($nid);
+    $node->body[LANGUAGE_NONE][0]['value'] = '';
+    $node->revision = TRUE;
+    node_save($node);
+
+    $node = node_load($nid);
+    $file_uses = file_usage_list($file);
+    $revisions = count(node_revision_list($node));
+
+    // Keep track of this VID to test deletion later on.
+    $delete_zero = $node->vid;
+
+    // Verify that there are four revisions of the node.
+    // File should continue to be used four times.
+    $this->assertEqual($revisions, 4, t('Node save created a fourth revision.'));
+    $this->assertEqual($file_uses['editor']['node'][$nid], 4, t('File usage is unchanged with a new revision of the node that does not contain any embedded files.'));
+
+    // Create a new revision of the node that has the file on it.
+    // Embed one instance of the file.
+    $node = node_load($nid);
+    $node->body[LANGUAGE_NONE][0]['value'] = '<img src="awesome-llama.jpg" data-entity-type="file" data-entity-id="' . $fid . '" />';
+    $node->revision = TRUE;
+    node_save($node);
+
+    $node = node_load($nid);
+    $file_uses = file_usage_list($file);
+    $revisions = count(node_revision_list($node));
+
+    // Verify that there are five revisions of the node.
+    // File should now be used five times.
+    $this->assertEqual($revisions, 5, t('Node save created a new revision.'));
+    $this->assertEqual($file_uses['editor']['node'][$nid], 5, t('File usage incremented with a single file on a new node revision.'));
+
+    // Delete a revision that has one embedded file. File usage will be 4.
+    node_revision_delete($delete_one);
+    $file_uses = file_usage_list($file);
+    $this->assertEqual($file_uses['editor']['node'][$nid], 4, t('Deleting revision with file decreases file usage.'));
+
+    // Delete a revision that has no embedded files. File usage will continue to
+    // be 4.
+    node_revision_delete($delete_zero);
+    $file_uses = file_usage_list($file);
+    $this->assertEqual($file_uses['editor']['node'][$nid], 4, t('Deleting revision without a file does not change file usage.'));
+
+    // Delete a revision that has two embedded files. File usage will be 2.
+    node_revision_delete($delete_two);
+    $file_uses = file_usage_list($file);
+    $this->assertEqual($file_uses['editor']['node'][$nid], 2, t('Deleting revision with file decreases file usage'));
+
+    // Create a new revision of the node that has the file on it.
+    // Embed two instances of the file.
+    $node = node_load($nid);
+    $content = '';
+    $content .= '<img src="awesome-llama.jpg" data-entity-type="file" data-entity-id="' . $fid . '" />';
+    $content .= '<img src="awesome-llama.jpg" data-entity-type="file" data-entity-id="' . $fid . '" />';
+    $node->body[LANGUAGE_NONE][0]['value'] = $content;
+    $node->revision = TRUE;
+    node_save($node);
+
+    $file_uses = file_usage_list($file);
+
+    // File should now be used four times.
+    $this->assertEqual($file_uses['editor']['node'][$nid], 4,  t('File usage incremented with files on a new node revision.'));
+
+    // Remove one instance of the embedded file and re-save the current revision
+    // of the node.
+    $node = node_load($nid);
+    $node->body[LANGUAGE_NONE][0]['value'] = '<img src="awesome-llama.jpg" data-entity-type="file" data-entity-id="' . $fid . '" />';
+    $saved_vid = $node->vid;
+    node_save($node);
+
+    $node = node_load($nid);
+    $file_uses = file_usage_list($file);
+
+    // Verify that the current revision was used.
+    // File should now be used three times.
+    $this->assertEqual($node->vid, $saved_vid, t('Resaved node revision does not create new revision.'));
+    $this->assertEqual($file_uses['editor']['node'][$nid], 3, t('Resaved node revision with fewer files reduces file usage.'));
+
+    // Delete the node.
+    // The file should now be unused.
+    node_delete($nid);
+
+    $node = node_load($nid);
+    $file_uses = file_usage_list($file);
+
+    // Verify that the node was deleted and the file is now unused.
+    $this->assertEqual(empty($node), TRUE, t('Node has been deleted.'));
+    $this->assertEqual(empty($file_uses), TRUE, t('Deleting the node removes all file uses.'));
+  }
+
+  /**
+   * Tests usage tracking when deleting content or files.
+   */
+  function testFileUsageDeleted() {
+    // Create a file.
+    $files = $this->drupalGetTestFiles('image');
+    $file = file_save($files[1]);
+    $fid = $file->fid;
+
+    // The file should start without any usage.
+    $file_uses = file_usage_list($file);
+    $this->assertEqual(empty($file_uses), TRUE, t('Created a new file without any usage.'));
+
+    // Create a node with an embedded file.
+    $content = '<img src="awesome-llama.jpg" data-entity-type="file" data-entity-id="' . $fid . '" />';
+    $settings = array();
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $nid = $node->nid;
+
+    // Verify that file usage increased.
+    $file_uses = file_usage_list($file);
+    $this->assertEqual($file_uses['editor']['node'][$nid], 1, t('File usage increases after embedding a file in a new node.'));
+
+    // Try to delete the file. file_delete() should return file_usage().
+    $deleted = file_delete($file);
+    $this->assertTrue(is_array($deleted), t('File cannot be deleted while in use by a node.'));
+
+    // Delete the node.
+    node_delete($nid);
+    $node = node_load($nid);
+    $file_uses = file_usage_list($file);
+
+    // Verify that the node was deleted and the file is now unused.
+    $this->assertEqual(empty($node), TRUE, t('Node has been deleted.'));
+    $this->assertEqual(empty($file_uses), TRUE, t('File has zero usage after node is deleted.'));
+
+    // Delete the file.
+    // Verify that the file can be deleted when it is unused.
+    $deleted = file_delete($file);
+    $this->assertTrue($deleted, t('File can be deleted with no usage.'));
+
+    // Verify that the file was deleted.
+    $file = file_load($fid);
+    $this->assertTrue(empty($file), t('File no longer exists after delete.'));
+  }
+
+  /**
+   * Tests usage tracking after forcefully deleting content or files.
+   */
+  function testFileUsageForcefullyDeleted() {
+    // Create a file.
+    $files = $this->drupalGetTestFiles('image');
+    $file = file_save($files[1]);
+    $fid = $file->fid;
+
+    // The file should start without any usage.
+    $file_uses = file_usage_list($file);
+    $this->assertEqual(empty($file_uses), TRUE, t('Created a new file without any usage.'));
+
+    // Create a node with an embedded file.
+    $content = '<img src="awesome-llama.jpg" data-entity-type="file" data-entity-id="' . $fid . '" />';
+    $settings = array();
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $nid = $node->nid;
+
+    // Verify that file usage increased.
+    $file_uses = file_usage_list($file);
+    $this->assertEqual($file_uses['editor']['node'][$nid], 1, t('File usage increases after embedding a file in a new node.'));
+
+    // Forcefully delete the file.
+    $deleted = file_delete($file, TRUE);
+    $this->assertTrue($deleted, t('File was deleted despite having usage.'));
+
+    // Try to update the node that references a non-existent file.
+    $account = $this->drupalCreateUser(array('edit any page content', 'use text format custom_format'));
+    $node = node_load($nid);
+    $this->drupalLogin($account);
+    $this->drupalGet('node/' . $nid . '/edit');
+    $this->assertRaw(check_plain($node->body['und'][0]['value']), t('Reference to deleted file found in node body.'));
+    $edit = array(
+      'body[und][0][value]' => '',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Verify that the node was save successfully.
+    $type = node_type_load($node->type);
+    $this->assertRaw(t('@type %title has been updated.', array('@type' => $type->name, '%title' => $node->title)), t('Node without reference to deleted file saved successfully.'));
+  }
+}

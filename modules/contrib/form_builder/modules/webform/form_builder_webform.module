@@ -1,0 +1,503 @@
+<?php
+
+/**
+ * @file
+ *   Form Builder integration for the Webform module.
+ */
+
+/**
+ * Implements hook_menu_alter().
+ */
+function form_builder_webform_menu_alter(&$items) {
+  $items['node/%webform_menu/webform']['page callback'] = 'form_builder_webform_components_page';
+  $items['node/%webform_menu/webform/components']['page callback'] = 'form_builder_webform_components_page';
+}
+
+/**
+ * Menu callback; display a form builder interface to edit webform components.
+ */
+function form_builder_webform_components_page($node) {
+  module_load_include('inc', 'form_builder', 'includes/form_builder.admin');
+
+  // Load all components.
+  $components = webform_components();
+  foreach ($components as $component_type => $component) {
+    webform_component_include($component_type);
+  }
+
+  $build = array();
+
+  $path = drupal_get_path('module', 'webform');
+  $build['#attached']['css'][] = $path . '/css/webform.css';
+  $build['#attached']['css'][] = $path . '/css/webform-admin.css';
+  $build['#attached']['js'][] = $path . '/js/webform.js';
+  $build['#attached']['js'][] = $path . '/js/webform-admin.js';
+  $build['#attached']['js'][] = $path . '/js/select-admin.js';
+  $build['#attached']['library'][] = array('system', 'ui.datepicker');
+
+  $build[] = form_builder_interface('webform', $node->nid);
+  $build[] = drupal_get_form('form_builder_webform_save_form', $node->nid);
+
+  return $build;
+}
+
+/**
+ * Form to save the Form Builder interface.
+ *
+ * The actual Form Builder interface is displayed as part of the
+ * form_builder_webform_components_page() function.
+ */
+function form_builder_webform_save_form($form, &$form_state, $nid) {
+  $form['nid'] = array(
+    '#type' => 'value',
+    '#value' => $nid,
+  );
+  $form['actions'] = array(
+    '#type' => 'actions',
+  );
+  $form['actions']['save'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  $form['actions']['cancel'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+    '#submit' => array('form_builder_webform_cancel'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler; save the current Form Builder interface changes.
+ */
+function form_builder_webform_save_form_submit($form, &$form_state) {
+  $node = node_load($form_state['values']['nid']);
+  form_builder_webform_save_node($node);
+  drupal_set_message(t('Changes to the form have been saved.'));
+}
+
+/**
+ * Save the current Form Builder interface changes for a webform node.
+ */
+function form_builder_webform_save_node($node) {
+  $form_obj = FormBuilderLoader::instance()->fromCache('webform', $node->nid);
+  $element_ids = $form_obj->getElementIds();
+
+  // Remove components if deleted and calculate the highest in-use CID.
+  $max_cid = 0;
+  foreach ($node->webform['components'] as $component) {
+    $element_id = 'cid_' . $component['cid'];
+    $cid = $component['cid'];
+
+    // Max CID is used in the creation of new components, preventing conflicts.
+    $max_cid = max($max_cid, $cid);
+
+    // Remove components from the $node that have been removed in the UI.
+    if (!$form_obj->getElementArray($element_id)) {
+      if (isset($node->webform['components'][$cid])) {
+        unset($node->webform['components'][$cid]);
+      }
+    }
+  }
+
+  // Update any new/updated components in the node record.
+  foreach ($element_ids as $element_id) {
+    $component = $form_obj->getComponent($element_id);
+    if ($component) {
+      if (empty($component['cid'])) {
+        $cid = ++$max_cid;
+        $component['cid'] = $cid;
+        // Reassign the component ID to the form so that future elements that
+        // may depend on this one set their parent ID (pid) properly.
+        $element = $form_obj->getElementArray($element_id);
+        $element['#webform_component']['cid'] = $cid;
+        $form_obj->setElementArray($element);
+        $form_obj->save();
+      }
+      else {
+        $cid = $component['cid'];
+      }
+      $node->webform['components'][$cid] = $component;
+    }
+  }
+
+  // Save the node itself to update components and allow other modules to
+  // respond to any changes. The Form Builder cache is intentionally left in
+  // place so other modules can check it for changes also.
+  node_save($node);
+
+  // Remove the cached form_builder form.
+  $form_obj->delete();
+}
+
+/**
+ * Submit handler for the "Cancel" button.
+ */
+function form_builder_webform_cancel(&$form, &$form_state) {
+  drupal_set_message(t('Changes to the form have been discarded.'));
+  FormBuilderLoader::instance()
+    ->fromCache('webform', $form_state['values']['nid'])
+    ->delete();
+}
+
+/**
+ * Implements hook_form_builder_property_groups().
+ */
+function form_builder_webform_form_builder_property_groups($form_type) {
+  $groups = array();
+  if ($form_type == 'webform') {
+    $groups['analysis'] = array(
+      'weight' => 4,
+      'title' => t('Analysis'),
+    );
+  }
+  return $groups;
+}
+
+/**
+ * Implements hook_form_builder_form_types().
+ */
+function form_builder_webform_form_builder_form_types() {
+  $types['webform'] = array(
+    'class' => 'FormBuilderWebformForm',
+    'property class' => 'FormBuilderWebformProperty',
+    'element class' => 'FormBuilderWebformElement',
+  );
+  return $types;
+}
+
+/**
+ * Implements hook_form_builder_element_types().
+ *
+ * Define the element types within webforms that are editable.
+ */
+function form_builder_webform_form_builder_element_types($form_type, $form_id) {
+  if ($form_type != 'webform') {
+    return;
+  }
+  $types = array();
+
+  $components = webform_components();
+  foreach ($components as $type => $component) {
+    if ($additional_fields = form_builder_webform_component_invoke($type, 'form_builder_types')) {
+      if ($map = _form_builder_webform_property_map($type)) {
+        foreach ($additional_fields as $field_name => $field_type) {
+          foreach ($map['properties'] as $property_name => $property_info) {
+            $additional_fields[$field_name]['properties'][] = $property_name;
+          }
+        }
+      }
+      $types = array_merge($types, $additional_fields);
+    }
+  }
+
+  return $types;
+}
+
+/**
+ * Implements hook_form_builder_properties().
+ */
+function form_builder_webform_form_builder_properties($form_type) {
+  $properties = array();
+
+  if ($form_type == 'webform') {
+    $components = webform_components();
+    foreach ($components as $component_type => $component) {
+      // Components providing a map to automatically list properties.
+      if ($map = _form_builder_webform_property_map($component_type)) {
+        foreach ($map['properties'] as $name => $property_map) {
+          if (isset($property_map['form_parents'])) {
+            $property_map['form'] = '_form_builder_webform_mapped_form';
+          }
+          $properties[$name] = $property_map;
+        }
+      }
+
+      // Individual components manually providing properties.
+      if ($additional_properties = form_builder_webform_component_invoke($component_type, 'form_builder_properties')) {
+        foreach ($additional_properties as $name => $property) {
+          $properties += array($name => array());
+          $properties[$name] = array_merge($properties[$name], $property);
+        }
+      }
+    }
+  }
+
+  return $properties;
+}
+
+/**
+ * Implements hook_form_builder_load().
+ *
+ * Load a complete FAPI array based on a form type and ID.
+ */
+function form_builder_webform_form_builder_load($form_builder_type, $form_builder_id) {
+  if ($form_builder_type == 'webform') {
+    // Webform identifies its forms by Node Id.
+    $nid = $form_builder_id;
+    $node = node_load($nid);
+
+    // Get the unfiltered version of the client form.
+    $form = array();
+    $form_state = array();
+    $form = webform_client_form($form, $form_state, $node, array(), TRUE, FALSE);
+
+    // Perform final processing of the form, and return it.
+    $form += array('submitted' => array());
+    form_builder_webform_load_process($form['submitted'], $node);
+    return $form['submitted'];
+  }
+}
+
+/**
+ * Recursive helper function to populate #form_builder['element_id'] values.
+ */
+function form_builder_webform_load_process(&$form, $node, $pid = 0) {
+  module_load_include('inc', 'form_builder_webform', 'form_builder_webform.components');
+
+  _form_builder_select_or_other_form_element_pre_render($form);
+
+  foreach (element_children($form) as $key) {
+    $cid = webform_get_cid($node, $key, $pid);
+    $form[$key]['#form_builder'] = array(
+      'element_id' => 'cid_' . $cid,
+    );
+
+    // Add any component-specific loading. Note that all components are
+    // invoked here because the component type isn't yet known.
+    if (isset($form[$key]['#webform_component']['type'])) {
+      $component_type = $form[$key]['#webform_component']['type'];
+
+      // Set the internal type based on any mappings.
+      $form[$key] = _form_builder_webform_set_mapped_type($form[$key]);
+
+      if ($element = form_builder_webform_component_invoke($component_type, 'form_builder_load', $form[$key])) {
+        $form[$key] = $element;
+      }
+    }
+    form_builder_webform_load_process($form[$key], $node, $cid);
+  }
+}
+
+/**
+ * Tell form_builder that select_or_other fields are of type select.
+ *
+ * There is currently no other way to do this in because the mapping
+ * function is only called once per component type.
+ * @see  _form_builder_webform_form_builder_map_select().
+ */
+function _form_builder_select_or_other_form_element_pre_render(&$form) {
+  if (isset($form['#type']) && $form['#type'] == 'select_or_other') {
+    $form['#form_builder']['element_type'] = 'select';
+  }
+}
+
+/**
+ * Implements hook_form_builder_add_element_alter().
+ *
+ * Modify a FAPI element before it is added to the form array.
+ */
+function form_builder_webform_form_builder_add_element_alter(&$element, $form_type, $form_id) {
+  if ($form_type == 'webform') {
+    $element['#webform_component']['nid'] = is_numeric($form_id) ? $form_id : NULL;
+    $element['#webform_component']['is_new'] = TRUE;
+    $element['#webform_component']['pid'] = 0;
+    $element['#webform_component']['form_key'] = $element['#key'];
+    unset($element['#webform_component']['cid']);
+  }
+}
+
+/**
+ * Implements hook_form_builder_preview_alter().
+ *
+ * The most common use of the preview altering is filtering field descriptions
+ * via filter_xss() or other functions. Webform has its own filtering function
+ * for this purpose.
+ */
+function form_builder_webform_form_builder_preview_alter(&$element, $form_type, $form_id) {
+  if ($form_type == 'webform') {
+    // Filter all descriptions for all components.
+    if (isset($element['#description'])) {
+      $element['#description'] = _webform_filter_descriptions($element['#description']);
+    }
+
+    if (isset($element['#default_value']) && is_string($element['#default_value'])) {
+      $element['#value'] = _webform_filter_values($element['#default_value'], NULL, NULL, NULL, FALSE);
+    }
+
+    // Let components do any extra filtering if needed.
+    $type = isset($element['#webform_component']['type']) ? $element['#webform_component']['type'] : $element['#form_builder']['element_type'];
+    if ($new_element = form_builder_webform_component_invoke($type, 'form_builder_preview_alter', $element)) {
+      $element = $new_element;
+    }
+
+    // A #title_display property of 0 (as stored by Webform) means no setting.
+    if (isset($element['#title_display']) && strcmp('0', $element['#title_display']) === 0) {
+      unset($element['#title_display']);
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This form_alter is a workaround for an unfortunate interaction that ends up
+ * duplicating titles and descriptions for radios and checkboxes. By default,
+ * system.module defines a pre_render function for radios and checkboxes
+ * (form_pre_render_conditional_form_element). This pre_render adds the
+ * form_element theme_wrapper if there is a title or a description.
+ * Unfortunately, webform is already adding webform_element, which is nearly
+ * a copy of form_element, and if you have both, you get two titles and
+ * descriptions.
+ *
+ * We can't use the normal mechanism for component alters, because that happens
+ * in a pre_render (so removing the other pre_render isn't going to help).
+ */
+function form_builder_webform_form_form_builder_preview_alter(&$form, $form_state) {
+  if ($form['#form_builder']['form_type'] != 'webform') {
+    return;
+  }
+  $form['#attached']['css'][] = drupal_get_path('module', 'webform') .'/css/webform.css';
+  _form_builder_remove_conditional_form_element_pre_render($form);
+}
+
+/**
+ * Helper function to remove a system.module pre-render function from a form.
+ *
+ * @see form_builder_webform_form_form_builder_preview_alter()
+ */
+function _form_builder_remove_conditional_form_element_pre_render(&$form) {
+  foreach (element_children($form) as $key) {
+    $form_element = &$form[$key];
+    if (isset($form_element['#pre_render'])) {
+      // Remove system_module's pre_render function, if it exists.
+      $k = array_search('form_pre_render_conditional_form_element', $form_element['#pre_render']);
+      if ($k !== FALSE) {
+        unset($form_element['#pre_render'][$k]);
+      }
+    }
+    // Recurse through the child elements (for example, to handle cases where
+    // a set of radios or checkboxes with the above pre-render function is
+    // contained within a fieldset).
+    _form_builder_remove_conditional_form_element_pre_render($form_element);
+  }
+}
+
+/**
+ * Invoke a form builder callback for a webform component.
+ *
+ * If the webform component implements the callback itself, this function
+ * returns the result obtained from that. Otherwise, if this module has a
+ * default implementation of the callback on behalf of the component, the
+ * result obtained from that is returned.
+ *
+ * @param $component_type
+ *   The component type as a string.
+ * @param $callback
+ *   The callback to execute.
+ * @param ...
+ *   Any additional parameters required by the $callback.
+ */
+function form_builder_webform_component_invoke($component_type, $callback) {
+  $args = func_get_args();
+
+  // First try invoking the callback in the webform component itself.
+  $result = call_user_func_array('webform_component_invoke', $args);
+  if (isset($result)) {
+    return $result;
+  }
+
+  // Otherwise look for a default implementation provided by this module.
+  $component_type = array_shift($args);
+  $callback = array_shift($args);
+  $function = '_form_builder_webform_' . $callback . '_' . $component_type;
+  module_load_include('inc', 'form_builder_webform', 'form_builder_webform.components');
+  if (function_exists($function)) {
+    return call_user_func_array($function, $args);
+  }
+}
+
+/**
+ * Helper function; Retrieve a component's map and merge in generic properties.
+ */
+function _form_builder_webform_property_map($component_type) {
+  static $maps;
+
+  if (!isset($maps[$component_type])) {
+    module_load_include('inc', 'webform', 'includes/webform.components');
+    $map = form_builder_webform_component_invoke($component_type, 'form_builder_map');
+    $map = $map ? $map : array();
+
+    if (webform_component_feature($component_type, 'title')) {
+      $map['properties']['title'] = array(
+        'storage_parents' => array('name'),
+      );
+    }
+
+    if (webform_component_feature($component_type, 'title_display')) {
+      $map['properties']['title_display'] = array(
+        'form_parents' => array('display', 'title_display'),
+        'storage_parents' => array('extra', 'title_display'),
+      );
+    }
+
+    if (webform_component_feature($component_type, 'default_value')) {
+      $map['properties']['default_value'] = array(
+        'class' => 'FormBuilderWebformPropertyValue',
+        'storage_parents' => array('value'),
+      );
+    }
+
+    if (webform_component_feature($component_type, 'description')) {
+      $map['properties']['description'] = array(
+        'storage_parents' => array('extra', 'description'),
+      );
+    }
+
+    if (webform_component_feature($component_type, 'placeholder')) {
+      $map['properties']['placeholder'] = array(
+        'form_parents' => array('display', 'placeholder'),
+        'storage_parents' => array('extra', 'placeholder'),
+      );
+    }
+
+    if (webform_component_feature($component_type, 'private')) {
+      $map['properties']['webform_private'] = array(
+        'form_parents' => array('display', 'private'),
+        'storage_parents' => array('extra', 'private'),
+      );
+    }
+
+    if (webform_component_feature($component_type, 'css_classes')) {
+      $map['properties']['css_classes'] = array(
+        'form_parents' => array('display', 'css_classes'),
+        'storage_parents' => array('extra', 'css_classes'),
+      );
+    }
+
+    if (webform_component_feature($component_type, 'wrapper_classes')) {
+      $map['properties']['wrapper_classes'] = array(
+        'form_parents' => array('display', 'wrapper_classes'),
+        'storage_parents' => array('extra', 'wrapper_classes'),
+      );
+    }
+
+    if (webform_component_feature($component_type, 'required')) {
+      $map['properties']['required'] = array(
+        'class'  => 'FormBuilderWebformPropertyRequired',
+      );
+    }
+
+    // All components support the key property.
+    $map['properties']['key'] = array(
+      'storage_parents' => array('form_key'),
+    );
+
+    drupal_alter('form_builder_webform_property_map', $map, $component_type);
+
+    $maps[$component_type] = $map;
+  }
+
+  return $maps[$component_type];
+}

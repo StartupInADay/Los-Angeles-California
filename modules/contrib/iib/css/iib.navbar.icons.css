@@ -1,0 +1,101 @@
+/**
+ * @file
+ * IIB icon styling.
+ */
+.navbar-tab-iib .iib-icon:before,
+.iib .iib-icon:before {
+  background-attachment: scroll;
+  background-color: transparent;
+  background-image: url("../images/iib-icons.png");
+  background-repeat: no-repeat;
+  content: '';
+  display: block;
+  position: absolute;
+  z-index: 1;
+}
+.navbar-bar .navbar-tab-iib .iib-icon:before {
+  width: 29px;
+}
+#navbar-administration .navbar-tab-iib button.iib-icon,
+.iib button.iib-icon {
+  background-color: transparent;
+  border: 0;
+  font-size: 1em;
+}
+
+/* navbar icon. */
+#navbar-administration .navbar-bar .iib-icon.iib-icon-iib {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+  width: 5em;
+}
+.navbar-tab-iib .iib-icon.iib-icon-iib:before {
+  background-position: -0.3em -3.99em;
+}
+.navbar-tab-iib.open .iib-icon-iib:before,
+.navbar-tab-iib .iib-icon-iib.active:before,
+.navbar-tab-iib .iib-icon-iib:hover:before,
+.navbar-tab-iib.sps-active .iib-icon-iib:before {
+  background-position: -0.3em 0em;
+}
+
+.drupal-navbar .navbar-bar .navbar-tab-iib .iib-icon-iib:before {
+  left: 0em; /* LTR */
+  height: 22px;
+  top: 0.6667em;
+}
+[dir="rtl"] .drupal-navbar .navbar-bar .navbar-tab-iib .iib-icon-iib:before {
+  left: auto;
+  right: 6px;
+}
+
+/**
+ * controls icons.
+ */
+.iib-control.iib-icon:before {
+  height: 12px;
+  width: 12px;
+  top: 12px;
+}
+.iib-icon-close:before {
+  background-position: left -44px;
+  right: 9px; /* LTR */
+}
+[dir="rtl"] .iib-icon-close:before {
+  left: 9px;
+  right: auto;
+}
+.iib-icon-close:active:before,
+.iib-icon-close.active:before,
+.iib-icon-close:hover:before {
+  background-position: left -56px;
+}
+.iib-icon-orientation:before {
+  background-position: left -92px; /* LTR */
+  left: 9px; /* LTR */
+}
+[dir="rtl"] .iib-icon-orientation:before {
+  background-position: left -155px;
+  left: auto;
+  right: 9px;
+}
+.iib-icon-orientation:hover:before {
+  background-position: left -104px; /* LTR */
+}
+[dir="rtl"] .iib-icon-orientation:hover:before {
+  background-position: left -167px;
+}
+.iib-icon-orientation.rotated:before {
+  background-position: left -68px; /* LTR */
+}
+[dir="rtl"] .iib-icon-orientation.rotated:before {
+  background-position: left -131px;
+}
+.iib-icon-orientation.rotated:hover:before {
+  background-position: left -80px; /* LTR */
+}
+[dir="rtl"] .iib-icon-orientation.rotated:hover:before {
+  background-position: left -143px;
+}

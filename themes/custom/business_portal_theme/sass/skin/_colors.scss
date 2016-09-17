@@ -1,0 +1,79 @@
+$white: rgb(255, 255, 255);
+$black: rgb(0, 0, 0);
+$grayscale: #888888;
+$grayscale_dark: rgb(49, 49, 49);
+$grayscale_light: rgb(230, 230, 230);
+$egg_starter: #00BED5;
+$sec1_light: adjust-lightness($egg_starter, 50%);
+$egg_blue: #0D84E9;
+$link-blue: #50b0e5;
+$tooltip-blue: #DEF6FE;
+
+//labp colors
+$navy:            #1e3549;
+$dark_blue:       #0F2940;
+$medium-blue-dim: #3582ac;
+$medium-blue:     #47aee6;
+$dark-grey:       #dde2e4;
+$light-grey:      #f2f2f2;
+$yellow:          #FFD65C;
+$dark_blue_faded: rgba(15,41,64,.7);
+
+// Half-Width hero colors
+$light-blue:      #7AC7F6;
+$blue:            #5DBBF5;
+$light-green:     #ACC863;
+$green:           #B5CF6E;
+$light-mint:      #9CE5D5;
+$mint:            #89D5C4;
+$light-mustard:   #F5D365;
+$mustard:         #E9C759;
+$light-orange:    #FBB64F;
+$orange:          #EEA73C;
+
+// wizard colors
+$background-intro: #6BC3F3;
+$background-city-registration: #89D5C4;
+$background-color-section-1: #89D5C4;
+$background-name: #B5CF6E;
+$background-color-section-2: #B5CF6E;
+$background-sellers-permit: #E9C759;
+$background-color-section-3: #E9C759;
+$background-employeer-identification-number: #6BC3F3;
+$background-color-section-4: #6BC3F3;
+$background-your-business_registration-guide: #FBB040;
+$background-color-section-5: #FBB040;
+
+// wizard contextual screens
+$background-contextual-city-registration: #c5e6de;
+$background-contextual-name: #d8eda2;
+$background-contextual-sellers-permit: #eed78e;
+$background-contextual-employeer-identification-number: #99d5f5;
+
+// wizard drawers
+$wizard__drawer_city-registration: #82caba;
+$wizard__drawer_name: #abc468;
+$wizard__drawer_sellers-permit: #ddbc54;
+$wizard__drawer_employeer-identification-number: #65b9e6;
+$wizard__drawer_your-business_registration-guide: #eea73c;
+
+$background-your-business: #B5CF6E;
+$wizard-text: #0F2940;
+$wizard-hr: #0F2940;
+$wizard__button--default: #fff;
+$wizard__button--selected: #0F2940;
+$wizard__button_text--selected: #FFF;
+
+// homepage colors
+// these colors are hardcoded in the html templates
+$homepage__panel--bg-light-blue: $light-blue;
+$homepage__panel--bg-dark-grey: #dde2e4;
+$homepage__panel--bg-light-grey: #f9fafa;
+$homepage__panel--dark-blue-copy: #0F2940;
+$panel--button_background--yellow: #FFDB67;
+$timeline__orange--dark: #f0a82c;
+$footer__blue: #264057;
+
+//subsection colors
+$subsection_light_grey: #f2f2f2;
+$checkbox_grey_outline: #9B9B9B;

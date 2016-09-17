@@ -1,0 +1,668 @@
+<?php
+
+/**
+ * Enable scheduling of revision operations on arbitrary dates.
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function revision_scheduler_permission() {
+  $permission['schedule revisions'] = array(
+    'title' => t('Schedule revisions'),
+  );
+  return $permission;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function revision_scheduler_menu() {
+  // The diff.module already defines this menu path, so skip it if enabled.
+  if (!module_exists('diff')) {
+    $items['node/%node/revisions/list'] = array(
+      'title' => 'List',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => -10,
+      'file path' => drupal_get_path('module', 'node'),
+    );
+  }
+
+  $items['node/%node/revisions/schedule'] = array(
+    'title' => 'Schedule',
+    'page callback' => 'revision_scheduler_list_page',
+    'page arguments' => array('node', 1),
+    // @todo Figure out a better way to control this access.
+    'access arguments' => array('schedule revisions'),
+    'file' => 'revision_scheduler.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['node/%node/revisions/schedule/add'] = array(
+    'title' => 'Add scheduled revision',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('revision_scheduler_add_form', 'node', 1),
+    // @todo Figure out a better way to control this access.
+    'access arguments' => array('schedule revisions'),
+    'file' => 'revision_scheduler.pages.inc',
+    'type' => MENU_LOCAL_ACTION,
+  );
+
+  // Support workbench moderation paths.
+  if (module_exists('workbench_moderation')) {
+    foreach ($items as $path => $item) {
+      $moderation_path = str_replace('/revisions/', '/moderation/', $path);
+      $items[$moderation_path] = $item;
+    }
+  }
+
+  $items['revision-scheduler/%revision_scheduler_operation/run'] = array(
+    'title' => 'Edit scheduled revision',
+    'page callback' => 'revision_scheduler_operation_run',
+    'page arguments' => array(1),
+    'access arguments' => array('schedule revisions'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['revision-scheduler/%revision_scheduler_operation/edit'] = array(
+    'title' => 'Edit scheduled revision',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('revision_scheduler_edit_form', 1),
+    'access arguments' => array('schedule revisions'),
+    'file' => 'revision_scheduler.pages.inc',
+  );
+  $items['revision-scheduler/%revision_scheduler_operation/delete'] = array(
+    'title' => 'Cancel scheduled revision',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('revision_scheduler_delete_form', 1),
+    'access arguments' => array('schedule revisions'),
+    'file' => 'revision_scheduler.pages.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Preprocess the add scheduled revision local action to add a destination query.
+ */
+function revision_scheduler_preprocess_menu_local_action(&$variables) {
+  $link = &$variables['element']['#link'];
+  if (isset($link['href']) && !isset($link['localized_options']['query']['destination']) && preg_match('#node/\d+/(revisions|moderation)/schedule/add#', $link['href'])) {
+    $link += array('localized_options' => array());
+    $link['localized_options'] += array('query' => array());
+    $link['localized_options']['query'] += drupal_get_destination();
+  }
+}
+
+/**
+ * Implements hook_admin_paths().
+ */
+function revision_scheduler_admin_paths() {
+  $paths = array();
+  if (variable_get('node_admin_theme')) {
+    $paths['node/*/revisions/list'] = TRUE;
+    $paths['node/*/revisions/schedule'] = TRUE;
+    $paths['node/*/revisions/schedule/add'] = TRUE;
+
+    // Support the workbench moderation paths.
+    if (module_exists('workbench_moderation')) {
+      $paths['node/*/moderation/schedule'] = TRUE;
+      $paths['node/*/moderation/schedule/add'] = TRUE;
+    }
+  }
+  $paths['revision-scheduler/*'] = TRUE;
+  return $paths;
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function revision_scheduler_entity_delete($entity, $entity_type) {
+  // Delete all the entity's revisions from the revision_scheduler table.
+  list($entity_id) = entity_extract_ids($entity_type, $entity);
+  db_delete('revision_scheduler')
+    ->condition('entity_type', $entity_type)
+    ->condition('entity_id', $entity_id)
+    ->execute();
+}
+
+/**
+ * Implements hook_field_attach_delete_revision().
+ */
+function revision_scheduler_field_attach_delete_revision($entity_type, $entity) {
+  // Delete the entity's revision from the revision_scheduler table.
+  list($entity_id, $revision_id) = entity_extract_ids($entity_type, $entity);
+  db_delete('revision_scheduler')
+    ->condition('entity_type', $entity_type)
+    ->condition('entity_id', $entity_id)
+    ->condition('revision_id', $revision_id)
+    // Only delete un-executed operations.
+    ->condition('time_executed', 0)
+    ->execute();
+}
+
+/**
+ * Implements hook_user_cancel().
+ */
+function revision_scheduler_user_cancel($edit, $account, $method) {
+  switch ($method) {
+    case 'user_cancel_reassign':
+      // Reassign scheduled operations to the anonymous user.
+      db_update('revision_scheduler')
+        ->fields(array('uid' => 0))
+        ->condition('uid', $account->uid)
+        ->execute();
+      break;
+  }
+}
+
+/**
+ * Implements hook_user_delete().
+ */
+function revision_scheduler_user_delete($account) {
+  // Remove any operations scheduled by this user.
+  db_delete('revision_scheduler')
+    ->condition('uid', $account->uid)
+    ->execute();
+}
+
+function revision_scheduler_entity_type_has_revisions($entity_type) {
+  $info = entity_get_info($entity_type);
+  return !empty($info['entity keys']['revision']) && !empty($info['revision table']);
+}
+
+/**
+ * Return an array of all the revision IDs of a given entity.
+ */
+function revision_scheduler_get_all_entity_revision_ids($entity_type, $entity, $exclude_current_revision_id = FALSE) {
+  $info = entity_get_info($entity_type);
+
+  if (empty($info['entity keys']['id']) || empty($info['entity keys']['revision']) || empty($info['revision table'])) {
+    return array();
+  }
+
+  list($entity_id, $revision_id) = entity_extract_ids($entity_type, $entity);
+  $id_key = $info['entity keys']['id'];
+  $revision_key = $info['entity keys']['revision'];
+
+  $query = db_select($info['revision table'], 'revision');
+  $query->addField('revision', $revision_key);
+  $query->condition('revision.' . $id_key, $entity_id);
+  if ($exclude_current_revision_id) {
+    $query->condition('revision.' . $revision_key, $revision_id, '<>');
+  }
+  return $query->execute()->fetchCol();
+}
+
+function revision_scheduler_get_entity_revision_key($entity_type) {
+  $info = entity_get_info($entity_type);
+  return !empty($info['entity keys']['revision']) ? $info['entity keys']['revision'] : FALSE;
+}
+
+/**
+ * Load a single entity revision.
+ *
+ * @param string $entity_type
+ *   An entity type.
+ * @param int $entity_id
+ *   An entity ID to load.
+ * @param int $revision_id
+ *   (optional) An entity revision ID to use when loading the entity rather
+ *   than the latest revision.
+ *
+ * @return object
+ *   An entity objects from entity_load().
+ *
+ * @see revision_scheduler_entity_revision_load_multiple()
+ */
+function revision_scheduler_entity_revision_load($entity_type, $entity_id, $revision_id = NULL) {
+  if (empty($revision_id)) {
+    $revisions = entity_load($entity_type, array($entity_id));
+  }
+  else {
+    $revisions = revision_scheduler_entity_revision_load_multiple($entity_type, $entity_id, array($revision_id));
+  }
+  return !empty($revisions) ? reset($revisions) : FALSE;
+}
+
+/**
+ * Load multiple entity revisions.
+ *
+ * @param string $entity_type
+ *   An entity type.
+ * @param int $entity_id
+ *   An entity ID to load.
+ * @param array $revision_ids
+ *   An array of revision IDs to load.
+ *
+ * @return array
+ *   An array of entity revision objects from entity_load().
+ *
+ * @see entity_load()
+ */
+function revision_scheduler_entity_revision_load_multiple($entity_type, $entity_id, array $revision_ids) {
+  $revisions = array();
+  if (is_object($entity_id)) {
+    list($entity_id) = entity_extract_ids($entity_type, $entity_id);
+  }
+  $revision_key = revision_scheduler_get_entity_revision_key($entity_type);
+  foreach ($revision_ids as $revision_id) {
+    if ($entity = revision_scheduler_entity_single_load($entity_type, $entity_id, array($revision_key => $revision_id))) {
+      $revisions[$revision_id] = $entity;
+    }
+  }
+  return $revisions;
+}
+
+function revision_scheduler_entity_single_load($entity_type, $entity_id, array $conditions = array()) {
+  $entities = entity_load($entity_type, array($entity_id), $conditions);
+  return !empty($entities) ? reset($entities) : FALSE;
+}
+
+/**
+ * Implements hook_cron_queue_info().
+ */
+function revision_scheduler_cron_queue_info() {
+  $info['revision_scheduler'] = array(
+    'worker callback' => 'revision_scheduler_operation_process',
+    'time' => variable_get('revision_scheduler_cron_time', 30),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function revision_scheduler_cron() {
+  $ids = db_query("SELECT * FROM {revision_scheduler} WHERE time_scheduled <= :now AND time_queued = 0 AND time_executed = 0 ORDER BY id ASC", array(':now' => REQUEST_TIME))->fetchCol();
+  if ($operations = revision_scheduler_operation_load_multiple($ids)) {
+    $queue = DrupalQueue::get('revision_scheduler');
+    foreach ($operations as $operation) {
+      if ($queue->createItem($operation)) {
+        db_update('revision_scheduler')
+          ->fields(array('time_queued' => REQUEST_TIME))
+          ->condition('id', $operation->id)
+          ->execute();
+      }
+    }
+  }
+}
+
+/**
+ * Process a single scheduled revision operation.
+ */
+function revision_scheduler_operation_process($operation) {
+  $transaction = db_transaction();
+  $args = array(
+    '@entity-type' => $operation->entity_type,
+    '@entity-id' => $operation->entity_id,
+    '@operation' => $operation->operation,
+    '@revision-id' => $operation->revision_id,
+  );
+
+  try {
+    $entity = revision_scheduler_entity_revision_load($operation->entity_type, $operation->entity_id, $operation->revision_id);
+    $operation_info = revision_scheduler_entity_revision_operation_get_info($operation->entity_type, $operation->operation);
+    $entity_info = entity_get_info($operation->entity_type);
+
+    if (empty($entity)) {
+      throw new Exception(t('Failed to load entity @entity-type @entity-id.', $args));
+    }
+    elseif (empty($operation_info)) {
+      throw new Exception(t('Failed to load revision_scheduler_entity_revision_operation_get_info(@entity-type, @operation).', $args));
+    }
+    elseif (empty($entity_info)) {
+      throw new Exception(t('Failed to load entity_get_info(@entity-type).', $args));
+    }
+
+    // Allow modules to alter or validate the operation about to be processed.
+    module_invoke_all('revision_scheduler_operation_preprocess', $entity, $operation);
+
+    $callback = $operation_info['callback'];
+    if (isset($operation_info['file'])) {
+      include_once $operation_info['file'];
+    }
+    if (!function_exists($callback)) {
+      throw new Exception(t('Revision operation @operation callback @callback does not exist.', $args + array('@callback' => $callback)));
+    }
+
+    // Switch the user to the one that created the operation.
+    $original_session_saving = drupal_save_session();
+    $original_user = $GLOBALS['user'];
+    if ($operation->uid != $GLOBALS['user']->uid) {
+      drupal_save_session(FALSE);
+      if ($operation->uid && $account = user_load($operation->uid)) {
+        $GLOBALS['user'] = $account;
+      }
+      else {
+        $GLOBALS['user'] = drupal_anonymous_user();
+      }
+    }
+
+    $operation->time_executed = REQUEST_TIME;
+    revision_scheduler_operation_save($operation);
+
+    // Run the operation callback with the entity and operation.
+    $callback($entity, $operation);
+
+    // Restore the user.
+    $GLOBALS['user'] = $original_user;
+    drupal_save_session($original_session_saving);
+
+    // Allow modules to react to the operation after it has been processed.
+    module_invoke_all('revision_scheduler_operation_postprocess', $entity, $operation);
+    watchdog('revision_scheduler', 'Performed scheduled revision operation @operation on @entity-type @entity-id revision @revision-id.', $args);
+  }
+  catch (Exception $e) {
+    $transaction->rollback();
+    watchdog_exception('revision_scheduler', $e);
+  }
+}
+
+/**
+ * Run a specific scheduled operation.
+ */
+function revision_scheduler_operation_run($operation) {
+  $value = implode('-', array('run', $operation->id, $operation->operation, $operation->time_scheduled));
+  if (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], $value)) {
+    return MENU_ACCESS_DENIED;
+  }
+
+  revision_scheduler_operation_process($operation);
+  drupal_goto();
+}
+
+/**
+ * Load a single scheduled revision operation from the database.
+ *
+ * @param int $id
+ *   A scheduled operation ID.
+ *
+ * @return object
+ *   A scheduled revision operation record.
+ *
+ * @see revision_scheduler_operation_load_multiple()
+ */
+function revision_scheduler_operation_load($id) {
+  $operations = revision_scheduler_operation_load_multiple(array($id));
+  return !empty($operations) ? reset($operations) : FALSE;
+}
+
+/**
+ * Load multiple scheduled revision operations from the database.
+ *
+ * @param array $ids
+ *   An array of scheduled operation IDs.
+ *
+ * @return array
+ *   An array of scheduled revision operation records.
+ */
+function revision_scheduler_operation_load_multiple(array $ids) {
+  if (empty($ids)) {
+    return array();
+  }
+
+  $operations = db_query("SELECT * FROM {revision_scheduler} WHERE id IN (:ids)", array(':ids' => $ids))->fetchAllAssoc('id');
+  return $operations;
+}
+
+/**
+ * Save a scheduled revision operation to the database.
+ *
+ * @param object $operation
+ *   A secheduled revision operation record.
+ */
+function revision_scheduler_operation_save($operation) {
+  $operation->is_new = empty($operation->id);
+
+  if (!isset($operation->uid)) {
+    $operation->uid = $GLOBALS['user']->uid;
+  }
+
+  // Should we reset queued?
+  //$operation->queued = 0;
+
+  if ($operation->is_new) {
+    drupal_write_record('revision_scheduler', $operation);
+  }
+  else {
+    drupal_write_record('revision_scheduler', $operation, array('id'));
+  }
+
+  unset($operation->is_new);
+}
+
+/**
+ * Delete a scheduled revision operation from the database.
+ *
+ * @param int $id
+ *   A scheduled operation ID.
+ *
+ * @see revision_scheduler_operation_delete_multiple()
+ */
+function revision_scheduler_operation_delete($id) {
+  return revision_scheduler_operation_delete_multiple(array($id));
+}
+
+/**
+ * Delete multiple scheduled revision operations from the database.
+ *
+ * @param array $ids
+ *   An array of scheduled operation IDs.
+ */
+function revision_scheduler_operation_delete_multiple(array $ids) {
+  if ($operations = revision_scheduler_operation_load_multiple($ids)) {
+    db_delete('revision_scheduler')
+      ->condition('id', $ids, 'IN')
+      ->execute();
+  }
+}
+
+/**
+ * Fetch information about entity revision operations.
+ *
+ * @see hook_entity_revision_operation_info()
+ * @see hook_entity_revision_operation_info_alter()
+ */
+function revision_scheduler_entity_revision_operation_get_info($entity_type = NULL, $operation = NULL) {
+  $operations = &drupal_static(__FUNCTION__);
+
+  if (!isset($operations)) {
+    $cid = 'revision:operations:info:' . $GLOBALS['language']->language;
+    if ($cache = cache_get($cid)) {
+      $operations = $cache->data;
+    }
+    else {
+      $operations = module_invoke_all('entity_revision_operation_info');
+      drupal_alter('entity_revision_operation_info', $operations);
+      foreach ($operations as &$entity_operations) {
+        foreach (array_keys($entity_operations) as $key) {
+          $entity_operations[$key]['operation'] = $key;
+        }
+      }
+      cache_set($cid, $operations);
+    }
+  }
+
+  if (isset($entity_type) && isset($operation)) {
+    return isset($operations[$entity_type][$operation]) ? $operations[$entity_type][$operation] : FALSE;
+  }
+  if (isset($entity_type)) {
+    return isset($operations[$entity_type]) ? $operations[$entity_type] : array();
+  }
+
+  return $operations;
+}
+
+function revision_scheduler_operation_access($operation, $entity_type, $entity = NULL, $account = NULL) {
+  $access = FALSE;
+
+  if (isset($operation['access callback']) || isset($operation['access arguments'])) {
+    $operation += array(
+      'access callback' => 'user_access',
+      'access arguments' => array(),
+    );
+    $access_callback = isset($operation['access callback']) ? $operation['access callback'] : 'user_access';
+    if (is_bool($access_callback)) {
+      $access = $access_callback;
+    }
+    else {
+      $access_arguments = isset($operation['access arguments']) ? $operation['access arguments'] : array();
+      $access = call_user_func_array($access_callback, $access_arguments);
+    }
+  }
+
+  $access_checks = module_invoke_all('entity_revision_operation_access', $operation, $entity_type, $entity, $account);
+  if (in_array(FALSE, $access_checks, TRUE)) {
+    return FALSE;
+  }
+  elseif (in_array(TRUE, $access_checks, TRUE)) {
+    return TRUE;
+  }
+
+  return $access;
+}
+
+/**
+ * Fetch the list of available entity revision operation that the user can add.
+ */
+function revision_scheduler_entity_revision_operation_get_options($entity_type, $entity = NULL, $account = NULL) {
+  $options = array();
+  $operations = revision_scheduler_entity_revision_operation_get_info($entity_type);
+
+  foreach ($operations as $key => $operation) {
+    if (!revision_scheduler_operation_access($operation, $entity_type, $entity, $account)) {
+      unset($operations[$key]);
+    }
+  }
+
+  //$operations = array_filter($operations, 'revision_scheduler_operation_access');
+  foreach ($operations as $operation => $info) {
+    $options[$operation] = $info['label'];
+  }
+  return $options;
+}
+
+/**
+ * Load a single entity with an optional revision ID.
+ *
+ * @param string $entity_type
+ *   An entity type.
+ * @param int $entity_id
+ *   An entity ID to load.
+ * @param int $revision_id
+ *   (optional) An entity revision ID to use when loading the entity rather
+ *   than the latest revision.
+ *
+ * @return object
+ *   An entity objected from entity_load().
+ *
+ * @see entity_load()
+ */
+function revision_scheduler_entity_load_by_revision($entity_type, $entity_id, $revision_id = NULL) {
+  $conditions = array();
+  if (!empty($revision_id)) {
+    $info = entity_get_info($entity_type);
+    if (isset($info['entity keys']['revision'])) {
+      $conditions[$info['entity keys']['revision']] = $revision_id;
+    }
+  }
+  $entities = entity_load($entity_type, array($entity_id), $conditions);
+  return !empty($entities) ? reset($entities) : FALSE;
+}
+
+/**
+ * Implements hook_field_attach_form().
+ */
+function revision_scheduler_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {
+  //$operations = revision_scheduler_entity_revision_operation_get_options($entity_type, $entity);
+}
+
+/**
+ * @name revision_scheduler_node Revision scheduler integration on behalf of node.module.
+ * @{
+ */
+
+/**
+ * Implements hook_entity_revision_operation_info() on behalf of node.module.
+ */
+function node_entity_revision_operation_info() {
+  $operations['node']['revert'] = array(
+    'label' => t('Revert'),
+    'access arguments' => array('revert revisions'),
+    'callback' => 'node_node_revision_operation_revert',
+  );
+  $operations['node']['delete'] = array(
+    'label' => t('Delete'),
+    'access arguments' => array('delete revisions'),
+    'callback' => 'node_node_revision_operation_delete',
+  );
+
+  return $operations;
+}
+
+/**
+ * Node revision operation callback: revert to revision.
+ */
+function node_node_revision_operation_revert($node) {
+  $node->revision = 1;
+  $node->log = t('Copy of the revision from %date.', array('%date' => format_date($node->revision_timestamp)));
+  node_save($node);
+  drupal_set_message(t('@type %title has been reverted back to the revision from %revision-date.', array('@type' => node_type_get_name($node), '%title' => $node->title, '%revision-date' => format_date($node->revision_timestamp))));
+}
+
+/**
+ * Node revision operation callback: delete revision.
+ */
+function node_node_revision_operation_delete($node) {
+  node_revision_delete($node->vid);
+  drupal_set_message(t('Revision from %revision-date of @type %title has been deleted.', array('%revision-date' => format_date($node->revision_timestamp), '@type' => node_type_get_name($node), '%title' => $node->title)));
+}
+
+/**
+ * @} End of "name revision_scheduler_node".
+ */
+
+/**
+ * @name revision_scheduler_workbench_moderation Revision scheduler integration on behalf of workbench_moderation.module.
+ * @{
+ */
+
+/**
+ * Implements hook_entity_revision_operation_info().
+ */
+function workbench_moderation_entity_revision_operation_info() {
+  $info = array();
+  $states = workbench_moderation_state_labels();
+  foreach ($states as $state => $label) {
+    $info['node']['workbench_moderation_' . $state] = array(
+      'label' => t('Moderate to @label', array('@label' => $label)),
+      'access callback' => TRUE,
+      'callback' => 'workbench_moderation_revision_operation_process',
+    );
+  }
+  return $info;
+}
+
+/**
+ * Implements hook_entity_revision_operation_access().
+ */
+function workbench_moderation_entity_revision_operation_access($operation, $entity_type, $entity, $account) {
+  if (strpos($operation['operation'], 'workbench_moderation_') !== FALSE && !empty($entity) && $entity_type == 'node') {
+    //$state = substr($operation['operation'], 21);
+    if (!workbench_moderation_node_type_moderated($entity->type)) {
+      return FALSE;
+    }
+  }
+}
+
+/**
+ * Revision operation process callback for scheduled moderation state changes.
+ */
+function workbench_moderation_revision_operation_process($entity, $operation) {
+  // Extract the transition to state from the operation key: 'workbench_moderation_state'.
+  $state = substr($operation->operation, 21);
+  workbench_moderation_moderate($entity, $state);
+}
+
+/**
+ * @} End of "name revision_scheduler_workbench_moderation".
+ */

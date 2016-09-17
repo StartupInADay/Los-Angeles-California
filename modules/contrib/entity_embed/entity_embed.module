@@ -1,0 +1,583 @@
+<?php
+
+/**
+ * @file
+ * Provides a CKEditor plugin and text filter for embedding and rendering entities.
+ */
+
+// HTML processing functions.
+require_once dirname(__FILE__) . '/includes/entity_embed.html.inc';
+
+// AJAX commands.
+require_once dirname(__FILE__) . '/includes/entity_embed.commands.inc';
+
+// Display functions.
+require_once dirname(__FILE__) . '/includes/entity_embed.display.inc';
+
+/**
+ * Implements hook_permission().
+ */
+function entity_embed_permission() {
+  return array(
+    'administer embed buttons' => array(
+      'title' => t('Administer entity embed buttons'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function entity_embed_menu() {
+  $items['entity-embed/preview/%entity_embed_filter_format'] = array(
+    'title' => 'Preview embedded entity',
+    'page callback' => 'entity_embed_preview',
+    'page arguments' => array(2),
+    'access callback' => '_entity_embed_preview_format_access',
+    'access arguments' => array(2),
+    'delivery callback' => 'ajax_deliver',
+    'theme callback' => 'ajax_base_page_theme',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['entity-embed/dialog/entity-embed/%entity_embed_filter_format/%entity_embed_embed_button'] = array(
+    'title' => 'Add/Edit embedded entity',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('entity_embed_dialog_form', 3, 4),
+    'access callback' => '_entity_embed_button_is_enabled',
+    'access arguments' => array(3, 4),
+    'file' => 'entity_embed.admin.inc',
+    'delivery callback' => 'ajax_deliver_dialog',
+    'theme callback' => 'ajax_base_page_theme',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['entity-embed/autocomplete-entity/%entity_embed_filter_format/%entity_embed_embed_button'] = array(
+    'title' => 'Autocomplete for embedded entities',
+    'page callback' => 'entity_embed_autocomplete_entity',
+    'page arguments' => array(2, 3),
+    'access callback' => '_entity_embed_button_is_enabled',
+    'access arguments' => array(2, 3),
+    'type' => MENU_CALLBACK
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_help().
+ */
+function entity_embed_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#entity_embed':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Drupal represents content as different types of entities: nodes, files, users, taxonomy terms, etc. Entity Embed allows entities to be embedded in other entities, for example an image (file entity) may be embedded within a page (node entity). Users embed entities via WYSIWYG through one or more buttons. A button to embed content (nodes) is provided by default but additional buttons can be configured on the <a href="@entity_embed">Entity Embed administration page</a>.', array('@entity_embed' => url('admin/config/content/embed-button'))) . '</p>';
+      $output .= '<h3>' . t('Configuration') . '</h3>';
+      $output .= '<ol>';
+      $output .= '<li>' . t('Configure the jQuery Update module to use jQuery 1.7 or higher by visiting the <a href="@jquery_update">jQuery Update configuration page</a>.', array('@jquery_update' => url('admin/config/development/jquery_update'))) . '</li>';
+      $output .= '<li>' . t('Enable the entity-embed filter <em>Display embedded entities</em> for the desired text formats from the <a href="@filter">Text Formats configuration page</a>.', array('@filter' => url('admin/config/content/formats'))) . '</li>';
+      $output .= '<li>' . t('If the <em>Limit allowed HTML tags</em> filter is enabled, add <code>&lt;drupal-entity&gt;</code> to the <em>Allowed HTML tags</em>') . '</li>';
+      $output .= '<li>' . t('Optionally enable the editor-align filter <em>Align images</em> to allow positioning of embedded entities.') . '</li>';
+      $output .= '<li>' . t('To enable the WYSIWYG plugin, move the entity-embed <code>E</code> button into the Active toolbar for the desired text formats from the <a href="@formats">text formats configuration page</a>.', array('@formats' => url('admin/config/content/formats'))) . '</li>';
+      $output .= '</ol>';
+      return $output;
+
+    case 'admin/config/content/embed-button':
+      return '<p>' . t("Embed buttons define the buttons that can be added to CKEditor's toolbar. All buttons correspond to the selcted entity type, although a particular entity type can have more than one button. After you've created the desired buttons, go to <a href='@formats'>text formats configuration</a> page to add them to CKEditor's toolbar for the desired text formats.", array('@formats' => url('admin/config/content/formats'))) . '</p>';
+  }
+}
+
+/**
+ * Loads a text format object from the database.
+ *
+ * @param $format_id
+ *   The format ID.
+ *
+ * @return
+ *   A fully-populated text format object, if the requested format exists and
+ *   is enabled. If the format does not exist, or exists in the database but
+ *   has been marked as disabled, FALSE is returned.
+ *
+ * @see filter_format_exists()
+ */
+function entity_embed_filter_format_load($format_id) {
+  $formats = filter_formats();
+
+  return isset($formats[$format_id]) ? $formats[$format_id] : FALSE;
+}
+
+/**
+ * Creates a new embed button object.
+ *
+ * @param $set_defaults
+ *   If TRUE, which is the default, then default values will be retrieved
+ *   from schema fields and set on the object.
+ *
+ * @return
+ *   An embed button object populated with default values.
+ */
+function entity_embed_embed_button_new($set_defaults = TRUE) {
+  ctools_include('export');
+
+  return ctools_export_new_object('entity_embed', $set_defaults);
+}
+
+/**
+ * Loads an embed button object from the database.
+ *
+ * @param $name
+ *   The name of the button to load.
+ *
+ * @return
+ *   The loaded button object or FALSE if the button is not found.
+ */
+function entity_embed_embed_button_load($name) {
+  ctools_include('export');
+
+  $result = ctools_export_load_object('entity_embed', 'names', array($name));
+
+  return isset($result[$name]) ? $result[$name] : FALSE;
+}
+
+/**
+ * Loads multiple embed button objects from the database.
+ *
+ * @param $names
+ *   An array of button names to load.
+ *
+ * @return
+ *   An array of loaded button objects.
+ */
+function entity_embed_embed_button_load_multiple(array $names) {
+  ctools_include('export');
+
+  $results = ctools_export_load_object('entity_embed', 'names', $names);
+
+  // Ensure no empty results are returned.
+  return array_filter($results);
+}
+
+/**
+ * Load all embed button objects from the database.
+ *
+ * @param $reset
+ *   If TRUE, the static cache of all objects will be flushed prior to
+ *   loading all. This can be important on listing pages where items
+ *   might have changed on the page load.
+ *
+ * @return
+ *   An array of all loaded embed button objects, keyed by the unique IDs of the
+ *   export key.
+ */
+function entity_embed_embed_button_load_all($reset = FALSE) {
+  ctools_include('export');
+
+  if ($reset) {
+    ctools_export_load_object_reset('entity_embed');
+  }
+
+  return ctools_export_load_object('entity_embed', 'all');
+}
+
+/**
+ * Saves an embed button object to the database.
+ *
+ * @param $embed_button
+ *   The embed button to save.
+ */
+function entity_embed_embed_button_save($embed_button) {
+  ctools_include('export');
+
+  $new_button_icon_fid = $embed_button->button_icon_fid;
+
+  // Find the original button settings to see if they have been changed.
+  if ($original = entity_embed_embed_button_load($embed_button->name)) {
+    $old_button_icon_fid = $original->button_icon_fid;
+
+    // If the button icon has changed, remove file usage from the old icon.
+    if (!empty($old_button_icon_fid) && $old_button_icon_fid != $new_button_icon_fid) {
+      if ($file = file_load($old_button_icon_fid)) {
+        // Mark the old icon file as temporary since it is no longer needed.
+        if ($file->status !== 0) {
+          $file->status = 0;
+          file_save($file);
+        }
+
+        file_usage_delete($file, 'entity_embed', $embed_button->name, 1);
+      }
+    }
+  }
+
+  // Add file usage information to the button icon if it is new.
+  if ($new_button_icon_fid) {
+    if ($file = file_load($new_button_icon_fid)) {
+      // Mark the file as permanent so it won't be cleaned up by the system.
+      if ($file->status !== FILE_STATUS_PERMANENT) {
+        $file->status = FILE_STATUS_PERMANENT;
+        file_save($file);
+      }
+
+      $usage = file_usage_list($file);
+
+      // Icons can only be used once per button.
+      if (empty($usage['entity_embed'][$embed_button->name][1])) {
+        file_usage_add($file, 'entity_embed', $embed_button->name, 1);
+      }
+    }
+  }
+
+  if ($embed_button->export_type & EXPORT_IN_DATABASE) {
+    // Existing record.
+    $update = array('cid');
+  }
+  else {
+    // New record.
+    $update = array();
+    $embed_button->export_type = EXPORT_IN_DATABASE;
+  }
+
+  // Reset the ctools object cache so that the changes are picked up.
+  ctools_export_load_object_reset('entity_embed');
+
+  return drupal_write_record('entity_embed', $embed_button, $update);
+}
+
+/**
+ * Deletes an embed button object from the database.
+ *
+ * @param $embed_button
+ *   The embed button to delete or the button cid.
+ */
+function entity_embed_embed_button_delete($embed_button) {
+  ctools_include('export');
+
+  $button_icon_fid = $embed_button->button_icon_fid;
+
+  // Remove file usage from the associated button icon.
+  if ($button_icon_fid) {
+    if ($file = file_load($button_icon_fid)) {
+      // Mark the file as temporary since it is no longer needed.
+      if ($file->status !== 0) {
+        $file->status = 0;
+        file_save($file);
+      }
+
+      file_usage_delete($file, 'entity_embed', $embed_button->name, 1);
+    }
+  }
+
+  $value = is_object($embed_button) ? $embed_button->cid : $embed_button;
+  db_delete('entity_embed')
+    ->condition('cid', $value)
+    ->execute();
+}
+
+/**
+ * Access callback: Checks access for previewing embedded entities.
+ *
+ * @param $format
+ *   A text format object.
+ *
+ * @return
+ *   TRUE if entities can be previewed for the specified filter format, FALSE
+ *   otherwise.
+ *
+ * @see entity_embed_menu()
+ */
+function _entity_embed_preview_format_access($format) {
+  return user_access('use text format ' . $format->format);
+}
+
+/**
+ * Checks whether or not the embed button is enabled for given text format.
+ *
+ * Returns allowed if the editor toolbar contains the embed button and neutral
+ * otherwise.
+ *
+ * @param $filter_format
+ *   The filter format to which this dialog corresponds.
+ * @param $embed_button
+ *   The embed button to which this dialog corresponds.
+ *
+ * @return boolean
+ *   The access result.
+ */
+function _entity_embed_button_is_enabled($filter_format, $embed_button) {
+  editor_format_ensure_additional_properties($filter_format);
+
+  if (!editor_load($filter_format->editor)) {
+    return FALSE;
+  }
+
+  $button_name = $embed_button->name;
+
+  if (!empty($filter_format->editor_settings['toolbar'])) {
+    foreach ($filter_format->editor_settings['toolbar'] as $row) {
+      foreach ($row as $button_group) {
+        if (in_array($button_name, $button_group['items'])) {
+          return TRUE;
+        }
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function entity_embed_flush_caches() {
+  return array('cache_entity_embed');
+}
+
+/**
+ * Returns an Ajax response to generate preview of an entity.
+ *
+ * Expects the the HTML element as GET parameter.
+ *
+ * @param $filter_format
+ *   The filter format.
+ *
+ * @return
+ *   The Ajax response.
+ */
+function entity_embed_preview($filter_format) {
+  $query_parameters = drupal_get_query_parameters();
+  $text = $query_parameters['value'];
+
+  if ($text == '') {
+    drupal_exit();
+  }
+
+  // @todo: remove contextual links.
+  $entity_output = check_markup($text, $filter_format->format);
+
+  $commands[] = entity_embed_command_insert($entity_output);
+
+  return array(
+    '#type' => 'ajax',
+    '#commands' => $commands,
+  );
+}
+
+/**
+ * Page callback: Autocomplete for entities.
+ *
+ * @param $entity_type
+ *   The type of the entity being saved.
+ * @param $entity_id
+ *   The ID of the entity being saved.
+ *
+ * @return
+ *   Any matching entities output as JSON.
+ */
+function entity_embed_autocomplete_entity($filter_format, $embed_button, $string) {
+  $matches = array();
+
+  $entity_type_id = $embed_button->entity_type;
+  $entity_type_bundles = $embed_button->entity_type_bundles;
+  $entity_type = entity_get_info($entity_type_id);
+
+  // Prevent errors if the entity type has no label key.
+  if (empty($entity_type['entity keys']['label'])) {
+    return drupal_json_output($matches);
+  }
+
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', $entity_type_id)
+    ->propertyCondition($entity_type['entity keys']['label'], $string, 'STARTS_WITH')
+    ->range(0, 10)
+    ->propertyOrderBy($entity_type['entity keys']['label'], 'DESC')
+    ->execute();
+
+  // Add optional bundle restrictions.
+  if (!empty($entity_type_bundles)) {
+    $query->entityCondition('bundle', array_keys($entity_type_bundles));
+  }
+
+  $results = $query->execute();
+
+  if (!empty($results)) {
+    $ids = array_keys($results[$entity_type_id]);
+    $entities = entity_load($entity_type_id, $ids);
+
+    foreach ($entities as $entity) {
+      $label = entity_label($entity_type_id, $entity);
+
+      $matches[$label] = check_plain($label);
+    }
+  }
+
+  return drupal_json_output($matches);
+}
+
+/**
+ * Implements hook_filter_info().
+ */
+function entity_embed_filter_info() {
+  $filters['entity_embed'] = array(
+    'title' => t('Render embedded entities'),
+    'description' => t('Replaces embedded entity placeholders with the rendered entity.'),
+    'process callback' => '_entity_embed_render_placeholders',
+    'cache' => FALSE,
+    'tips callback' => '_entity_embed_render_placeholders_tips',
+    'js settings callback' => '_entity_embed_entity_embed_js_settings',
+  );
+
+  return $filters;
+}
+
+/**
+ * Implements callback_filter_tips().
+ *
+ * Provides help for the entity embed's render placeholder filter.
+ */
+function _entity_embed_render_placeholders_tips($filter, $format, $long = FALSE) {
+  if ($long) {
+    return t('
+        <p>You can embed entities. Additional properties can be added to the embed tag like data-caption and data-align if supported. Examples:</p>
+        <ul>
+          <li>Embed by ID: <code>&lt;drupal-entity data-entity-type="node" data-entity-id="1" data-view-mode="teaser" /&gt;</code></li>
+          <li>Embed by UUID: <code>&lt;drupal-entity data-entity-type="node" data-entity-uuid="07bf3a2e-1941-4a44-9b02-2d1d7a41ec0e" data-view-mode="teaser" /&gt;</code></li>
+        </ul>');
+  }
+  else {
+    return t('You can embed entities.');
+  }
+}
+
+/**
+ * Implements callback_filter_js_settings().
+ *
+ * Entity Embed JS settings callback: return settings for JavaScript.
+ */
+function _entity_embed_entity_embed_js_settings($filter, $format) {
+  // Add user-defined buttons.
+  $embed_buttons = entity_embed_embed_button_load_all();
+
+  $buttons = array();
+
+  foreach ($embed_buttons as $embed_button) {
+    $buttons[$embed_button->name] = array(
+      'id' => check_plain($embed_button->name),
+      'name' => check_plain($embed_button->admin_title),
+      'label' => check_plain($embed_button->admin_title),
+      'entity_type' => check_plain($embed_button->entity_type),
+      'image' => check_plain(_entity_embed_button_image($embed_button->button_icon_fid)),
+    );
+  }
+
+  return array(
+    'DrupalEntity_dialogTitleAdd' => t('Insert entity'),
+    'DrupalEntity_dialogTitleEdit' => t('Edit entity'),
+    'DrupalEntity_buttons' => $buttons,
+  );
+}
+
+/**
+ * Implements callback_filter_process().
+ *
+ * Converts embedded entity placeholders into rendered entities.
+ */
+function _entity_embed_render_placeholders($text, $filter, $format, $langcode, $cache, $cache_id) {
+  $result = $text;
+
+  if (strpos($text, 'data-entity-type') !== FALSE && (strpos($text, 'data-entity-embed-display') !== FALSE || strpos($text, 'data-view-mode') !== FALSE)) {
+    $dom = entity_embed_dom_load_html($text);
+    $xpath = new \DOMXPath($dom);
+
+    foreach ($xpath->query('//drupal-entity[@data-entity-type and (@data-entity-uuid or @data-entity-id) and (@data-entity-embed-display or @data-view-mode)]') as $node) {
+      $entity_type = $node->getAttribute('data-entity-type');
+      $entity = NULL;
+      $entity_output = '';
+
+      try {
+        // Load the entity either by UUID (preferred) or ID.
+        $uuid = $node->getAttribute('data-entity-uuid');
+        $id = $node->getAttribute('data-entity-id');
+
+        if (!empty($uuid) && module_exists('uuid')) {
+          $entity = entity_uuid_load($entity_type, array($uuid));
+          $entity = reset($entity);
+        }
+        else {
+          $entity = entity_load_single($entity_type, $id);
+        }
+
+        if ($entity) {
+          // Protect ourselves from recursive rendering.
+          static $depth = 0;
+          $depth++;
+          if ($depth > 20) {
+            throw new EntityEmbedRecursiveRenderingException(sprintf('Recursive rendering detected when rendering embedded %s entity %s.', $entity_type, $id));
+          }
+
+          // If a UUID was not used, but is available, add it to the HTML.
+          if (!$node->getAttribute('data-entity-uuid') && !empty($entity->uuid)) {
+            $node->setAttribute('data-entity-uuid', $entity->uuid);
+          }
+
+          $context = entity_embed_get_dom_node_attributes_as_array($node);
+          $context += array('data-langcode' => $langcode);
+          $entity_output = entity_embed_render_entity($entity_type, $entity, $context);
+
+          $depth--;
+        }
+        else {
+          throw new EntityEmbedEntityNotFoundException(sprintf('Unable to load embedded %s entity %s.', $entity_type, $id));
+        }
+      }
+
+      catch(\Exception $e) {
+        watchdog_exception('entity_embed', $e);
+      }
+
+      entity_embed_replace_dom_node_content($node, $entity_output);
+    }
+
+    $result = entity_embed_serialize($dom);
+  }
+
+  return $result;
+}
+
+/**
+ * Helper function to create a URL to an embed button icon.
+ *
+ * @param int $fid
+ *   A file ID.
+ *
+ * @return string
+ *   A string containing a URL that may be used to access the file.
+ */
+function _entity_embed_button_image($fid) {
+  $url = file_create_url(drupal_get_path('module', 'entity_embed') . '/js/plugins/drupalentity/entity.png');
+
+  if ($fid) {
+    if ($file = file_load($fid)) {
+      $url = file_create_url($file->uri);
+    }
+  }
+
+  return $url;
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function entity_embed_ctools_plugin_api($module, $api) {
+  if ($module == 'entity_embed' && $api == 'default_entity_embed_configurations') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function entity_embed_ctools_plugin_directory($module, $plugin) {
+  if ($plugin =='export_ui') {
+    return 'plugins/export_ui';
+  }
+}

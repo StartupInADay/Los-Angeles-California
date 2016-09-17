@@ -1,0 +1,15 @@
+name = Personalize Fields
+description = Allows the ability to Personalize any Fields.
+dependencies[] = personalize
+package = Personalization
+core = 7.x
+
+files[] = tests/personalize_fields.test
+files[] = tests/personalize_collection_fields.test
+
+; Information added by Drupal.org packaging script on 2016-02-02
+version = "7.x-2.0-rc1"
+core = "7.x"
+project = "personalize"
+datestamp = "1454439579"
+

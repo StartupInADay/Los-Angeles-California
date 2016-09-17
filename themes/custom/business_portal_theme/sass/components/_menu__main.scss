@@ -1,0 +1,104 @@
+/**
+* Styles for the MAIN MENU
+*/
+
+#header {
+  @include window_size(desktop) {
+    .menu {
+      float: left;
+      margin-left: 62px;
+      padding: 0;
+      height: 55px;
+      position: relative;
+      // Hide dropdown menu
+      ul.menu {
+        display: none;
+        height: 0;
+        position: absolute;
+        top: 43px;
+        padding: 11px 20px 9px;
+        width: 285px;
+        margin-left: 0 !important;
+        background: rgba(255, 255, 255, 0.8);
+
+        .menu__item {
+          // Styling links
+          .menu__link {
+            color: $dark_blue;
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 32px;
+            margin-top: 0;
+          }
+
+        }
+      }
+      // Display dropdown on hover
+      > li:hover > .menu {
+        display: block;
+        height: auto;
+        li {
+          display: block;
+          //Hiding deeper level menus
+          .menu {
+            display: none;
+          }
+        }
+      }
+    }
+
+    .menu {
+      > .menu__item {
+        height: 100%;
+        @include window_size(tab-wide-up) {
+          margin: 0 15px 0 0;
+          padding: 0;
+          color: $white;
+          font-size: 15px;
+          list-style: none;
+          display: inline-block;
+        }
+        &.active-trail {
+          background-image: url("../images/hero/menu_selector.png");
+          background-position: 50% 77%;
+          background-repeat: repeat-x;
+
+          // Hiding bottom border on deeper level active items
+          .active-trail {
+            background-image: none;
+          }
+        }
+      }
+
+      > .menu__item--selected {
+        height: 100%;
+        @include window_size(tab-wide-up) {
+          margin: 0 15px 0 0;
+          border: 0px solid pink;
+          color: $white;
+          font-size: 15px;
+          font-weight: 700;
+          list-style: none;
+          display: inline-block;
+          background-image: url("../images/hero/menu_selector.png");
+          background-position: bottom;
+          background-repeat: repeat-x;
+        }
+        display: none;
+      }
+    }
+  }
+  
+  .menu__item a {
+    //border:1px solid red;
+    //margin: 15px 0 0 0;
+    display: block;
+    font-weight: bold;
+  }
+
+  .menu__link {
+    border: 0px solid red;
+    margin: 8px 0 0 0;
+    display: block;
+  }
+}

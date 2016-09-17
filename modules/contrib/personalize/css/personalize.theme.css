@@ -1,0 +1,86 @@
+
+/**
+ * Content sets
+ */
+.personalize-content-set-title {
+  display: inline-block;
+  margin-right: 1em; /* LTR */
+}
+
+.personalize-content-set-item {
+  border-top: 1px solid #ccc;
+  margin-bottom: 1em;
+  padding-top: 1em;
+}
+
+.personalize-content-set-item:first-child {
+  border-top: none;
+}
+
+.personalize-content-set-item:last-child {
+  margin-bottom: 0;
+}
+
+.personalize-variation-count {
+  margin-left: 1em; /* LTR */
+}
+
+.personalize-admin-content-title-secondary {
+    display: inline;
+    margin-left: 25px;
+}
+
+.personalize-admin-content-collapsed .personalize-admin-enumerated-item {
+  font-size: 1.2em;
+}
+
+.personalize-wizard-section .personalize-ctools-dropdown .ctools-dropdown-container-wrapper .ctools-dropdown-container {
+  left: 12em;
+}
+
+html.js div.ctools-dropdown div.ctools-dropdown-container {
+  border: 1px solid #ccc;
+  margin: 1em 1px 0 0;
+  padding: .25em;
+  box-shadow: 0px 3px 3px #ddd;
+}
+html.js .ctools-dropdown-hover {
+  background-color: #fff;
+}
+html.js div.ctools-dropdown div.ctools-dropdown-container ul li a {
+  text-decoration: none;
+}
+html.js div.ctools-dropdown div.ctools-dropdown-container ul li a:hover {
+  text-decoration: underline;
+}
+
+/* remove c-tools icon */
+html.js .personalize-admin-content-title-suffix div.ctools-dropdown a.ctools-dropdown-text-link {
+  background: none;
+  padding-left: 0px;
+}
+
+/* Make all the campaign wizard form links the same as buttons that masquerade
+ as links. */
+.personalize-wizard-section a {
+  color: #2fa6e5;
+}
+.personalize-wizard-section a:hover, a:active {
+  color: #007ec0;
+}
+/* Link look alike styling for add a goal button */
+.personalize-add-link-prefix:after {
+  content: '+';
+  color: #2fa6e5;
+}
+button.personalize-add-link,
+input[type="submit"].personalize-add-link {
+  text-decoration: none;
+  color: #2fa6e5;
+  font-weight: normal;
+}
+button.personalize-add-link:hover,
+input[type="submit"].personalize-add-link:hover {
+  text-decoration: underline;
+  color: #007ec0;
+}

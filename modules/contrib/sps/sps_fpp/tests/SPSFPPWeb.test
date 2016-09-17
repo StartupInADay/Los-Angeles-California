@@ -1,0 +1,41 @@
+<?php
+
+class SPSFPPWebTest extends DrupalWebTestCase {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS FPP Web Tests',
+      'description' => 'Test the integration between sps and fpp',
+      'group' => 'SPS_FPP',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp("iib", "sps", "ctools", "fieldable_panels_panes", "sps_fpp");
+  }
+
+  public function testFPPIntegration() {
+    $entity_info = entity_get_info('fieldable_panels_pane');
+    $types = array_keys($entity_info['bundles']);
+
+    //create an fpp
+    $fpp = fieldable_panels_panes_create(array('bundle' => current($types)));
+    $fpp->title = 'first revision';
+    fieldable_panels_panes_save($fpp);
+
+    $fpp->title = 'second revision';
+    $first = $fpp->vid;
+    unset($fpp->vid);
+
+    fieldable_panels_panes_save($fpp);
+
+    $loaded = fieldable_panels_panes_load($fpp->fpid);
+    //confirm our assumption
+    $this->assertEqual($loaded->title, 'second revision', 'FPP should always set the most recently saved revision to be active.');
+    sps_drupal()->set('path_is_admin', function() {return FALSE;});
+    sps_add_override('A single fpp override', $fpp->fpid, 'fieldable_panels_pane', array('revision_id' => $first));
+
+    $loaded = fieldable_panels_panes_load($fpp->fpid);
+    $this->verbose('<h3>'.t('Loaded Fieldable Panels Pane').$first.'</h3><pre>'.print_r($loaded, TRUE).'</pre>');
+    $this->assertEqual($loaded->title, 'first revision', 'The overridden revision of the FPP should be loaded when an override is set.');
+  }
+}

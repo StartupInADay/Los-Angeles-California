@@ -1,0 +1,65 @@
+<?php
+class SPSSimpleCacheOverrideControllerUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS SimpleCacheOverrideController Unit Tests',
+      'description' => 'Test the public interface to SimpleCacheOverrrideController objects',
+      'group' => 'SPS',
+    );
+  }
+  public function testSimpleCacheOverrideController_getAndSet() {
+    $manager = new \Drupal\sps\Test\Manager();
+    $controller = new \Drupal\sps\Plugins\OverrideController\SimpleCacheOverrideController(array(), $manager);
+
+    $overrides = array(
+      array(
+        'id' => 5,
+        'revision_id' => 7,
+        'type' => 'node',
+      ),
+      array(
+        'id' => 1,
+        'revision_id' => 2,
+        'type' => 'node',
+      ),
+    );
+   $controller->set($overrides);
+
+   $this->assertEqual(
+     $controller->getRevisionId(5, 'node'),
+     $overrides[0],
+     '::set should store rows for retrival by getRevisionId'
+   );
+
+  }
+  public function testSimpleCacheOverrideController_validateRow() {
+    $manager = new \Drupal\sps\Test\Manager();
+    $controller = new \Drupal\sps\Plugins\OverrideController\SimpleCacheOverrideController(array(), $manager);
+
+   $overrides = array(
+      array(
+        'revision_id' => 5,
+        'type' => 'node',
+      ),
+   );
+   $this->assertThrows(
+     function() use ($controller, $overrides) { $controller->set($overrides) ;},
+     '\Drupal\sps\Exception\InvalidOverrideRowException',
+     'Override row must have id field',
+     '::set throws exeption when an row missing the id field is passed'
+   );
+   $overrides = array(
+      array(
+        'revision_id' => 5,
+        'id' => 3,
+      ),
+   );
+   $this->assertThrows(
+     function() use ($controller, $overrides) { $controller->set($overrides) ;},
+     '\Drupal\sps\Exception\InvalidOverrideRowException',
+     'Override row must have type field',
+     '::set throws exeption when an row missing the type field is passed'
+   );
+
+  }
+}

@@ -1,0 +1,20 @@
+name = Business Portal Migrate
+description = Provide migration support for Business Portal demo content.
+core = 7.x
+
+dependencies[] = migrate
+dependencies[] = sbp_landing_page
+dependencies[] = sbp_terms_definitions
+
+files[] = sbp_migrate.migrate.inc
+files[] = migrate/sbp_landing_page.inc
+files[] = migrate/sbp_migrate.industry_tags.inc
+files[] = migrate/nodes.inc
+files[] = migrate/field_collections.inc
+files[] = migrate/sbp_migrate.business_business_ownership.inc
+files[] = migrate/sbp_migrate.business_needs.inc
+files[] = migrate/sbp_migrate.resource_type.inc
+files[] = migrate/sbp_migrate.starter_kit.inc
+files[] = migrate/sbp_migrate.terms_definitions.inc
+files[] = migrate/sbp_migrate.terms_definitions_grouping.inc
+files[] = plugins/destinations/fields.inc

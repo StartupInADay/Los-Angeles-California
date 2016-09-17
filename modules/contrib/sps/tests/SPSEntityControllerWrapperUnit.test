@@ -1,0 +1,137 @@
+<?php
+class SPSEntityControllerWrapperUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Entity Controller Wrapper Tests',
+      'description' => 'Test the public interface for Entiy controller Wrapper objects',
+      'group' => 'SPS',
+    );
+  }
+  public function testEntityControllerWrapper_load() {
+
+    sps_drupal()->set('entity_get_info', function () {
+      return array( 
+        'controller class base' => 'EntityControllerWrapperTestParent',
+        'entity keys' => array('id' => 'nid', 'revision' => 'vid'),
+        'base table' => 'node',
+      );
+    });
+    sps_drupal()->set('sps_get_manager', array($this, 'manager'));
+    $this->reactReturn(array(11,22));
+    $controller = new Drupal\sps\EntityController\EntityControllerWrapper('node');
+    $result = $controller->load(array(1,2));
+
+    $this->assertEqual(
+      $this->react('get', array()),
+      (object) array(
+        'base_id_key' => 'nid',
+        'revision_id_key' => 'vid',
+        'base_table' => 'node',
+        'type' => 'node',
+        'ids' => array(1,2),
+      ),
+      "::load with no reviion key set in the condition should call the manager react method"
+    );
+
+    $this->assertEqual(
+      $result,
+      array(array(1,2), array('vid' => array(11,22))),
+      '::load should alter the conditions to include revision_ids and then return the result sof the child controller load method'
+    );
+  }
+  public function testEntityControllerWrapper_load_already_have_condition() {
+
+    sps_drupal()->set('entity_get_info', function () {
+      return array( 
+        'controller class base' => 'EntityControllerWrapperTestParent',
+        'entity keys' => array('id' => 'nid', 'revision' => 'vid'),
+        'base table' => 'node',
+      );
+    });
+    sps_drupal()->set('sps_get_manager', array($this, 'manager'));
+    $this->reactReturn(array(11,22));
+    $controller = new Drupal\sps\EntityController\EntityControllerWrapper('node');
+    $result = $controller->load(array(1,2), array('vid' => 5));
+
+    $this->assertEqual(
+      $result,
+      array(array(1,2), array('vid' => 5)),
+      '::load should not alter the conditions if a revision id conditions is passed in'
+    );
+  }
+  public function testEntityControllerWrapper_load_no_overrides() {
+
+    sps_drupal()->set('entity_get_info', function () {
+      return array( 
+        'controller class base' => 'EntityControllerWrapperTestParent',
+        'entity keys' => array('id' => 'nid', 'revision' => 'vid'),
+        'base table' => 'node',
+      );
+    });
+    sps_drupal()->set('sps_get_manager', array($this, 'manager'));
+    $this->reactReturn(NULL);
+    $controller = new Drupal\sps\EntityController\EntityControllerWrapper('node');
+    $result = $controller->load(array(1,2));
+
+    $this->assertEqual(
+      $result,
+      array(array(1,2), array()),
+      '::load should not alter the conditions but return the result of the child controller load method'
+    );
+  }
+  public function testEntityControllerWrapper_other_methods() {
+
+    sps_drupal()->set('entity_get_info', function () {
+      return array( 
+        'controller class base' => 'EntityControllerWrapperTestParent',
+        'entity keys' => array('id' => 'nid', 'revision' => 'vid'),
+        'base table' => 'node',
+      );
+    });
+    $controller = new Drupal\sps\EntityController\EntityControllerWrapper('node');
+    $this->assertEqual(
+      $controller->resetCache(array()),
+      'resetCache called',
+      "::resetCache should pass through to the child controller"
+    );
+    $this->assertEqual(
+      $controller->otherMethod(array()),
+      'otherMethod called',
+      "::METHOD should pass through to the child controller"
+    );
+
+  }
+
+  public function manager() {
+    return $this;
+  }
+
+  public function react($name, $data= array()) {
+    if($name == 'get') {
+      $rtn = $this->data_stored;
+      $this->data_stored = NULL;
+      return $rtn;
+    }
+
+    $this->data_stored = $data;
+    return $this->reactReturn();
+  }
+
+  public function reactReturn($value = FALSE) {
+    static $value_stored;
+    $value_stored = $value === FALSE ? $value_stored : $value;
+    return $value_stored;
+  }
+}
+
+class EntityControllerWrapperTestParent {
+  function load($ids= array(), $conditions = array()) {
+    return array($ids, $conditions);
+  }
+  function resetCache($ids) {
+    return 'resetCache called';
+  }
+  function otherMethod() {
+    return 'otherMethod called';
+  }
+}

@@ -1,0 +1,378 @@
+// @file
+// Custom sass mixins
+//
+// Define the custom mixins for your project here.
+// http://sass-lang.com/docs/yardoc/file.SASS_REFERENCE.html#defining_a_mixin
+
+// Makes an element visually hidden, but accessible.
+// @see http://snook.ca/archives/html_and_css/hiding-content-for-accessibility
+@mixin element-invisible {
+  position: absolute !important;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  @if $legacy-support-for-ie6 or $legacy-support-for-ie7 {
+    clip: rect(1px 1px 1px 1px); // IE6 and IE7 use the wrong syntax.
+  }
+  clip: rect(1px, 1px, 1px, 1px);
+}
+
+// Turns off the element-invisible effect.
+@mixin element-invisible-off {
+  position: static !important;
+  clip: auto;
+  height: auto;
+  width: auto;
+  overflow: auto;
+}
+
+// Makes an element visually hidden by default, but visible when focused.
+@mixin element-focusable {
+  @include element-invisible;
+
+  &:active,
+  &:focus {
+    @include element-invisible-off;
+  }
+}
+
+/********************************************
+*           LAYOUT RULES
+*********************************************/
+$max-site-width: 960px;
+$max-content-width: 710px;
+$max-sidebar-width: 300px;
+
+@mixin max-width($max-site-width) {
+  max-width: $max-site-width;
+}
+
+// min-width rules
+@mixin window_size($width) {
+  @if $width == desktop {
+    @media all and (min-width : 960px) { @content; }
+  }
+  @else if $width == tab-wide-up {
+    @media all and (min-width : 720px) { @content; }
+  }
+  @else if $width == tab-narrow-up {
+    @media all and (min-width : 480px) { @content; }
+  }
+}
+
+
+/* Wrapper width mixin for containers */
+@mixin wrapper($wrapper-width: 80%){
+  width: $wrapper-width;
+  margin: 0 auto;
+}
+
+$border--thick: 3px solid $dark_blue;
+
+
+/************************************************************
+                   STYLE VARIANTS
+ ************************************************************/
+
+@mixin hr-thin {
+  height: 2px;
+  max-width: 40px;
+}
+
+@mixin hr-thick {
+  height: 4px;
+  max-width: 80px;
+}
+
+@mixin hr-full {
+  height: 2px;
+}
+
+@mixin style-variant($variant-color) {
+  background-color: $variant-color;
+  color: $white;
+  border-color: $variant-color;
+
+  .panel__intro_header,
+  .hero__description { color: $white; }
+
+  hr {
+    background-color: $variant-color;
+    border: none;
+    &.panel__header-line_thin {
+      margin: 0 0 1em 0;
+      background: $navy;
+    }
+    &.panel__header-line {
+      margin-bottom: 2em;
+      background: $white;
+    }
+  }
+}
+
+.style_variant {
+
+  /****** Light Blue ******/
+  &.light_blue {
+    @include style-variant($light-blue);
+    color: $navy;
+
+    .panel__intro_header,
+    .hero__headline--half,
+    .hero__description {
+      color: $navy;
+    }
+
+    .hero__headline,
+    .hero__headline--half--mobile {
+      color: $white;
+    }
+
+    hr.panel__header-line_thin,
+    hr.hero__line--half {
+      background: $white;
+    }
+
+    #hero--left-bg {
+      background-color: $blue;
+    }
+  }
+
+  /****** Light Green******/
+  &.light_green {
+    @include style-variant($green);
+    color: $navy;
+
+    .hero__headline--half,
+    .hero__description {
+      color: $navy;
+    }
+
+    hr.hero__line--half {
+      background: $white;
+    }
+    #hero--left-bg {
+      background-color: $light-green;
+    }
+  }
+
+  /********** Yellow ************/
+  &.yellow {
+    @include style-variant($light-mustard);
+    color: $navy;
+
+    .hero__headline--half,
+    .hero__description {
+      color: $navy;
+    }
+
+    hr.hero__line--half {
+      background: $white;
+    }
+    #hero--left-bg {
+      background-color: $mustard;
+    }
+  }
+
+  /********** Orange ************/
+  &.orange {
+    @include style-variant($light-orange);
+    color: $navy;
+
+    .hero__headline--half,
+    .hero__description {
+      color: $navy;
+    }
+
+    hr.hero__line--half {
+      background: $white;
+    }
+    #hero--left-bg {
+      background-color: $orange;
+    }
+  }
+
+
+  /********** Mint ************/
+  &.mint {
+    @include style-variant($light-mint);
+    color: $navy;
+
+    .hero__headline--half,
+    .hero__description {
+      color: $navy;
+    }
+
+    hr.hero__line--half {
+      background: $white;
+    }
+    #hero--left-bg {
+      background-color: $mint;
+    }
+  }
+
+
+  /****** White ******/
+  &.white {
+    @include style-variant ($white);
+    color: $navy;
+    .panel__intro_header {
+      color: $navy;
+    }
+    hr.panel__header-line,
+    hr.panel__header-line_thin {
+      background: $light-blue;
+    }
+  }
+
+  /****** Light Grey ******/
+  &.light_grey {
+    @include style-variant ($homepage__panel--bg-light-grey);
+    color: $navy;
+    .panel__intro_header,
+    .hero__headline--half,
+    .hero__description {
+      color: $navy;
+    }
+
+    hr.panel__header-line,
+    hr.panel__header-line_thin {
+      background: $light-blue;
+    }
+  }
+  
+  /****** Dark Grey ******/
+  &.dark_grey {
+    @include style-variant ($homepage__panel--bg-dark-grey);
+    color: $navy;
+    .panel__intro_header,
+    .hero__headline--half,
+    .hero__description {
+      color: $navy;
+    }
+
+    hr.panel__header-line,
+    hr.panel__header-line_thin {
+      background: $white;
+    }
+  }
+}
+
+/*****************************************************
+*                    BUTTONS
+******************************************************/
+
+@mixin panel__button--base($bgcolor, $text-color: $white) {
+  @include border-radius(50px);
+  background-color:$bgcolor;
+  color: $text-color;
+  padding: 10px 20px;
+  font-weight: bold;
+  display: inline-block;
+  margin: 1em 0;
+  cursor: pointer;
+  a { color: $text-color; }
+
+  @include window_size(desktop){
+    //@include border-radius(25px);
+    font-size: 1.143em;
+  }
+}
+
+
+/*************************************************
+                    WIZARD
+***************************************************/
+
+@mixin wizard__button--base {
+  @include border-radius(20px);
+  background-color: $wizard__button--default;
+  padding: 8px 35px 8px 35px;
+  font-weight: bold;
+  display: inline-block;
+  margin: 2px 10px 2px 0;
+  cursor: pointer;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+@mixin maintain-ratio($ratio: 1 1) {
+  @if length($ratio) < 2 or length($ratio) > 2 {
+    @warn "$ratio must be a list with two values.";
+  }
+
+  $width: 100%;
+  $height: percentage(nth($ratio, 2) / nth($ratio, 1));
+
+  width: $width;
+  height: 0;
+  padding-bottom: $height;
+}
+
+@mixin page__icon_base($url: "../images/icon_view.png"){
+  background-image: url($url);
+  background-repeat: no-repeat;
+  background-size: 32px 32px;
+  width:32px;
+  height:32px;
+  display: inline-block;
+  float: right;
+  margin: 0 0 0 6px;
+}
+
+/*************** TOOL TIP************/
+@mixin tool-tip($tip-bg-color: $tooltip-blue, $tip-icon: "../images/subsections/icon_bulb_no_circle.png") {
+  padding: 60px 16px 16px !important;
+  background-image: url($tip-icon);
+  background-color: $tip-bg-color;
+  background-repeat: no-repeat;
+  background-size: 23px 33px;
+  background-position: 16px 16px;
+  margin: 1em 0 !important;
+  color: rgba(0,0,0,.6);
+  @include window_size(desktop){
+    background-position: 20px center;
+    padding: 1em 55px !important;
+  }
+}
+/***************TITLE************/
+@mixin headline($heading-font, $zen-grid-width) {
+  font-family: $heading-font;
+  font-weight: 700;
+  margin:0 0 18px 0;
+  padding: 0;
+  font-size:1.714em;
+  width: $zen-grid-width;
+  @include window_size(tab-wide-up){
+    font-size: 2.571em;
+    margin:0 0 30px 0;
+  }
+}
+
+/***************SMALL HEADLINE************/
+@mixin small-headline($heading-font, $zen-grid-width) {
+  font-family: $heading-font;
+  font-weight: 400;
+  margin:0 0 18px 0;
+  padding: 0;
+  font-size:1.714em;
+  width: $zen-grid-width;
+  @include window_size(tab-wide-up){
+    font-size: 2.571em;
+    margin:0 0 30px 0;
+  }
+}
+
+/***************SUBTITLE************/
+@mixin subtitle($heading-font, $zen-grid-width) {
+  font-family: $heading-font;
+  font-weight: 400;
+  margin:0 0 18px 0;
+  padding: 0;
+  font-size:1.1em;
+  width: $zen-grid-width;
+  @include window_size(tab-wide-up){
+    font-size: 1.45em;
+    margin:0 0 30px 0;
+  }
+}

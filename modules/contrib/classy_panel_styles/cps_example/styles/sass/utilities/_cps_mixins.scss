@@ -1,0 +1,111 @@
+// GENERAL USE
+@mixin panel-pane-with-ipe ($pane-name: "panel-pane") {
+  .#{$pane-name} {
+    @content;
+  }
+  .panels-ipe-portlet-wrapper {
+    @content;
+    .#{$pane-name} {
+      width: 100% !important;
+      margin: 0;
+      padding: 0;
+    }
+  }
+}
+// APPEND TO SAME CONTAINER
+@mixin panel-pane-ipe-compound ($pane-name: "panel-pane") {
+  &.#{$pane-name} {
+    @content;
+  }
+  &.panels-ipe-portlet-wrapper {
+    @content;
+    .#{$pane-name} {
+      width: 100% !important;
+      margin: 0;
+      border: 0;
+      padding: 0;
+    }
+  }
+}
+// NTH CHILD
+@mixin panel-pane($nth: null, $pane-name: "panel-pane") {
+  @if ($nth) {
+    .#{$pane-name}:nth-child(#{$nth}),
+    .panels-ipe-portlet-wrapper:nth-child(#{$nth}) .#{$pane-name} {
+      @content;
+    }
+  }
+  @else {
+    .#{$pane-name},
+    .panels-ipe-portlet-wrapper .#{$pane-name} {
+      @content;
+    }
+  }
+}
+
+
+//  REGION COLUMN LAYOUT MIXINS
+@mixin l-region-1col {
+  @include region-1col;
+}
+
+@mixin l-region-2col ($bp-one: 600px) {
+  @include region-1col;
+  @include breakpoint($bp-one) {
+    @include symmetric-grid(2);
+  }
+}
+
+@mixin l-region-2col-1x3 ($bp-one: 600px) {
+  @include region-1col;
+  @include breakpoint($bp-one) {
+    @include region-2col-1x3;
+  }
+}
+
+@mixin l-region-1col-2col ($bp-one: 600px) {
+  @include region-1col;
+  @include breakpoint($bp-one) {
+    @include symmetric-grid(2, $offset: 1);
+  }
+}
+
+@mixin l-region-2col-60-40 ($bp-one: 600px) {
+  float: left;
+  clear: both;
+  width: 100%;
+  @include breakpoint($bp-one) {
+    @include region-2col-60-40;
+  }
+}
+
+@mixin l-region-3col ($bp-one: 600px) {
+  @include region-1col;
+
+  @include breakpoint($bp-one) {
+    @include symmetric-grid(3);
+  }
+}
+
+@mixin l-region-1col-3col ($bp-one: 300px, $bp-two: 600px) {
+  @include region-1col;
+  @include breakpoint($bp-one ($bp-two - 1px)) {
+    @include symmetric-grid(2, $offset: 1);
+  }
+  @include breakpoint($bp-two) {
+    @include symmetric-grid(3, $offset: 1);
+  }
+}
+
+@mixin l-region-4col ($bp-one: 300px, $bp-two: 600px, $bp-three: 900px) {
+  @include region-1col;
+  @include breakpoint($bp-one ($bp-two - 1px)) {
+    @include symmetric-grid(2);
+  }
+  @include breakpoint($bp-two $bp-three) {
+    @include symmetric-grid(4);
+  }
+}
+
+
+

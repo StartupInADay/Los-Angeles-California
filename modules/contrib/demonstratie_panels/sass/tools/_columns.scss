@@ -1,0 +1,46 @@
+//**
+//* @file
+//* Mixins for generating column styles.
+//*/
+
+//**
+//* Create an invisible class with styles for a column layout.
+//*
+//* @params
+//*   - $break - The break the columns are active.
+//*   - $count - The number of columns visible.
+//*   - $width - The total width of all columns.
+//*   - $spacing - The gutter beside and below elements.
+//*   - $name - A label to be prepended to the class.
+//*/
+
+@mixin columns($break: medium, $count: 2, $width: 100%, $spacing: 1.4em, $name: none) {
+  $prefix: "columns-";
+  @if $name != none {
+    $prefix: "#{$name}-#{$prefix}";
+  }
+
+  $size: $width / $count;
+  $class: $prefix + "#{$break}-#{$count}";
+
+  // An invisible class is used so that the developer can make a more semantic
+  // name for it and reuse it.
+  %#{$class} {
+    .column {
+      margin-bottom: $spacing;
+
+      @include respond($break) {
+        @include box-sizing(border-box);
+        float: left;
+        padding-left: $spacing;
+        width: $size;
+
+        &:nth-child(#{$count}n+1) {
+          clear: left;
+          display: inline;
+          margin-left: -$spacing;
+        }
+      }
+    }
+  }
+}

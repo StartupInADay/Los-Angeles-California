@@ -1,0 +1,132 @@
+name,description,format,weight,parent_name
+Auto,,,,
+Auto Body & Paint Shop,,,,Auto
+Auto Dealer,,,,Auto
+Auto Detailing,,,,Auto
+Auto Wrecker,,,,Auto
+Auto/Motorcycle Mechanic,,,,Auto
+Brake & Tire Shop,,,,Auto
+Parking Lots & Garages,,,,Auto
+Smog Check Facility,,,,Auto
+Towing Company,,,,Auto
+Child & Elder Care,,,,
+Adult Day Care,,,,Child & Elder Care
+Assisted Living Facility,,,,Child & Elder Care
+Child Care Services,,,,Child & Elder Care
+Elder Care Services,,,,Child & Elder Care
+Home Health Agency,,,,Child & Elder Care
+Contractors & Construction,,,,
+General Contractor,,,,Contractors & Construction
+Specialty Contractor,,,,Contractors & Construction
+Entertainment,,,,
+Bowling Alley,,,,Entertainment
+Nightclub,,,,Entertainment
+Food & Drink,,,,
+Alcohol/Beer & Wine Distributor,,,,Food & Drink
+Alcohol/Beer & Wine Importer,,,,Food & Drink
+Alcohol/Beer & Wine Wholesaler,,,,Food & Drink
+Bakery,,,,Food & Drink
+Bar,,,,Food & Drink
+Cafe or Deli,,,,Food & Drink
+Candy Store,,,,Food & Drink
+Caterer,,,,Food & Drink
+Chocolatier,,,,Food & Drink
+Corner Store,,,,Food & Drink
+Farmer's Market Booth,,,,Food & Drink
+Food Manufacturing,,,,Food & Drink
+Grocery Market,,,,Food & Drink
+Ice Cream Shop,,,,Food & Drink
+Mobile Food Truck,,,,Food & Drink
+Restaurant,,,,Food & Drink
+Vending Machines,,,,Food & Drink
+Winery,,,,Food & Drink
+Healthcare,,,,
+Dentist Office,,,,Healthcare
+Doctor's Office,,,,Healthcare
+Health Clinic,,,,Healthcare
+Medical Device Sales,,,,Healthcare
+Medical Marijuana Dispensary,,,,Healthcare
+Medical Transport,,,,Healthcare
+Pharmacy,,,,Healthcare
+Skilled Nursing Facility,,,,Healthcare
+Manufacturing,,,,
+Animal Food Manufacturing,,,,Manufacturing
+Clothing & Apparel Manufacturing,,,,Manufacturing
+Food Manufacturing,,,,Manufacturing
+Jewelry Manufacturing,,,,Manufacturing
+Personal Services,,,,
+Cleaning Business,,,,Personal Services
+Dog Walking,,,,Personal Services
+Gym & Yoga Studio,,,,Personal Services
+Hair/Nail Salon,,,,Personal Services
+Laundry/Dry Cleaning,,,,Personal Services
+Massage Establishment,,,,Personal Services
+Personal Trainer,,,,Personal Services
+Tattoo & Piercing Parlor,,,,Personal Services
+Pet Services,,,,
+Dog Kennel,,,,Pet Services
+Dog Walking,,,,Pet Services
+Pet Hospital,,,,Pet Services
+Pet Shop,,,,Pet Services
+Pet Sitting,,,,Pet Services
+Professional Services,,,,
+Accounting Service,,,,Professional Services
+Advertising Agency,,,,Professional Services
+Appliance Repair & Service,,,,Professional Services
+Architectural Consultant,,,,Professional Services
+Art Consultant,,,,Professional Services
+Broker Dealer,,,,Professional Services
+Business Consultant,,,,Professional Services
+Educational Consulting,,,,Professional Services
+Electronics & Computer Repair,,,,Professional Services
+Employment/Staffing Agency,,,,Professional Services
+Engineering Consultant,,,,Professional Services
+Escrow Agency,,,,Professional Services
+Event & Wedding Planning,,,,Professional Services
+Financial Advisor,,,,Professional Services
+Graphic/Web Design,,,,Professional Services
+Insurance Agency/Broker,,,,Professional Services
+IT Consultant,,,,Professional Services
+Junk Dealer/Junkyard,,,,Professional Services
+Landlord,,,,Professional Services
+Law Firm,,,,Professional Services
+Marketing Consultant,,,,Professional Services
+Modeling/Talent Agency,,,,Professional Services
+Payroll Services,,,,Professional Services
+Photography,,,,Professional Services
+Real Estate Agency,,,,Professional Services
+Recycling Business,,,,Professional Services
+Residential Leasing,,,,Professional Services
+Security Services,,,,Professional Services
+Software Developer,,,,Professional Services
+Transportation & Shipping,,,,
+Airport Passenger Transportation,,,,Transportation & Shipping
+Commercial Transportation/Trucking,,,,Transportation & Shipping
+Hazardous Materials Transportation,,,,Transportation & Shipping
+Import/Export,,,,Transportation & Shipping
+Limousine Services,,,,Transportation & Shipping
+Pedicab,,,,Transportation & Shipping
+Shipping,,,,Transportation & Shipping
+Taxi Company,,,,Transportation & Shipping
+Valet Parking,,,,Transportation & Shipping
+Vehicle Rental,,,,Transportation & Shipping
+Travel/Tourism,,,,
+Travel Company,,,,Travel/Tourism
+Tour Company,,,,Travel/Tourism
+Bed & Breakfast,,,,Travel/Tourism
+Hotel,,,,Travel/Tourism
+Retail,,,,
+Antique Shop,,,,Retail
+Art Gallery,,,,Retail
+Book Store,,,,Retail
+Clothing Store,,,,Retail
+Electronic Sales,,,,Retail
+Florist,,,,Retail
+Furniture Store,,,,Retail
+General Retail,,,,Retail
+Jeweler,,,,Retail
+Online Retailer,,,,Retail
+Pawn Shop,,,,Retail
+Print & Photocopy Shop,,,,Retail
+Street Artist,,,,Retail
+Tobacco Sales,,,,Retail

@@ -1,0 +1,54 @@
+/**
+ * @file
+ * Styles for Personalize Elements administration page.
+ */
+
+/* Supporting text within a form label */
+label span.secondary {
+  font-weight: normal;
+}
+
+/* Floating help link */
+.form-item-help-link {
+  display: inline-block;
+}
+.form-item-help-link label {
+  float: left;
+}
+.form-item-help-link .field-prefix {
+  float: right;
+}
+.form-item-help-link input {
+  width: 100%;
+}
+
+/* Rename-able personalize element content variation label */
+.personalize-elements-option-label-element label {
+  display: inline;
+}
+.personalize-elements-option-label-element .form-item {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Add another variation button */
+.personalize-elements-add-option {
+
+}
+input[type="submit"].personalize-elements-add-option { /* moved color to theme.css -KO */
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  height: 2em;
+  line-height: 2em;
+}
+input[type="submit"].personalize-elements-add-option:hover { /* moved color and text decoration to theme.css -KO */
+  background: transparent;
+}
+/* The + before the Add variation button */
+.personalize-elements-add-link-prefix:after {
+  font-weight: bold;
+  font-size: 1.5em;
+  margin-right: .2em;
+}

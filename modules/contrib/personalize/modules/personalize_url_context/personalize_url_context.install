@@ -1,0 +1,21 @@
+<?php
+
+/**
+ * Implements hook_uninstall().
+ */
+function personalize_url_context_uninstall() {
+  variable_del('personalize_url_querystring_contexts');
+}
+
+/**
+ * Remove the lists of possible values from all querystring contexts as we no
+ * longer need them.
+ */
+function personalize_url_context_update_7001() {
+  $contexts = variable_get('personalize_url_querystring_contexts', array());
+  $new_contexts = array();
+  foreach ($contexts as $key => $values) {
+    $new_contexts[] = $key;
+  }
+  variable_set('personalize_url_querystring_contexts', $new_contexts);
+}

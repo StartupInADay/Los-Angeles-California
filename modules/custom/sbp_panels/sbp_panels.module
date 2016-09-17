@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the SBP Panels feature.
+ */
+
+include_once 'sbp_panels.features.inc';

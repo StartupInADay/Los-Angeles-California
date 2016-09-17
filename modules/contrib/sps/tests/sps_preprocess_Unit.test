@@ -1,0 +1,139 @@
+<?php
+class sps_preprocess_UnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'sps_preprocess Unit Tests',
+      'description' => 'Test the overrides of sps_preprocess',
+      'group' => 'SPS',
+    );
+  }
+  function test_sps_preprocess_node() {
+    $vars = array(
+      'nid' => 1,
+      'classes_array' => array(),
+    );
+    _sps_preprocess($vars, 'node', $this);
+    $this->assertEqual(
+      $vars['classes_array'][0],
+      'test_class',
+      "sps_preprcess should alter the \$vars['classes_array'] if the nid is set to override by the reaction"
+    );
+    $vars = array(
+      'nid' => 2,
+      'classes_array' => array(),
+    );
+    _sps_preprocess($vars, 'node', $this);
+    $this->assertEqual(
+      $vars['classes_array'],
+      array(),
+      "sps_preprcess should not alter the \$vars['classes_array'] if the nid is not set to override by the reaction"
+    );
+  }
+  function test_sps_preprocess_views_view_list() {
+    $vars = array(
+      'view' => $this->getView(),
+      'classes_array' => array('view', 'view', 'view', 'view'),
+    );
+    _sps_preprocess($vars, 'views_view_list', $this);
+    $this->assertEqual(
+      $vars['classes_array'][2],
+      'view test_class',
+      "sps_preprocess, with a views_view_list should alter the \$vars['classes_array'] for the index of the matching node"
+    );
+    $this->assertEqual(
+      $vars['classes_array'][3],
+      'view',
+      "sps_preprocess, with a views_view_list should not alter the \$vars['classes_array'] for the index of non-matching nodes"
+    );
+  }
+  function test_sps_preprocess_views_view_unformatted() {
+    $vars = array(
+      'view' => $this->getView(),
+      'classes_array' => array('view', 'view', 'view', 'view'),
+    );
+    _sps_preprocess($vars, 'views_view_unformatted', $this);
+    $this->assertEqual(
+      $vars['classes_array'][2],
+      'view test_class',
+      "sps_preprocess, with a views_view_unformatted should alter the \$vars['classes_array'] for the index of the matching node"
+    );
+    $this->assertEqual(
+      $vars['classes_array'][3],
+      'view',
+      "sps_preprocess, with a views_view_unformatted should not alter the \$vars['classes_array'] for the index of non-matching nodes"
+    );
+  }
+
+  function test_sps_preprocess_views_view_table() {
+    $vars = array(
+      'view' => $this->getView(),
+      'row_classes' => array(array('view'), array('view'), array('view'), array('view')),
+    );
+    _sps_preprocess($vars, 'views_view_table', $this);
+    $this->assertEqual(
+      $vars['row_classes'][2][1],
+      'test_class',
+      "sps_preprocess, with a views_view_table should alter the \$vars['classes_array'] for the index of the matching node"
+    );
+    $this->assertEqual(
+      $vars['row_classes'][3],
+      array('view'),
+      "sps_preprocess, with a views_view_table should not alter the \$vars['classes_array'] for the index of non-matching nodes"
+    );
+  }
+
+  function test_sps_preprocess_views_view_grid() {
+    $vars = array(
+      'view' => $this->getView(),
+      'column_classes' => array(array('view','view'), array('view','view')),
+    );
+    $vars['view']->style_plugin = (object) array('options' => array('columns' => 2, 'alignment' => 'horizontal'));
+    _sps_preprocess($vars, 'views_view_grid', $this);
+    $this->assertEqual(
+      $vars['column_classes'][1][0],
+      'view test_class',
+      "sps_preprocess, with a views_view_grid should alter the \$vars['classes_array'] for the index of the matching node"
+    );
+    $this->assertEqual(
+      $vars['column_classes'][0][1],
+      'view',
+      "sps_preprocess, with a views_view_grid should not alter the \$vars['classes_array'] for the index of non-matching nodes"
+    );
+
+    $vars = array(
+      'view' => $this->getView(),
+      'column_classes' => array(array('view','view'), array('view','view')),
+    );
+    $vars['view']->style_plugin = (object) array('options' => array('columns' => 2, 'alignment' => 'vertical'));
+    _sps_preprocess($vars, 'views_view_grid', $this);
+    $this->assertEqual(
+      $vars['column_classes'][0][1],
+      'view test_class',
+      "sps_preprocess, with a views_view_grid should alter the \$vars['classes_array'] for the index of the matching node (in vertical)"
+    );
+    $this->assertEqual(
+      $vars['column_classes'][1][0],
+      'view',
+      "sps_preprocess, with a views_view_grid should not alter the \$vars['classes_array'] for the index of non-matching nodes (in vertical)"
+    );
+
+
+  }
+  function react($react, $data) {
+     if(($react == 'add_class') && ($data['id'] == 1) && ($data['type'] = 'node')) {
+       return 'test_class';
+     }
+   }
+
+   function getView() {
+     $view = new stdClass();
+     $view->base_table = 'node';
+     $view->result = array(
+       (object) array('nid'=> 2),
+       (object) array('nid'=> 3),
+       (object) array('nid'=> 1),
+       (object) array('nid'=> 8)
+     );
+     return $view;
+   }
+}

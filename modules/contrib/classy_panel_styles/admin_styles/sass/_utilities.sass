@@ -1,0 +1,20 @@
+@import "compass"
+@import "breakpoint"
+@import "singularitygs"
+
+$smartphone-portrait: 320px
+$smartphone-landscape: 480px
+$tablet-portrait: 600px
+$tablet-landscape: 769px
+$desktop: 960px
+
+$breakpoint-no-query-fallbacks: true
+
+// The first selector is to apply styles to the backend admin panel
+//   - use #page #panels-dnd-main for the styles themselves, and
+//   - use .panels-ipe-display-container .panel-display for admin styles
+// The second selector is to apply styles on the front-end
+@mixin cps-top-level-selectors
+  .panels-ipe-display-container .panel-display,
+  body 
+    @content

@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the SBP Field Base feature.
+ */
+
+include_once 'sbp_field_base.features.inc';

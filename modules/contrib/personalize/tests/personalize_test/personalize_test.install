@@ -1,0 +1,51 @@
+<?php
+
+/**
+ * @file
+ * Sets up the base table for our agent entity.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function personalize_test_install() {
+  // Force the test agent to be available to CTools during installation.
+  $file = dirname(__FILE__) . '/plugins/agent_types/PersonalizeTestAgent.inc';
+  require_once($file);
+  $plugins = &drupal_static('ctools_plugins', array());
+  $path = drupal_get_path('module', 'personalize_test') . '/plugins';
+  $plugins['personalize']['agent_type']['test_agent'] = array(
+    'path' => $path . '/agent_types',
+    'handler' => array(
+      'file' => 'PersonalizeTestAgent.inc',
+      'class' => 'PersonalizeTestAgent',
+    ),
+  );
+  // Force loading of default agents.
+  personalize_agent_load_multiple(array(), array(), TRUE);
+  // Set the form_submit action as a goal on our test agent.
+  personalize_goal_save('test-agent', 'form_submit', 2);
+  // Create a new client-side action.
+  $action_name = 'my_test_action';
+  $action = array(
+    'machine_name' => $action_name,
+    'label' => 'My test action',
+    'plugin' => 'link',
+    'event' => 'mouseenter',
+    'pages' => 'personalize-test/personalized-page/*',
+    'identifier' => '.some-class',
+    'client_side' => TRUE,
+    'data' => array(),
+  );
+  visitor_actions_save_action($action);
+  // Now set that action as a goal on the first test agent.
+  personalize_goal_save('test-agent', $action_name, 5);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function personalize_test_uninstall() {
+  drupal_load('module', 'visitor_actions');
+  visitor_actions_delete_action('my_test_action');
+}

@@ -1,0 +1,98 @@
+<?php
+class SPSBasicConditionUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Basic condition Unit Test',
+      'description' => 'Test that BasicCondition public metholds',
+      'group' => 'SPS',
+    );
+  }
+
+  public function testBasicConditionIntegration() {
+    $manager = self::getManager();
+
+    $settings = array(
+      'name' => 'basic',
+      'widget' => new \Drupal\sps\Test\Widget(array(), $manager)
+    );
+
+    $condition = new \Drupal\sps\Plugins\Condition\BasicCondition($settings, $manager);
+
+    $state = array();
+    $element = $condition->getElement(array(), $state);
+
+    $good_state = array(
+      'values' => array(
+        'widget' => array(
+          'text_input' => 'value'
+        ),
+      )
+    );
+
+    //BasicCondition should submit the form properly and pass the values to the override.
+    $condition->submitElement($element, $good_state);
+    $override = $condition->getOverride();
+
+    $this->assertEqual($override->getOverrides(), array(
+        'node' => 'value',
+        'box' => 'value',
+      ),
+      'BasicCondition should properly extract values from widget and pass them to Override after submit.');
+  }
+
+  /**
+   * Helper function to return a manager object for passing into plugins
+   */
+  protected static function getManager() {
+   $plugins = array(
+      'override' => array(
+        'test1' => array(
+          'name' => 'test1',
+          'condition' => 'basic',
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(
+            'type' => 'node',
+          ),
+        ),
+        'test2' => array(
+          'name' => 'test2',
+          'condition' => 'basic',
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(
+            'type' => 'box',
+          ),
+        ),
+        'test3' => array(
+          'name' => 'test3',
+          'condition' => 'client',
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(),
+        ),
+      ),
+      'condition' => array(
+        'basic' => array(
+          'name' => 'basic',
+          'class' => '\Drupal\sps\Plugins\Condition\BasicCondition',
+          'instance_settings' => array(
+            'widget' => 'basicWidget',
+            'name' => 'basic',
+          ),
+        ),
+      ),
+      'widget' => array(
+        'basicWidget' => array(
+          'name' => 'basicWidget',
+          'class' => '\Drupal\sps\Test\Widget',
+          'instance_settings' => array(),
+        ),
+      )
+    );
+
+    $config_controller = new Drupal\sps\Test\ConfigController();
+    $config_controller->set(SPS_CONFIG_ROOT_CONDITION, array('name' => 'basic'));
+
+    $config_controller->default[SPS_CONFIG_PLUGIN_CONTROLLER]['instance_settings'] = $plugins;
+
+    return new Drupal\sps\Test\Manager($config_controller);
+  }
+}

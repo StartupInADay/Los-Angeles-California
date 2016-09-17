@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * @file personalize_target.module
+ * Provides an agent type plugin for pure explicit targeting.
+ */
+
+/**
+ * Implements hook_personalize_agent_type().
+ */
+function personalize_target_personalize_agent_type() {
+  $info = array();
+  $path = drupal_get_path('module', 'personalize_target') . '/plugins';
+  $info['personalize_target'] = array(
+    'path' => $path . '/agent_types',
+    'handler' => array(
+      'file' => 'PersonalizeTarget.inc',
+      'class' => 'PersonalizeTarget',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function personalize_target_ctools_plugin_api($owner, $api) {
+  if ($owner == 'personalize' && $api == 'personalize') {
+    return array('version' => 1);
+  }
+}

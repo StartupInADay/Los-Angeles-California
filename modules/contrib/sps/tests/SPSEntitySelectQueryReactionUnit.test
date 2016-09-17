@@ -1,0 +1,1131 @@
+<?php
+class SPSEntitySelectQueryAlterReactionUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Entity Select Query Alter Reaction Unit Tests',
+      'description' => 'Test the public interface to the Query Alter Reaction objects',
+      'group' => 'SPS',
+    );
+  }
+  public function test_EntitySelectQueryAlterReaction_NodeAddTable() {
+    
+    $query = $this->addTable_start();
+    $controller = $this->getTestCondition();
+    $reaction = $this->getNodeReaction();
+    $data= new stdClass();
+    $data->query = $query;
+    $reaction->react($data, $controller);
+    $expected = $this->addTable_start();
+    $expected->tables['node_overrides'] = array (
+      'join type' => 'LEFT OUTER',
+      'table' => 'test_override',
+      'alias' => 'node_overrides',
+      'condition' => 'b.nid = node_overrides.id',
+      'arguments' => array (),
+    );
+    $expected->tables['override_node_revision'] = array (
+      'join type' => 'INNER',
+      'table' => 'node_revision',
+      'alias' => 'override_node_revision',
+      'condition' => 'COALESCE(node_overrides.override_revision_id, b.vid) = override_node_revision.vid',
+      'arguments' => array (),
+    );
+    $this->assertEqual(
+      $query->tables,
+      $expected->tables,
+      "::react alter a query and adds the overrides table"
+    );
+  }
+
+  public function test_EntitySelectQueryAlterReaction_NodeVidField() {
+    $query = $this->vidField_start();
+    $controller = $this->getTestCondition();
+    $reaction = $this->getNodeReaction();
+
+    $data= new stdClass();
+    $data->query = $query;
+    $reaction->react($data, $controller);
+    $this->assertEqual(
+      $query->expressions['vid']['expression'],
+      'COALESCE(node_overrides.override_revision_id, b.vid)',
+      "::react alter a query to change the vid field to a expression, with a COALESECE of the base table and the override table"
+    );
+    $this->assertTrue(
+      !isset($query->fields['vid']),
+      "::react alters a query and should remove the vid field as it is now an expression"
+    );
+  }
+ 
+  public function test_EntitySelectQueryAlterReaction_revisionFields() {
+    $query = $this->revisionFields_start();
+    $info = $this->getNodeReactionInfo();
+
+    $controller = $this->getTestCondition(array(array('id'=> 4, 'revision_id'=>5)));
+    $reaction = $this->getNodeReaction();
+    $data= new stdClass();
+    $data->query = $query;
+    $reaction->react($data, $controller);
+
+    $expected = $this->revisionFields_start();
+    $expected->fields['title']['table'] = 'r';
+    $expected->fields['status']['table'] = 'r';
+    $expected->fields['promote']['table'] = 'r';
+    $expected->fields['sticky']['table'] = 'r';
+    $expected->fields['uid']['table'] = 'r';
+
+    $this->assertEqual(
+      $query->fields,
+      $expected->fields,
+      "::react alter a query changing the table of all fields on the base table in revisions_fields to the revision table alias if they are not in the property map"
+    );
+
+    $this->assertEqual(
+      array_keys($query->tables),
+      array('b', 'node_overrides', 'r'),
+      "::react alter a query so that the overrides table is right after the base table"
+    );
+    
+    $this->assertEqual(
+      $query->tables['r']['condition'],
+      'r.vid = COALESCE(node_overrides.override_revision_id, b.vid)',
+      "::react alter a query so that the revision table joins on a coalesce of the overides and the base revision ids"
+    );
+    $condition = $query->where->conditions[0]['field']->conditions();
+    $this->assertEqual(
+      $condition[0]['field'],
+      'r.status',
+      "::react alter a query so that conditions that reference revision fields on the base, are change to the revision table"
+    );
+
+    $this->assertEqual(
+      $query->expressions['expression']['expression'],
+      'r.title is NULL', 
+      "::react alter a query so that expressions that reference revision fields on the base, are change to the revision table"
+    );
+
+    $this->assertEqual(
+      $query->order,
+      array ('r.sticky' => 'ASC', 'r.title' => 'ASC'),
+      "::react alter a query so that order fields that reference revision fields on the base, are change to the revision table"
+    );
+  }
+
+  public function test_EntitySelectQueryAlterReaction_revisionFields_with_Overrides() {
+    $query = $this->revisionFields_start();
+    $info = $this->getNodeReactionInfo();
+
+    $controller = $this->getTestCondition(array(array('id'=> 4, 'status' => 0, 'promote' => 0 , 'sticky' => 0, 'uid' => 8, 'title' => 'joe')));
+    $reaction = $this->getNodeReaction();
+    $data= new stdClass();
+    $data->query = $query;
+    $reaction->react($data, $controller);
+
+    $expected = $this->revisionFields_start();
+    $expected->expressions['title']['expression'] = 'COALESCE(node_overrides.override_title, r.title)';
+    $expected->expressions['title']['alias'] = 'title';
+    $expected->expressions['title']['arguments'] = array();
+    $expected->expressions['status']['expression'] = 'COALESCE(node_overrides.override_status, r.status)';
+    $expected->expressions['status']['alias'] = 'status';
+    $expected->expressions['status']['arguments'] = array();
+    $expected->expressions['promote']['expression'] = 'COALESCE(node_overrides.override_promote, r.promote)';
+    $expected->expressions['promote']['alias'] = 'promote';
+    $expected->expressions['promote']['arguments'] = array();
+    $expected->expressions['sticky']['expression'] = 'COALESCE(node_overrides.override_sticky, r.sticky)';
+    $expected->expressions['sticky']['alias'] = 'sticky';
+    $expected->expressions['sticky']['arguments'] = array();
+    $expected->expressions['uid']['expression'] = 'COALESCE(node_overrides.override_uid, r.uid)';
+    $expected->expressions['uid']['alias'] = 'uid';
+    $expected->expressions['uid']['arguments'] = array();
+    $expected->expressions['expression']['expression'] = 'COALESCE(node_overrides.override_title, r.title) is NULL';
+    unset($expected->fields['title']);
+    unset($expected->fields['status']);
+    unset($expected->fields['promote']);
+    unset($expected->fields['sticky']);
+    unset($expected->fields['uid']);
+    ksort($query->expressions);
+    ksort($expected->expressions);
+    $this->assertEqual(
+      $query->expressions,
+      $expected->expressions,
+      "::react alter a query changing the table of all fields on the base table in revisions_fields to to an expression of the Coalese of the overrides table and the revision table"
+    );
+    $this->assertEqual(
+      $query->fields,
+      $expected->fields,
+      "::react alter a query changing the table of all fields on the base table in revisions_fields to to an expression of the Coalese of then doe_overrides table and the revision table and remove them from fields"
+    );
+
+    $this->assertEqual(
+      array_keys($query->tables),
+      array('b', 'node_overrides', 'r'),
+      "::react alter a query so that the overrides table is right after the base table"
+    );
+
+    $this->assertEqual(
+      $query->tables['r']['condition'],
+      'r.vid = COALESCE(node_overrides.override_revision_id, b.vid)',
+      "::react alter a query so that the revision table joins on a coalesce of the overides and the base revision ids"
+    );
+    $condition = $query->where->conditions[0]['field']->conditions();
+    $this->assertEqual(
+      $condition[0]['field'],
+      'COALESCE(node_overrides.override_status, r.status)',
+      "::react alter a query so that conditions that reference revision fields on the base, are change to a coalesce of the overrides table and the revision table if the field is controller->getProperyMap"
+    );
+    $this->assertEqual(
+      $query->expressions['expression']['expression'],
+      'COALESCE(node_overrides.override_title, r.title) is NULL',
+      "::react alter a query so that expressions that reference revision fields on the base, are change to a coalesce of the overrides table and the revision table if the field is controller->getProperyMap"
+    );
+
+    $this->assertEqual(
+      $query->order,
+      array ('COALESCE(node_overrides.override_sticky, r.sticky)' => 'ASC', 'COALESCE(node_overrides.override_title, r.title)' => 'ASC'),
+      "::react alter a query so that order fields that reference revision fields on the base, are change to a coalesce of the overrides table and the revision table if the field is controller->getProperyMap"
+    );
+  }
+  public function test_EntitySelectQueryAlterReaction_revisionFields_with_Overrides_withError() {
+    $query = $this->revisionFields_withError_start();
+    $info = $this->getNodeReactionInfo();
+
+    $controller = $this->getTestCondition(array(array('id'=> 4, 'status!$%' => 0, 'promote' => 0 , ';;sticky' => 0, 'uid' => 8, 'title' => 'joe')));
+    $reaction = $this->getNodeReaction();
+    $data= new stdClass();
+    $data->query = $query;
+    $reaction->react($data, $controller);
+
+    $expected = $this->revisionFields_start();
+    $expected->expressions['title']['expression'] = 'COALESCE(node_overrides.override_title, r.title)';
+    $expected->expressions['title']['alias'] = 'title';
+    $expected->expressions['title']['arguments'] = array();
+    $expected->expressions['status']['expression'] = 'r.status';
+    $expected->expressions['status']['alias'] = 'status';
+    $expected->expressions['status']['arguments'] = array();
+    $expected->expressions['promote']['expression'] = 'COALESCE(node_overrides.override_promote, r.promote)';
+    $expected->expressions['promote']['alias'] = 'promote';
+    $expected->expressions['promote']['arguments'] = array();
+    $expected->expressions['sticky']['expression'] = 'r.sticky';
+    $expected->expressions['sticky']['alias'] = 'sticky';
+    $expected->expressions['sticky']['arguments'] = array();
+    $expected->expressions['uid']['expression'] = 'COALESCE(node_overrides.override_uid, r.uid)';
+    $expected->expressions['uid']['alias'] = 'uid';
+    $expected->expressions['uid']['arguments'] = array();
+    $expected->expressions['expression']['expression'] = 'COALESCE(node_overrides.override_title, r.title) is NULL';
+    unset($expected->fields['title']);
+    unset($expected->fields['status']);
+    unset($expected->fields['promote']);
+    unset($expected->fields['sticky']);
+    unset($expected->fields['uid']);
+    ksort($query->expressions);
+    ksort($expected->expressions);
+    $this->assertEqual(
+      $query->expressions,
+      $expected->expressions,
+      "::react alter a query changing the table of all fields on the base table in revisions_fields to to an expression of the Coalese of the overrides table and the revision table and should filter bad chars"
+    );
+    $this->assertEqual(
+      $query->fields,
+      $expected->fields,
+      "::react alter a query changing the table of all fields on the base table in revisions_fields to to an expression of the Coalese of then doe_overrides table and the revision table and remove them from fields"
+    );
+
+    $this->assertEqual(
+      array_keys($query->tables),
+      array('b', 'node_overrides', 'r'),
+      "::react alter a query so that the overrides table is right after the base table"
+    );
+
+    $this->assertEqual(
+      $query->tables['r']['condition'],
+      'r.vid = COALESCE(node_overrides.override_revision_id, b.vid)',
+      "::react alter a query so that the revision table joins on a coalesce of the overides and the base revision ids"
+    );
+
+    $condition = $query->where->conditions[0]['field']->conditions();
+    $this->assertEqual(
+      $condition[0]['field'],
+      'r.status',
+      "::react alter a query so that conditions that reference revision fields on the base, are change to a coalesce of the overrides table and the revision table if the field is controller->getProperyMap"
+    );
+    $this->assertEqual(
+      $query->expressions['expression']['expression'],
+      'COALESCE(node_overrides.override_title, r.title) is NULL',
+      "::react alter a query so that expressions that reference revision fields on the base, are change to a coalesce of the overrides table and the revision table if the field is controller->getProperyMap"
+    );
+
+    $this->assertEqual(
+      $query->order,
+      array ('r.sticky' => 'ASC', 'COALESCE(node_overrides.override_title, r.title)' => 'ASC'),
+      "::react alter a query so that order fields that reference revision fields on the base, are change to a coalesce of the overrides table and the revision table if the field is controller->getProperyMap"
+    );
+  }
+  public function test_EntitySelectQueryAlterReaction_groupBy() {
+    $query = $this->groupBy_start();
+    $info = $this->getNodeReactionInfo();
+
+    $controller = $this->getTestCondition();
+    $reaction = $this->getNodeReaction();
+    $data= new stdClass();
+    $data->query = $query;
+    $reaction->react($data, $controller);
+
+    $this->assertEqual(
+      $query->group,
+      array ('r.uid' => 'r.uid', 'u.name' => 'u.name'),
+      "::react alter a query so that group by fields that reference revision fields on the base, are change to the revision table"
+    );
+
+    $this->assertEqual(
+      $query->having->conditions[0]['field'],
+      'COUNT(r.status) > 1',
+      "::react alter a query so that fields that reference revision fields on the base, are change to the revision table in having clauses"
+    );
+  }
+
+  public function test_EntitySelectQueryAlterReaction_subCondition() {
+    $query = $this->groupBy_start();
+    $info = $this->getNodeReactionInfo();
+
+    $controller = $this->getTestCondition();
+    $reaction = $this->getNodeReaction();
+    $data= new stdClass();
+    $data->query = $query;
+    $reaction->react($data, $controller);
+    $conditions = $query->conditions();
+    $conditions = $conditions[0]['field']->conditions();
+    $conditions = $conditions[0]['field']->conditions();
+    $this->assertEqual(
+      $conditions[0]['field'],
+      'r.sticky',
+      "::react alter a query so that sub conditions that reference revision fields on the base, are change to the revision table"
+    );
+  }
+
+  public function test_EntitySelectQueryAlterReaction_subCondition_withProperty() {
+    $query = $this->groupBy_start();
+    $info = $this->getNodeReactionInfo();
+
+    $controller = $this->getTestCondition(array(array('id'=> 4, 'status' => 0, 'promote' => 0 , 'sticky' => 0, 'uid' => 8, 'title' => 'joe')));
+    $reaction = $this->getNodeReaction();
+    $data= new stdClass();
+    $data->query = $query;
+    $reaction->react($data, $controller);
+   
+    $conditions = $query->conditions();
+    $conditions = $conditions[0]['field']->conditions();
+    $conditions = $conditions[0]['field']->conditions();
+    $this->assertEqual(
+      $conditions[0]['field'],
+      'COALESCE(node_overrides.override_sticky, r.sticky)',
+      "::react alter a query so that sub conditions that reference revision fields on the base, are change to a COALESCE if they are properties on the override controller"
+    );
+  }
+  public function test_EntitySelectQueryAlterReaction_noAlter() {
+    $query = $this->noAlter_start();
+    $info = $this->getNodeReactionInfo();
+
+    $controller = $this->getTestCondition();
+    $reaction = $this->getNodeReaction();
+    $data= new stdClass();
+    $data->query = $query;
+    $reaction->react($data, $controller);
+   
+    $this->assertEqual(
+      $query,
+      $this->noAlter_start(),
+      "::react does not alter queries with the SPS_NO_ALTER_QUERY_TAG tag"
+    );
+  }
+  protected function getNodeReactionInfo() {
+    return array(
+      'entities' => array(
+        array(
+          'base_table'=>'node', 
+          'revision_table' => 'node_revision',
+          'base_id' => 'nid',
+          'revision_id' => 'vid',
+          'revision_fields' => array('title', 'status', 'promote', 'sticky', 'uid'),
+        )
+      )
+    );
+  }
+  protected function getTestCondition($overrides = NULL) {
+    $manager = new \Drupal\sps\Test\Manager();
+    $controller = new \Drupal\sps\Test\TableOverrideStorageController(array(), $manager);
+    if($overrides) {
+      $controller ->set($overrides);
+    }
+    return $controller;
+  }
+
+  protected function getNodeReaction() {
+     $manager = new \Drupal\sps\Test\Manager();
+     $reaction = new \Drupal\sps\Plugins\Reaction\EntitySelectQueryAlterReaction(
+      $this->getNodeReactionInfo(),
+      $manager
+    );
+    return $reaction;
+  }
+
+  protected function addTable_start() {
+    return Drupal\sps\Test\SelectQuery::__set_state(array(
+       'fields' => 
+      array (
+        'nid' => 
+        array (
+          'field' => 'nid',
+          'table' => 'b',
+          'alias' => 'nid',
+        ),
+      ),
+       'expressions' => 
+      array (
+      ),
+       'tables' => 
+      array (
+        'b' => 
+        array (
+          'join type' => NULL,
+          'table' => 'node',
+          'alias' => 'b',
+          'condition' => NULL,
+          'arguments' => 
+          array (
+          ),
+        ),
+      ),
+       'order' => 
+      array (
+      ),
+       'group' => 
+      array (
+      ),
+       'where' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'having' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'distinct' => false,
+       'range' => NULL,
+       'union' => 
+      array (
+      ),
+       'prepared' => false,
+       'forUpdate' => false,
+       'connectionTarget' => 'default',
+       'connectionKey' => 'default',
+       'queryOptions' => 
+      array (
+        'target' => 'default',
+        'return' => 1,
+      ),
+       'uniqueIdentifier' => '5004e1ce871882.19828660',
+       'nextPlaceholder' => 0,
+       'comments' => 
+      array (
+      ),
+    ));
+  }
+  protected function vidField_start() {
+    return Drupal\sps\Test\SelectQuery::__set_state(array(
+       'fields' => 
+      array (
+        'vid' => 
+        array (
+          'field' => 'vid',
+          'table' => 'b',
+          'alias' => 'vid',
+        ),
+      ),
+       'expressions' => 
+      array (
+      ),
+       'tables' => 
+      array (
+        'b' => 
+        array (
+          'join type' => NULL,
+          'table' => 'node',
+          'alias' => 'b',
+          'condition' => NULL,
+          'arguments' => 
+          array (
+          ),
+        ),
+      ),
+       'order' => 
+      array (
+      ),
+       'group' => 
+      array (
+      ),
+       'where' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'having' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'distinct' => false,
+       'range' => NULL,
+       'union' => 
+      array (
+      ),
+       'prepared' => false,
+       'forUpdate' => false,
+       'connectionTarget' => 'default',
+       'connectionKey' => 'default',
+       'queryOptions' => 
+      array (
+        'target' => 'default',
+        'return' => 1,
+      ),
+       'uniqueIdentifier' => '5004e417107c22.99425880',
+       'nextPlaceholder' => 0,
+       'comments' => 
+      array (
+      ),
+    ));
+  }
+  protected function revisionFields_start() {
+     return Drupal\sps\Test\SelectQuery::__set_state(array(
+       'fields' => 
+      array (
+        'sticky' => 
+        array (
+          'field' => 'sticky',
+          'table' => 'b',
+          'alias' => 'sticky',
+        ),
+        'title' => 
+        array (
+          'field' => 'title',
+          'table' => 'b',
+          'alias' => 'title',
+        ),
+        'status' => 
+        array (
+          'field' => 'status',
+          'table' => 'b',
+          'alias' => 'status',
+        ),
+        'uid' => 
+        array (
+          'field' => 'uid',
+          'table' => 'b',
+          'alias' => 'uid',
+        ),
+        'promote' => 
+        array (
+          'field' => 'promote',
+          'table' => 'b',
+          'alias' => 'promote',
+        ),
+      ),
+       'expressions' => 
+      array (
+        'expression' => 
+        array (
+          'expression' => 'b.title is NULL',
+          'alias' => 'expression',
+          'arguments' => 
+          array (
+          ),
+        ),
+      ),
+       'tables' => 
+      array (
+        'b' => 
+        array (
+          'join type' => NULL,
+          'table' => 'node',
+          'alias' => 'b',
+          'condition' => NULL,
+          'arguments' => 
+          array (
+          ),
+        ),
+        'r' => 
+        array (
+          'join type' => 'INNER',
+          'table' => 'node_revision',
+          'alias' => 'r',
+          'condition' => 'r.vid = b.vid',
+          'arguments' => 
+          array (
+          ),
+        ),
+      ),
+       'order' => 
+      array (
+        'b.sticky' => 'ASC',
+        'b.title' => 'ASC',
+      ),
+       'group' => 
+      array (
+      ),
+       'where' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+          0 => 
+          array (
+            'field' => 'b.status',
+            'value' => 1,
+            'operator' => '=',
+          ),
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'having' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'distinct' => false,
+       'range' => NULL,
+       'union' => 
+      array (
+      ),
+       'prepared' => false,
+       'forUpdate' => false,
+       'connectionTarget' => 'default',
+       'connectionKey' => 'default',
+       'queryOptions' => 
+      array (
+        'target' => 'default',
+        'return' => 1,
+      ),
+       'uniqueIdentifier' => '5004e873f40640.15709914',
+       'nextPlaceholder' => 0,
+       'comments' => 
+      array (
+      ),
+    )); 
+  }
+  protected function revisionFields_withError_start() {
+     return Drupal\sps\Test\SelectQuery::__set_state(array(
+       'fields' => 
+      array (
+        'sticky' => 
+        array (
+          'field' => ';;sticky',
+          'table' => 'b',
+          'alias' => 'sticky',
+        ),
+        'title' => 
+        array (
+          'field' => 'title',
+          'table' => 'b',
+          'alias' => 'title',
+        ),
+        'status' => 
+        array (
+          'field' => 'status!$%',
+          'table' => 'b',
+          'alias' => 'status',
+        ),
+        'uid' => 
+        array (
+          'field' => 'uid',
+          'table' => 'b',
+          'alias' => 'uid',
+        ),
+        'promote' => 
+        array (
+          'field' => 'promote',
+          'table' => 'b',
+          'alias' => 'promote',
+        ),
+      ),
+       'expressions' => 
+      array (
+        'expression' => 
+        array (
+          'expression' => 'b.title is NULL',
+          'alias' => 'expression',
+          'arguments' => 
+          array (
+          ),
+        ),
+      ),
+       'tables' => 
+      array (
+        'b' => 
+        array (
+          'join type' => NULL,
+          'table' => 'node',
+          'alias' => 'b',
+          'condition' => NULL,
+          'arguments' => 
+          array (
+          ),
+        ),
+        'r' => 
+        array (
+          'join type' => 'INNER',
+          'table' => 'node_revision',
+          'alias' => 'r',
+          'condition' => 'r.vid = b.vid',
+          'arguments' => 
+          array (
+          ),
+        ),
+      ),
+       'order' => 
+      array (
+        'b.sticky' => 'ASC',
+        'b.title' => 'ASC',
+      ),
+       'group' => 
+      array (
+      ),
+       'where' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+          0 => 
+          array (
+            'field' => 'b.status',
+            'value' => 1,
+            'operator' => '=',
+          ),
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'having' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'distinct' => false,
+       'range' => NULL,
+       'union' => 
+      array (
+      ),
+       'prepared' => false,
+       'forUpdate' => false,
+       'connectionTarget' => 'default',
+       'connectionKey' => 'default',
+       'queryOptions' => 
+      array (
+        'target' => 'default',
+        'return' => 1,
+      ),
+       'uniqueIdentifier' => '5004e873f40640.15709914',
+       'nextPlaceholder' => 0,
+       'comments' => 
+      array (
+      ),
+    )); 
+  }
+  protected function groupBy_start() {
+     return Drupal\sps\Test\SelectQuery::__set_state(array(
+       'fields' => 
+      array (
+      ),
+       'expressions' => 
+      array (
+      ),
+       'tables' => 
+      array (
+        'b' => 
+        array (
+          'join type' => NULL,
+          'table' => 'node',
+          'alias' => 'b',
+          'condition' => NULL,
+          'arguments' => 
+          array (
+          ),
+        ),
+        'r' => 
+        array (
+          'join type' => 'INNER',
+          'table' => 'node_revision',
+          'alias' => 'r',
+          'condition' => 'r.vid = b.vid',
+          'arguments' => 
+          array (
+          ),
+        ),
+        'u' => 
+        array (
+          'join type' => 'INNER',
+          'table' => 'user',
+          'alias' => 'u',
+          'condition' => 'u.uid = b.uid',
+          'arguments' => 
+          array (
+          ),
+        ),
+      ),
+       'order' => 
+      array (
+      ),
+       'group' => 
+      array (
+        'b.uid' => 'b.uid',
+        'u.name' => 'u.name',
+      ),
+       'where' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+          0 => 
+          array (
+            'field' => 
+            Drupal\sps\Test\DatabaseCondition::__set_state(array(
+               'conditions' => 
+              array (
+                '#conjunction' => 'OR',
+                0 => 
+                array (
+                  'field' => 'b.sticky',
+                  'value' => 1,
+                  'operator' => '=',
+                ),
+                1 => 
+                array (
+                  'field' => 'b.promote',
+                  'value' => 1,
+                  'operator' => '=',
+                ),
+              ),
+               'arguments' => 
+              array (
+              ),
+               'changed' => true,
+               'queryPlaceholderIdentifier' => NULL,
+            )),
+            'value' => NULL,
+            'operator' => 'IS NULL',
+          ),
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'having' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+          0 => 
+          array (
+            'field' => 'COUNT(b.status) > 1',
+            'value' => 
+            array (
+            ),
+            'operator' => NULL,
+          ),
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'distinct' => false,
+       'range' => NULL,
+       'union' => 
+      array (
+      ),
+       'prepared' => false,
+       'forUpdate' => false,
+       'connectionTarget' => 'default',
+       'connectionKey' => 'default',
+       'queryOptions' => 
+      array (
+        'target' => 'default',
+        'return' => 1,
+      ),
+       'uniqueIdentifier' => '5005820d1a9456.93964435',
+       'nextPlaceholder' => 0,
+       'comments' => 
+      array (
+      ),
+    )); 
+  }
+  protected function subCondition_start() {
+    return array (
+      'forUpdate' => false,
+      'prepared' => false,
+      'union' => 
+      array (
+      ),
+      'range' => NULL,
+      'distinct' => false,
+      'having->conditions' => 
+      array (
+        '#conjunction' => 'AND',
+      ),
+      'where->conditions' => 
+      array (
+        '#conjunction' => 'AND',
+        0 => 
+        array (
+          'field' => 
+          DatabaseCondition::__set_state(array(
+             'conditions' => 
+            array (
+              '#conjunction' => 'OR',
+              0 => 
+              array (
+                'field' => 'b.sticky',
+                'value' => 1,
+                'operator' => '=',
+              ),
+              1 => 
+              array (
+                'field' => 'b.promote',
+                'value' => 1,
+                'operator' => '=',
+              ),
+            ),
+             'arguments' => 
+            array (
+            ),
+             'changed' => true,
+             'queryPlaceholderIdentifier' => NULL,
+          )),
+          'value' => NULL,
+          'operator' => 'IS NULL',
+        ),
+      ),
+      'group' => 
+      array (
+      ),
+      'order' => 
+      array (
+      ),
+      'tables' => 
+      array (
+        'b' => 
+        array (
+          'join type' => NULL,
+          'table' => 'node',
+          'alias' => 'b',
+          'condition' => NULL,
+          'arguments' => 
+          array (
+          ),
+        ),
+        'r' => 
+        array (
+          'join type' => 'INNER',
+          'table' => 'node_revision',
+          'alias' => 'r',
+          'condition' => 'r.vid = b.vid',
+          'arguments' => 
+          array (
+          ),
+        ),
+      ),
+      'expressions' => 
+      array (
+      ),
+      'fields' => 
+      array (
+      ),
+    );
+  }
+  protected function noAlter_start() {
+    return Drupal\sps\Test\SelectQuery::__set_state(array(
+       'fields' => 
+      array (
+      ),
+       'expressions' => 
+      array (
+      ),
+       'tables' => 
+      array (
+        'b' => 
+        array (
+          'join type' => NULL,
+          'table' => 'node',
+          'alias' => 'b',
+          'condition' => NULL,
+          'arguments' => 
+          array (
+          ),
+        ),
+        'r' => 
+        array (
+          'join type' => 'INNER',
+          'table' => 'node_revision',
+          'alias' => 'r',
+          'condition' => 'r.vid = b.vid',
+          'arguments' => 
+          array (
+          ),
+        ),
+        'u' => 
+        array (
+          'join type' => 'INNER',
+          'table' => 'user',
+          'alias' => 'u',
+          'condition' => 'u.uid = b.uid',
+          'arguments' => 
+          array (
+          ),
+        ),
+      ),
+       'order' => 
+      array (
+      ),
+       'group' => 
+      array (
+        'b.uid' => 'b.uid',
+        'u.name' => 'u.name',
+      ),
+       'where' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+          0 => 
+          array (
+            'field' => 
+            Drupal\sps\Test\DatabaseCondition::__set_state(array(
+               'conditions' => 
+              array (
+                '#conjunction' => 'OR',
+                0 => 
+                array (
+                  'field' => 'b.sticky',
+                  'value' => 1,
+                  'operator' => '=',
+                ),
+                1 => 
+                array (
+                  'field' => 'b.promote',
+                  'value' => 1,
+                  'operator' => '=',
+                ),
+              ),
+               'arguments' => 
+              array (
+              ),
+               'changed' => true,
+               'queryPlaceholderIdentifier' => NULL,
+            )),
+            'value' => NULL,
+            'operator' => 'IS NULL',
+          ),
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'having' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+          0 => 
+          array (
+            'field' => 'COUNT(b.status) > 1',
+            'value' => 
+            array (
+            ),
+            'operator' => NULL,
+          ),
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'distinct' => false,
+       'range' => NULL,
+       'union' => 
+      array (
+      ),
+       'prepared' => false,
+       'forUpdate' => false,
+       'connectionTarget' => 'default',
+       'connectionKey' => 'default',
+       'queryOptions' => 
+      array (
+        'target' => 'default',
+        'return' => 1,
+      ),
+       'uniqueIdentifier' => '50059b8a1fbeb1.17192713',
+       'nextPlaceholder' => 0,
+       'comments' => 
+      array (
+      ),
+       'alterTags' => 
+      array (
+        'sps_no_alter' => 1,
+      ),
+    ));
+  }
+}

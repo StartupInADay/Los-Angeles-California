@@ -1,0 +1,136 @@
+<?php
+
+/**
+ * @file: Module for adding horizontal_tabs and vertical_accordion element types
+ */
+
+/*
+ * Implements hook_element_info().
+ */
+function ux_elements_element_info() {
+  $types = array();
+  $types['horizontal_tabs'] = array(
+    '#theme_wrappers' => array('horizontal_tabs'),
+    '#default_tab' => '',
+    '#pre_render' => array('form_pre_render_fieldset'),
+    '#process' => array('form_process_horizontal_tabs2'),
+  );
+  $types['vertical_accordion'] = array(
+    '#theme_wrappers' => array('vertical_accordion', 'fieldset'),
+    '#pre_render' => array('form_pre_render_fieldset', 'form_pre_render_vertical_accordion'),
+    '#process' => array('form_process_fieldset'),
+  );
+
+  return $types;
+}
+
+/*
+ * Implements hook_theme().
+ */
+function ux_elements_theme() {
+  return array(
+    'horizontal_tabs2' => array(
+      'render element' => 'element',
+    ),
+    'vertical_accordion' => array(
+      'render element' => 'element',
+    ),
+    'vertical_accordion_pane' => array(
+      'render element' => 'element',
+    ),
+  );
+}
+
+/**
+ * Creates a group formatted as horizontal tabs.
+ *
+ * @param $element
+ *   An associative array containing the properties and children of the
+ *   fieldset.
+ * @param $form_state
+ *   The $form_state array for the form this vertical tab widget belongs to.
+ * @return
+ *   The processed element.
+ */
+function form_process_horizontal_tabs2($element, &$form_state) {
+  // Inject a new fieldset as child, so that form_process_fieldset() processes
+  // this fieldset like any other fieldset.
+  $element['group'] = array(
+    '#type' => 'fieldset',
+    '#theme_wrappers' => array(),
+    '#parents' => $element['#parents'],
+  );
+
+  // Add JS and CSS necessary for the horizontal tabs
+  $element['#attached']['js'][] = drupal_get_path('module', 'ux_elements') . '/js/horizontal_tab.js';
+  $element['#attached']['css'][] = drupal_get_path('module', 'ux_elements') . '/css/horizontal_tab.css';
+
+  return $element;
+}
+
+/**
+ * Returns HTML for an element's children fieldsets as horizontal tabs.
+ *
+ * @param $variables
+ */
+function theme_horizontal_tabs2($variables) {
+  $element = $variables['element'];
+
+  $output = '<h2 class="element-invisible">' . t('Horizontal Tabs') . '</h2>';
+  $output .= '<div class="horizontal-tabs-panes">' . $element['#children'] . '</div>';
+  return $output;
+}
+
+/**
+ * Alters fieldset children of this element to have a specific theme wrapper
+ *
+ * @param $element
+ */
+function form_pre_render_vertical_accordion($element) {
+  // Add a special theme wrapper to the children of this element.
+  $children = element_children($element);
+  foreach($children as $key) {
+    if ($element[$key]['#type']) {
+      $element[$key]['#theme_wrappers'] = array('vertical_accordion_pane');
+    }
+  }
+
+  // Add JS and CSS necessary for the vertical accordion.
+  drupal_add_js(drupal_get_path('module', 'ux_elements') . '/js/vertical_accordion.js', array('group' => 'JS_DEFAULT', 'weight' => 50));
+  drupal_add_css(drupal_get_path('module', 'ux_elements') . '/css/vertical_accordion.css');
+  drupal_add_library('system', 'ui.accordion');
+
+  return $element;
+}
+
+/**
+ * Returns HTML for an element's children fieldsets as a vertical accordion.
+ *
+ * @param $variables
+ */
+function theme_vertical_accordion($variables) {
+  $element = $variables['element'];
+
+  $output = '<div class="vertical-accordion">' . $element['#children'] . '</div>';
+  return $output;
+}
+
+/**
+ * Returns HTML for a vertical accordion's children fieldsets as panes.
+ *
+ * @param $variables
+ */
+function theme_vertical_accordion_pane($variables) {
+  $element = $variables['element'];
+
+  $output = '<a href="#" class="pane-header">' . $element['#title'] . '</a>';
+  $output .= '<div class="pane form-wrapper">' . $element['#children'];
+
+  if (isset($element['#value'])) {
+    $output .= $element['#value'];
+  }
+
+  $output .= '</div>';
+
+  return $output;
+}

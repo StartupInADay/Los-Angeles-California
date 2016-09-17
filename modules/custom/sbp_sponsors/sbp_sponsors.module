@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the SBP Sponsors feature.
+ */
+
+include_once 'sbp_sponsors.features.inc';

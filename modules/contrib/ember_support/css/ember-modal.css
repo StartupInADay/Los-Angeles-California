@@ -1,0 +1,585 @@
+/**
+* Modal stylings
+*/
+
+/*set some defaults to prevent front-end theme breaking layouts */
+#modal-content {
+  line-height:normal!important;
+  font: bold 12px/32px "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+}
+
+.modal-header {
+  line-height:normal!important;
+}
+
+#modal-content input.form-text {
+  max-width: 98%; /* Handle fixed width form elements in the IPE */
+}
+
+/*ensure the buton all look the same and dont pick up styles form front-end theme */
+#modal-content .button, #modal-content button, #drupal-modal .button, #drupal-modal button{
+  margin-top: 1em;
+  margin-bottom: .5em;
+  margin-right: 1em;
+  font: bold 12px/32px "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  text-decoration: none;
+  height: 33px;
+  color: #fff;
+  cursor: pointer;
+  outline: none;
+  -moz-border-radius: 2px;
+  -khtml-border-radius: 2px;
+  -webkit-border-radius: 2px;
+  border-radius: 2px;
+  background: #2fa6e5;
+  text-shadow: 0 1px 0 #0e3144;
+  padding: 0 13px 1px;
+  border: none;
+}
+
+#modal-content .has-tip, #drupal-modal .has-tip {
+  font-size:12px;
+
+}
+
+#modal-content .form-item-exposed-widget-title input,
+#modal-content .form-item-title input {
+  font-size: 1.5em;
+}
+
+#modalContent div.ctools-modal-content {
+  -moz-border-radius-topleft: 0;
+  -moz-border-radius-topright: 0;
+  -webkit-border-top-left-radius: 0;
+  -webkit-border-top-right-radius: 0;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  -webkit-box-shadow: none;
+  border: none;
+}
+
+/** hide contextual links when they are inside a pane add modal to avoid the view opening in the modal */
+.panels-add-content-modal .contextual-links-wrapper {
+  display:none!important;
+}
+
+.content-type-button .add-content-link-custom-icon-text-button img,
+.content-type-button .add-content-link-node-icon-text-button img  {
+  display:none;
+}
+
+#modalContent .panels-section-column-categories .add-content-link-custom-icon-text-button:before,
+#modalContent .panels-section-column-categories .add-content-link-node-icon-text-button:before {
+  content: "\2295";
+  font-size: 20px;
+  top:5px;
+  color: #666;
+  position: relative;
+  margin-right: 5px;
+}
+
+#modalContent .panels-section-column-categories .content-type-button .add-content-link-custom-icon-text-button,
+#modalContent .panels-section-column-categories .content-type-button .add-content-link-node-icon-text-button {
+  padding-left: 5px;
+  color: #2fa6e5!important;
+}
+
+#modalContent .panels-section-column-categories .content-type-button:hover {
+  background:#ccc;
+}
+
+/* border top left and right subtly differentiates header from dark background, and now background can be darker */
+#modalContent div.ctools-modal-content .modal-header {
+  border-top: 1px solid #666;
+  border-left: 1px solid #444;
+  border-right: 1px solid #444;
+  -moz-border-radius-topleft: 0;
+  -moz-border-radius-topright: 0;
+  -webkit-border-top-left-radius: 0;
+  -webkit-border-top-right-radius: 0;
+  background: #222;
+  color: #ddd;
+  font-family: "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif; /* "Helvetica-Neue" with hyphen required for mac font */
+  padding: 0 2em;
+  box-sizing:border-box;
+  height:40px;
+
+
+}
+
+/* removed margin and padding and added to parent */
+#modalContent div.ctools-modal-content .modal-title {
+  color: #bbb;
+  font-size: 1.7em;
+  font-family: "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  text-shadow: none;
+  padding: .2em 0em;
+  font-weight: 300;
+  line-height:2em;
+  /*margin-top: 10px;*/
+  /*height: 30px;*/
+  display: inline-block;
+}
+
+#modalContent div.ctools-modal-content a.close {
+  display: block;
+  text-indent: -99999em;
+  overflow: hidden;
+  outline: none;
+  height: 15px;
+  width: 16px;
+  margin-top: 1em;
+  background: url(../images/close-popup.png) no-repeat left top;
+  padding: 0;
+  -webkit-transition: 0;
+  -moz-transition: 0;
+  -o-transition: 0;
+  transition: 0;
+}
+
+#modalContent div.ctools-modal-content a.close:hover {
+  background-position: 0px -15px;
+}
+
+#modalContent .panels-add-content-modal {
+  background: #FFF;
+  padding-top: .9em;
+}
+
+#modalContent .panels-add-content-modal a.panels-modal-add-category,
+#modalContent .panels-section-column-categories .content-type-button {
+  background-color:#efefef;
+  font: bold 11px/30px "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  color: #2fa6e5!important;
+  text-decoration: none;
+  /*margin-left: 10px;*/
+  border-bottom: 1px solid #ddd;
+  padding: 0 2em;
+}
+
+#modalContent .panels-section-column-categories .content-type-button div, #modalContent .panels-section-column-categories .content-type-button span {
+  width: 85%;
+  position: relative;
+  top: 5px;
+  left: 0px;
+  padding: 0 .5em;
+  color: #2fa6e5!important;
+}
+
+#modalContent .panels-add-content-modal a.panels-modal-add-category:active,
+#modalContent .panels-add-content-modal a.panels-modal-add-category.active,
+#modalContent .panels-section-column-categories .content-type-button:active,
+#modalContent .panels-section-column-categories .content-type-button.active {
+  border-left: 1px solid #ddd;
+  background: #FFF;
+  margin-right: -1px;
+  color: #007ec0!important;
+}
+
+/* percent width expands catagory column for wider displays */
+#modalContent .panels-section-column-categories {
+  min-width: 182px;
+  margin-left: -182px;
+  border-right: 1px solid #ccc;
+  box-sizing:border-box;
+  -moz-box-sizing: border-box;
+}
+
+#modalContent .panels-section-column-categories .content-type-button {
+  padding: 0px;
+  background-color: #efefef;
+  margin-left: 9px;
+  border-bottom: 1px solid #ddd;
+}
+
+#modalContent .panels-section-column-categories .content-type-button div {
+  background: #efefef;
+  float: none;
+  left: 0;
+  top: 0;
+  width:100%;
+  margin: 0 8px 0 0px;
+  padding: 0;
+  padding-top:5px;
+  padding-bottom:5px;
+}
+
+#modalContent .panels-section-column-categories .content-type-button div a {
+  font: bold 11px/21px "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  text-decoration: none;
+  color:#007ec0;;
+  padding: 0 8px;
+  display:block;
+  width:100%;
+}
+
+#modalContent .panels-section-column-categories .panels-categories-box {
+  border-top: 1px solid white;
+  margin-bottom: 0;
+}
+
+/*#modalContent .panels-section-column-categories .content-type-button div a:before{
+content: "\2295";
+font-size: 2em;
+top: .1em;
+color: #999999;
+position: relative;
+margin-right: .1em;
+}*/
+
+#modalContent .panels-section-column-categories .content-type-button div:active {
+  outline: none;
+  background-image: linear-gradient(bottom, #FFFFFF 0%, #E9EAEC 100%);
+  background-image: -o-linear-gradient(bottom, #FFFFFF 0%, #E9EAEC 100%);
+  background-image: -moz-linear-gradient(bottom, #FFFFFF 0%, #E9EAEC 100%);
+  background-image: -webkit-linear-gradient(bottom, #FFFFFF 0%, #E9EAEC 100%);
+  background-image: -ms-linear-gradient(bottom, #FFFFFF 0%, #E9EAEC 100%);
+  background-image: -webkit-gradient(
+          linear,
+          left bottom,
+          left top,
+          color-stop(0, #FFFFFF),
+          color-stop(1, #E9EAEC)
+  );
+}
+
+#modalContent .panels-section-column-categories .content-type-button img {
+  border: none;
+  padding-top: 7px;
+  /*  display:none; */
+  margin-left:5px;
+  margin-right:5px;
+}
+
+/* removes extra padding left and top */
+#modalContent div.ctools-modal-content .modal-content {
+  padding: 0 2px 0 10px;
+  overflow-x: hidden;
+}
+
+/**
+ * Pane configuration preview styling
+ *
+ * Much of the fieldset-related css is ripped directly from Bartik to give
+ * IPE a more consistent look
+ * @see https://drupal.org/node/1717644
+ */
+#modal-content fieldset {
+  clear: none;
+  width: auto;
+  position: relative;
+  top: 12px; /* Offsets the negative margin of legends */
+  margin-top: 10px;
+  margin-bottom: 32px;
+  background: #FFFFFF;
+  padding:0px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+#modal-content fieldset.widget-preview {
+  margin-top: 3em;
+  margin-bottom: 4em;
+  -webkitborder-top-right-radius: 0;
+  -moz-border-topright-radius: 0;
+  border-top-right-radius: 0;
+}
+
+#modal-content fieldset.widget-preview-single {
+  margin-top: 10px;
+  margin-bottom: 1em;
+}
+
+#modal-content fieldset.widget-preview-single .fieldset-wrapper {
+  font-size: 100%;
+  max-width: 100%;
+  overflow-y: auto;
+  min-height: 75px;
+  max-height: 375px;
+}
+
+#modal-content fieldset.widget-preview-single .fieldset-wrapper .panopoly-spotlight img {
+  width: 100%;
+}
+
+#modal-content fieldset legend {
+  background-color: #303030;
+  border-bottom: none;
+  color: #3b3b3b;
+  display: block;
+  height: 2em;
+  /*left: -1px; /* LTR */
+  line-height: 2;
+  margin:0;
+  padding:0;
+  position: absolute;
+  top: -12px;
+  width: 100%;
+  -moz-border-radius-topleft: 2px;
+  -webkit-border-top-left-radius: 2px;
+  border-top-left-radius: 2px;
+  -moz-border-radius-topright: 2px;
+  -webkit-border-top-right-radius: 2px;
+  border-top-right-radius: 2px;
+}
+
+#modal-content fieldset.widget-preview legend {
+  -moz-border-radius-topright: 0;
+  -webkit-border-top-right-radius: 0;
+  border-top-right-radius: 0;
+}
+
+#modal-content .fieldset-legend {
+  font: bold 12px/1.5em "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  background: #333;
+  color: #cccccc;
+  padding-left: 10px;
+  vertical-align: middle;
+  line-height: 2em;
+}
+
+#modal-content fieldset.collapsed legend {
+  -moz-border-radius: 0px;
+  -webkit-border-radius: 0px;
+  border-radius: 0px;
+}
+
+#modal-content fieldset legend a {
+  color: #aaa;
+}
+
+#modal-content fieldset legend a:hover,
+#modal-content fieldset legend a:active {
+  color: white;
+}
+
+#modal-content fieldset.collapsible.collapsed .fieldset-legend:after {
+  top: -0.20711em;
+  -webkit-transform: scaleY(-1);
+  -moz-transform: scaleY(-1);
+  -ms-transform: scaleY(-1);
+  -o-transform: scaleY(-1);
+  transform: scaleY(-1);
+}
+
+#modal-content fieldset.collapsible .fieldset-legend:after {
+  position: relative;
+  top: 0.20711em;
+  display: inline-block;
+  content: '\2303';
+  color: #f05724;
+  margin-right: 0.35355em;
+  -webkit-transition: top 0.2s, -webkit-transform 0.2s;
+  -moz-transition: top 0.2s, -moz-transform 0.2s;
+  -o-transition: top 0.2s, -o-transform 0.2s;
+  transition: top 0.2s, transform 0.2s;
+}
+
+#modal-content .fieldset-wrapper {
+  padding: 0 10px;
+  margin-top: 2.25em;
+}
+
+#modal-content .widget-preview .fieldset-wrapper {
+  max-width: 100%;
+  overflow-y: auto;
+  font-size: 75%;
+  max-height: 400px;
+  overflow-x: hidden;
+}
+
+#modal-content .widget-preview .fieldset-wrapper table tr.even td,
+#modal-content .widget-preview .fieldset-wrapper table tr.odd td {
+  padding: 3px 5px;
+}
+
+#modal-content .widget-preview .fieldset-wrapper h2 {
+  font-size: 2em;
+  margin-top: .25em;
+  color:#000;
+  font-family:"Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  text-shadow: none;
+}
+
+#modal-content .widget-preview-single {
+  float: right;
+  margin-left: 1em;
+  margin-top: 0;
+  width: 48%;
+}
+
+#modal-content .form-actions {
+  float: right;
+  clear: right;
+  width: 48%;
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-left: 1em;
+  text-align: right;
+}
+
+#modal-content .widget-preview-title {
+  position: absolute;
+  right: 0;
+  color: #cccccc;
+  font: bold 11px/23px "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+}
+
+#modal-content .widget-preview-title .content-type-button span {
+  float: none;
+  position: static;
+  text-indent: 0px;
+  top: 0;
+  width: 60px;
+  padding: 0;
+}
+
+#modal-content .widget-preview-title .content-type-button a {
+  display: block;
+  font: bold 11px/23px "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  color: #fff;
+  text-decoration: none;
+  background: #58b7ea;
+  -webkit-border-radius: 3px 3px 0 0;
+  -moz-border-radius: 3px 3px 0 0;
+  border-radius: 3px 3px 0 0;
+  padding: 0 10px;
+  text-shadow: 0 1px 0 #1a3646;
+}
+
+#modal-content .widget-preview-title .content-type-button div a:hover {
+  background: #2fa6e5;
+  text-shadow: 0 1px 0 #1a3646;
+}
+
+#modal-content .widget-preview-title .content-type-button div a:active {
+  background: #2fa6e5;
+  text-shadow: 0 1px 0 #1a3646;
+}
+
+#modal-content .panels-section-columns,
+#modal-content .panels-categories-description {
+  width: 100%;
+  overflow: visible;
+  border: 1px solid #CECECA;
+  border-right: none;
+  height: 100%;
+  margin: 0;
+  margin-top: 1px;
+  overflow-y: auto;
+  border-bottom:none;
+  box-sizing:border-box;
+  -moz-box-sizing: border-box;
+}
+
+#modal-content .panels-categories-description {
+  color: #FFF;
+}
+
+/**
+ * Misc Modal Stylings
+ */
+#modal-content .form-type-textarea .form-type-select,
+#modal-content .field-type-text-long .form-type-select {
+  float: left;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+#modal-content .filter-wrapper .fieldset-wrapper {
+  margin-top:0px;
+}
+
+#modal-content .form-type-textarea .form-type-select label,
+#modal-content .field-type-text-long .form-type-select label {
+  float: left;
+  margin-right: .5em;
+  margin-top: .5em;
+  font-weight: normal;
+  display: block;
+  width: auto;
+}
+
+#modal-content .view-settings-wrapper .form-radios {
+  display: inline;
+  padding-right: 5px;
+}
+
+.panels-section-column .content-type-button {
+  font-size: 1em;
+}
+
+#modal-content .widget-preview-title .content-type-button img,
+#modal-content .panels-add-content-modal > .panels-modal-add-category {
+  display: none;
+}
+
+#modal-content #edit-widget-preview {
+  margin-top: 0;
+}
+
+#modalContent .panels-section-column-categories .content-type-button img:hover {
+  border: none;
+}
+
+#modal-content .widget-preview .fieldset-wrapper table img,
+#modal-content .widget-preview .panopoly-image-featured {
+  width: 100%;
+}
+
+.pane-content .create-links,
+.pane-categories .categories-links,
+.pane-menus .menu-links,
+.pane-users .user-links {
+  float: right;
+}
+
+#modalContent .panels-add-content-modal a.panels-modal-add-category:hover,
+#modalContent .panels-section-column-categories .content-type-button div:hover {
+  background: #ccc;
+}
+
+/**
+ * Form action button styling
+ */
+#modal-content .form-submit {
+  float: right;
+  margin-top: 1em;
+  margin-bottom: .5em;
+  margin-right: 1em;
+  font: bold 12px/32px "Helvetica-Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  text-decoration: none;
+  height: 33px;
+  color:#fff;
+  cursor: pointer;
+  outline: none;
+  -moz-border-radius: 2px;
+  -khtml-border-radius: 2px;
+  -webkit-border-radius: 2px;
+  border-radius: 2px;
+  background: #2fa6e5;
+  text-shadow: 0 1px 0 #0e3144;
+  padding: 0 13px 1px;
+  border:none;
+  transition: background, color, border, outline, 0.2s;
+  -webkit-transition: background color border, 0.2s;
+  -webkit-transition-delay: outline, 0s;
+}
+
+#modal-content .media-widget .form-submit {
+  float: none;
+}
+
+#modal-content .form-submit:hover {
+  background: #58b7ea;
+  color:#fff;
+  text-shadow: 0 1px 0 #0e3144;
+  color: #fff;
+}
+
+#modal-content .form-submit:active {
+  outline: none;
+  background: #2fa6e5;
+  color: #fff;
+}

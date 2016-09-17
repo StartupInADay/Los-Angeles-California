@@ -1,0 +1,822 @@
+<?php
+
+/**
+ * @file visitor_actions.module
+ * An API for tracking client-side and server-side visitor actions.
+ */
+
+
+/**
+ * =======================================================================
+ *  G E N E R A L   D R U P A L   H O O K S
+ * =======================================================================
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function visitor_actions_menu() {
+  $items = array();
+
+  $items['admin/structure/visitor_actions'] = array(
+    'title' => 'Visitor Actions',
+    'description' => 'Manage existing visitor actions.',
+    'page callback' => 'visitor_actions_list',
+    'access arguments' => array('administer visitor actions'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'visitor_actions.admin.inc',
+  );
+  $items['admin/structure/visitor_actions/list'] = array(
+    'title' => 'List visitor actions',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/structure/visitor_actions/add'] = array(
+    'title' => 'Add action',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('visitor_actions_form'),
+    'access arguments' => array('administer visitor actions'),
+    'type' => MENU_LOCAL_ACTION,
+    'file' => 'visitor_actions.admin.inc',
+  );
+  $items['admin/structure/visitor_actions/manage/%visitor_actions_custom/edit'] = array(
+    'title' => 'Edit custom action',
+    'page callback' => 'visitor_actions_edit',
+    'page arguments' => array(4),
+    'access arguments' => array('administer visitor actions'),
+    'type' => MENU_CALLBACK,
+    'file' => 'visitor_actions.admin.inc',
+  );
+  $items['admin/structure/visitor_actions/manage/%visitor_actions_custom/delete'] = array(
+    'title' => 'Delete custom action',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('visitor_actions_delete_form', 4),
+    'access arguments' => array('administer visitor actions'),
+    'type' => MENU_CALLBACK,
+    'file' => 'visitor_actions.admin.inc',
+  );
+  $items['visitor_actions/add/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('visitor_actions_form', 2, TRUE),
+    'access arguments' => array('administer visitor actions'),
+    'file' => 'visitor_actions.admin.inc',
+    'delivery callback' => 'ajax_deliver',
+    'theme callback' => 'ajax_base_page_theme',
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function visitor_actions_permission() {
+  $permissions = array(
+   'administer visitor actions' => array(
+      'title' => t('Administer visitor actions'),
+      'description' => t('Create and delete visitor actions.'),
+    ),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Implements hook_user_login().
+ */
+function visitor_actions_user_login(&$edit, $account) {
+  $context = (array) $account;
+  unset($context['access'], $context['init'], $context['pass']);
+  visitor_actions_trigger_event('user_login', $context);
+  if (drupal_static('visitor_actions_user_insert')) {
+    visitor_actions_trigger_event('user_register', $context);
+  }
+}
+
+/**
+ * Implements hook_user_insert().
+ */
+function visitor_actions_user_insert(&$edit, $account, $category) {
+  $is_new = &drupal_static(__FUNCTION__, TRUE);
+  return $is_new;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function visitor_actions_form_alter(&$form, &$form_state, $form_id) {
+  // Add the current url into form storage for page comparison.  This allows
+  // accurate comparisons even when the form is submitted via AJAX.
+  $form_state['visitor_actions']['internal_path'] = current_path();
+  // Put callback at the top of stack to be sure that it will be called.
+  array_unshift($form['#submit'], 'visitor_actions_form_submit_callback');
+}
+
+/**
+ * Submit callback to fire the 'form_submit' event.
+ */
+function visitor_actions_form_submit_callback($form, &$form_state) {
+  $context = array(
+    'form_id' => $form['#form_id'],
+    'path' => $_GET['q']
+  );
+  // Trigger event "Submit any form"
+  visitor_actions_trigger_event('form_submit', $context);
+  // Get all server-side form submit actions that have been added for the given
+  // form ID.
+  if (function_exists($form['#form_id'])) {
+    $actions = visitor_actions_get_server_side_actions_for_plugin_and_identifier('form', $form['#form_id']);
+  }
+  // If $form['#form_id'] is not an existed callback then try to find base form
+  else {
+    $forms = module_invoke_all('forms', $form['#form_id'], $form_state['build_info']['args']);
+    if (!empty($forms[$form['#form_id']]['callback'])) {
+      $actions = visitor_actions_get_server_side_actions_for_plugin_and_identifier('base_form', $forms[$form['#form_id']]['callback']);
+      // Trigger "particular form submit" also, because this form_id is valid
+      $actions += visitor_actions_get_server_side_actions_for_plugin_and_identifier('form', $form['#form_id']);
+    }
+  }
+
+  if (isset($actions)) {
+    foreach ($actions as $name => $action) {
+      // We're only concerned about the submit event here.
+      if (!isset($action['event']) || $action['event'] != 'submit_server') {
+        continue;
+      }
+      // Only trigger the action if no pages have been specified or the current
+      // page matches the pages specified.
+      $trigger = FALSE;
+      if (empty($action['pages'])) {
+        $trigger = TRUE;
+      }
+      elseif (visitor_actions_match_page($action['pages'], $form_state['visitor_actions']['internal_path'])) {
+        $trigger = TRUE;
+      }
+      if ($trigger) {
+        visitor_actions_trigger_event($name, $context);
+      }
+    }
+  }
+}
+
+/**
+ * Returns all actions for a particular plugin with a particular identifier.
+ *
+ * Useful for finding e.g. all actions tied to a particular form or to a
+ * particular node.
+ *
+ * @param $plugin
+ *   The name of the plugin, e.g. 'form'.
+ * @param $identifier
+ *   String identifying the thing being acted on. If plugin is 'form', then
+ *   this will be the form ID.
+ * @return array|FALSE
+ *   An array of actions for the given plugin and identifier or false if none
+ *   were found.
+ */
+function visitor_actions_get_server_side_actions_for_plugin_and_identifier($plugin, $identifier) {
+  $cid = 'plugin:' . $plugin . ':id:' . $identifier;
+  return visitor_actions_get_cache($cid);
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function visitor_actions_page_build(&$page) {
+  $path = drupal_get_path('module', 'visitor_actions');
+  // @todo Add the check for edit mode here and change what
+  //   we send in the settings accordingly. We only need to
+  //   send actionableElementTypes if we are in edit mode and we
+  //   only need to send client-side actions if we are not.
+  $actionable_element_types = visitor_actions_get_actionable_element_types();
+  $settings = array(
+    'currentPath' => current_path(),
+    'actions' => array(),
+    'actionableElementTypes' => $actionable_element_types,
+    'pageContext' => visitor_actions_get_page_context(),
+  );
+  $client_side_actions = visitor_actions_get_client_side_actions();
+  $page_actions = array();
+  // Add js settings for all client-side events that have
+  // been defined.
+  foreach ($client_side_actions as $name => $action) {
+    $page_match = TRUE;
+    if (isset($action['pages']) && !empty($action['pages'])) {
+      $page_match = visitor_actions_match_page($action['pages']);
+    }
+    if (!$page_match) {
+      continue;
+    }
+    $page_actions[] = $name;
+    $settings['actions'][$name] = array();
+    // Smush our action data into settings for our js.
+    foreach (array('identifier' => 'identifier', 'event' => 'event', 'plugin' => 'actionable_element', 'data' => 'options') as $key => $settings_key) {
+      if (isset($action[$key])) {
+        $settings['actions'][$name][$settings_key] = $action[$key];
+      }
+    }
+  }
+  $page['page_top']['visitor_actions'] = array(
+    '#attached' => array(
+      'js' => array(
+        $path . '/js/visitor_actions.js' => array(
+          'group' => JS_LIBRARY,
+          'scope' => 'footer',
+        ),
+        array(
+          'data' => array('visitor_actions' => $settings),
+          'type' => 'setting'
+        ),
+      ),
+    )
+  );
+  // Now allow other modules to act on the fact that we have added
+  // client-side event listeners for particular events.
+  foreach (module_implements('visitor_actions_page_build') as $module) {
+    // We can't use module_invoke_all because we need to pass the
+    // $page variable by reference.
+    $func = $module . '_visitor_actions_page_build';
+    $func($page, $page_actions);
+  }
+
+}
+
+/**
+ * Returns whether the supplied list of pages includes a match for
+ * the current page. This function handles both language prefixes and aliases.
+ *
+ * The following truth table assumes:
+ *  1. There are "en" and "fr" languages.
+ *  2. "en" is default (i.e. "node/1" is the same as "en/node/1").
+ *  3. "node/1" is aliased to "my_node".
+ *
+ * Table - How actual URLs would map to patterns
+ * URL \ pattern | node/1 | node/* | my_node | en/node/1 | en/my_node | fr/node/1 | fr/my_node
+ * --------------------------------------------------------------------------------------------
+ * node/1        |   T    |   T    |    T    |    T      |     T      |     F     |     F
+ * my_node       |   T    |   T    |    T    |    T      |     T      |     F     |     F
+ * en/node/1     |   T    |   T    |    T    |    T      |     T      |     F     |     F
+ * en/my_node    |   T    |   T    |    T    |    T      |     T      |     F     |     F
+ * fr/node/1     |   T    |   T    |    T    |    F      |     F      |     T     |     T
+ * fr/my_node    |   T    |   T    |    T    |    F      |     F      |     T     |     T
+ *
+ * @param string $page_paths
+ *   String containing a set of page paths separated by \n, \r, or \r\n.
+ * @param string $compare_path
+ *   The internal page path for comparison if different than the current path.
+ * @return bool
+ *   Returns TRUE if the current path is matched, FALSE otherwise.
+ */
+function visitor_actions_match_page($page_paths, $compare_path = NULL) {
+  // For all targeted paths, keep the ones that are 1) language-less, or 2) of the
+  // current language. Toss out the rest.
+  global $language;
+  $language_list = language_list();
+  $page_paths_array = preg_split('~\R~', $page_paths);
+  foreach ($page_paths_array as $page_path_index => $page_path) {
+    // Need to check if language_url_split_prefix() exists because the language may not be enabled.
+    $path_data = function_exists('language_url_split_prefix') ? language_url_split_prefix($page_path, $language_list) : array(false, $page_path);
+    list($path_language, $path_under_language) = $path_data;
+    // Toss all targeted paths out, but ...
+    unset($page_paths_array[$page_path_index]);
+    // Add back only the targeted paths that are 1) language-less, or 2) of the current language.
+    if (empty($path_language) || $path_language->language === $language->language) {
+      $page_paths_array[$page_path_index] = $path_under_language;
+    }
+  }
+  $filtered_page_paths = implode("\n", $page_paths_array);
+
+  // The current path is the internal path, without language prefix.
+  $current_path = empty($compare_path) ? current_path() : $compare_path;
+  // The alias path is of the internal path, without language prefix.
+  $alias_path = drupal_get_path_alias($current_path);
+
+  // Attempt to match the internal and the alias matches - either match works.
+  return drupal_match_path($current_path, $filtered_page_paths) || drupal_match_path($alias_path, $filtered_page_paths);
+}
+
+/**
+ * =======================================================================
+ *  E N D  O F  G E N E R A L   D R U P A L   H O O K S
+ * =======================================================================
+ */
+
+/**
+ * Retrieves all defined actions.
+ *
+ * @param boolean $exclude_limited_use
+ *   Whether to exclude custom actions that have been defined as limited use actions.
+ * @return
+ *   An array of actions.
+ */
+function visitor_actions_get_actions($exclude_limited_use = FALSE) {
+  static $drupal_static_fast;
+  if (!isset($drupal_static_fast)) {
+    $drupal_static_fast['actions'] = &drupal_static(__FUNCTION__, array());
+  }
+  $actions = &$drupal_static_fast['actions'];
+
+  if (empty($actions)) {
+    $actions = module_invoke_all('visitor_actions_info');
+    if (module_exists('rules')) {
+      module_load_include('inc', 'visitor_actions', 'visitor_actions.rules');
+      $actions += visitor_actions_get_rules();
+    }
+    // Get all custom actions from the database.
+    $actions += visitor_actions_custom_load_multiple(array(), $exclude_limited_use);
+  }
+
+  return $actions;
+}
+
+/**
+ * Retrieves all client-side defined actions.
+ *
+ * @param boolean $exclude_limited_use
+ *   Whether to exclude custom actions that have been defined as limited use actions.
+ * @return
+ *   An array of actions.
+ */
+function visitor_actions_get_client_side_actions($exclude_limited_use = FALSE) {
+  static $drupal_static_fast;
+  if (!isset($drupal_static_fast)) {
+    $drupal_static_fast['actions'] = &drupal_static(__FUNCTION__, array());
+  }
+  $actions = &$drupal_static_fast['actions'];
+  if (empty($actions)) {
+    $all_actions = visitor_actions_get_actions($exclude_limited_use);
+    $actions = array_filter($all_actions, create_function('$a', 'return isset($a["client_side"]) && $a["client_side"];'));
+  }
+  return $actions;
+}
+
+/**
+ * Implements hook_visitor_actions_info().
+ */
+function visitor_actions_visitor_actions_info() {
+  $actions = array(
+    'user_login' => array(
+      'label' => t('logs in'),
+    ),
+    'user_register' => array(
+      'label' => t('Registers'),
+    ),
+    'form_submit' => array(
+      'label' => t('submits any form'),
+    ),
+    'scroll_to_bottom' => array(
+      'plugin' => 'page',
+      'label' => t('scrolls to the bottom of the page'),
+      'client_side' => TRUE,
+      'event' => 'scrollToBottom',
+    ),
+  );
+  return $actions;
+}
+
+/**
+ * Retrieves all custom actions that have been set up.
+ *
+ * @param array $names
+ *   An array of action names to constrain the result to.
+ * @param boolean $exclude_limited_use
+ *   Whether to exclude those actions that have been defined as limited use actions.
+ * @param boolean $reset
+ *   Whether to reset the cache before loading.
+ */
+function visitor_actions_custom_load_multiple($names = array(), $exclude_limited_use = FALSE, $reset = FALSE) {
+  $custom_actions = array();
+  ctools_include('export');
+  if ($reset) {
+    // @todo No way to just reset the cache for actions specified in the $names
+    //   param?
+    ctools_export_load_object_reset('visitor_actions_actions');
+  }
+  if (empty($names)) {
+    $defaults = ctools_export_load_object('visitor_actions_actions', 'all');
+    if ($exclude_limited_use) {
+      foreach ($defaults as $action_name => $action) {
+        if (isset($action->limited_use) && $action->limited_use) {
+          unset($defaults[$action_name]);
+        }
+      }
+    }
+  }
+  else {
+    $defaults = ctools_export_load_object('visitor_actions_actions', 'names', $names);
+  }
+
+  foreach ($defaults as $action_name => $action) {
+    $custom_actions[$action_name] = (array) $action;
+  }
+  return $custom_actions;
+}
+
+/**
+ * Menu load function for a custom action.
+ *
+ * @param $name
+ *   The name of the action.
+ * @param boolean $reset
+ *   Whether to reset the cache before loading.
+ *
+ * @return array|null
+ *   An array representing the action or NULL if none was found.
+ */
+function visitor_actions_custom_load($name, $reset = FALSE) {
+  $actions = visitor_actions_custom_load_multiple(array($name), FALSE, $reset);
+  return isset($actions[$name]) ? $actions[$name] : NULL;
+}
+
+/**
+ * Unpacks visitor_actions_action db record into an action array.
+ *
+ * @param $record
+ *   The action record from the db.
+ * @return array
+ *   An array representing the action.
+ */
+function visitor_actions_unpack_action($record) {
+  $action = (array) $record;
+  $action['data'] = unserialize($record->data);
+  return $action;
+}
+
+/**
+ * Saves a new action to the database.
+ *
+ * @param $action
+ *   An array representing an action.
+ */
+function visitor_actions_save_action($action) {
+  $action = (array) $action;
+  // Ensure the machine name has only valid characters.
+  $action['machine_name'] = preg_replace('/[^a-z0-9_]+/', '_', drupal_strtolower($action['machine_name']));
+  $action += array(
+    'module' => 'visitor_actions',
+  );
+  if (is_array($action['data'])) {
+    $action['data'] = serialize($action['data']);
+  }
+  try {
+    db_merge('visitor_actions_actions')
+      ->key(array('machine_name' => $action['machine_name']))
+      ->fields($action)
+      ->execute();
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('There was a problem saving the visitor action @action_name', array('@action_name' => $action['machine_name'])), 'error');
+    return FALSE;
+  }
+  module_invoke_all('visitor_actions_save_action', $action);
+  return TRUE;
+}
+
+/**
+ * Returns whether a machine name is already taken by an existing action.
+ *
+ * @param $machine_name
+ *   The machine name to check.
+ * @return boolean
+ */
+function visitor_actions_machine_name_exists($machine_name) {
+  $action = visitor_actions_custom_load($machine_name);
+  return !empty($action);
+}
+
+/**
+ * Deletes the specified action from teh database.
+ *
+ * @param $action_name
+ */
+function visitor_actions_delete_action($action_name) {
+  $action = visitor_actions_custom_load($action_name);
+  db_delete('visitor_actions_actions')
+    ->condition('machine_name', $action_name)
+    ->execute();
+  module_invoke_all('visitor_actions_delete_action', $action);
+  visitor_actions_clear_subscribers($action_name);
+  // Clear the visitor action cache.
+  visitor_actions_custom_load($action_name, TRUE);
+}
+
+/**
+ * Triggers a server-side event.
+ *
+ * @param $name
+ *   THe name of the event.
+ * @param array $context
+ *   An array of contextual information about the event.
+ */
+function visitor_actions_trigger_event($name, $context = array()) {
+  $subscribers = visitor_actions_get_subscribers($name);
+  foreach ($subscribers as $callable) {
+    call_user_func_array($callable, array($name, $context));
+  }
+}
+
+/**
+ * Returns an array of subscribers for a particular event.
+ *
+ * @param $name
+ *
+ * @return
+ *   An array of callables.
+ */
+function visitor_actions_get_subscribers($name) {
+  $subscribers = visitor_actions_get_cache('event:' . $name);
+  return $subscribers;
+}
+
+/**
+ * Rebuilds the cache of subscribers for an event
+ *
+ * @param $name
+ *   The name of the event.
+ */
+function visitor_actions_clear_subscribers($name = NULL) {
+  if ($name !== NULL) {
+    $cid = 'event:' . $name;
+    cache_clear_all($cid, 'cache_visitor_actions');
+  }
+  else {
+    cache_clear_all('event:', 'cache_visitor_actions', TRUE);
+    cache_clear_all('plugin:', 'cache_visitor_actions', TRUE);
+  }
+}
+
+/**
+ * Retrieves cached action subscriber information.
+ *
+ * @param $cid
+ * @return mixed
+ */
+function visitor_actions_get_cache($cid) {
+  // Make use of the fast, advanced drupal static pattern.
+  static $drupal_static_fast;
+  if (!isset($drupal_static_fast)) {
+    $drupal_static_fast['cache'] = &drupal_static(__FUNCTION__, array());
+  }
+  $cache = &$drupal_static_fast['cache'];
+
+  if (!isset($cache[$cid])) {
+    if ($get = cache_get($cid, 'cache_visitor_actions')) {
+      $cache[$cid] = $get->data;
+    }
+    elseif (strpos($cid, 'event:') === 0) {
+      $name = substr($cid, strlen('event:'));
+      $subscribers = module_invoke_all('visitor_action_subscribe', $name);
+      cache_set($cid, $subscribers, 'cache_visitor_actions');
+      $cache[$cid] = $subscribers;
+    }
+    elseif (strpos($cid, 'plugin:') === 0) {
+      $ar = explode(':', $cid);
+      $plugin = $ar[1];
+      $identifier = $ar[3];
+      $all_actions = visitor_actions_get_actions();
+      $actions = array();
+      foreach ($all_actions as $name => $action) {
+        $server_side = !isset($action['client_side']) || !$action['client_side'];
+        $plugin_match = isset($action['plugin']) && $action['plugin'] == $plugin;
+        $id_match = isset($action['identifier']) && $action['identifier'] == $identifier;
+        if (!$server_side || !$plugin_match || !$id_match) {
+          continue;
+        }
+        $actions[$name] = $action;
+      }
+      cache_set($cid, $actions, 'cache_visitor_actions');
+      $cache[$cid] = $actions;
+    }
+    else {
+      $cache[$cid] = FALSE;
+    }
+  }
+  return $cache[$cid];
+}
+
+/**
+ * =======================================================================
+ *  P L U G I N   I N F O
+ * =======================================================================
+ */
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function visitor_actions_ctools_plugin_type() {
+  // Plugin to define new types of decision agents
+  $plugins['actionable_element'] = array(
+    'cache' => TRUE,
+    'use hooks' => TRUE,
+    'classes' => array('handler'),
+  );
+
+  return $plugins;
+}
+
+/**
+ * Fetch metadata for all actionable_element plugins.
+ *
+ * @return
+ *   An array of arrays with information about all available
+ *   actionable elements.
+ */
+function visitor_actions_get_actionable_element_types() {
+  ctools_include('plugins');
+  $actionable_element_types = array();
+  foreach (ctools_get_plugins('visitor_actions', 'actionable_element') as $plugin => $info) {
+    if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $plugin, 'handler')) {
+      $actionable_element_types[] = array(
+        'type' => $plugin,
+        'selector' => call_user_func(array($class, 'getSelectable'))
+      );
+    }
+  }
+  return $actionable_element_types;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function visitor_actions_node_view($node, $view_mode, $langcode) {
+  visitor_actions_node_page_context($node, $view_mode == 'full');
+}
+
+/**
+ * Handles the node-specific page context request data.
+ *
+ * @param $node
+ *   (optional) If passed then the taxonomy terms for the selected node
+ *   are added to the page taxonomy context.
+ * @param bool $primary
+ *   True if this is the primary node displayed for the page, false otherwise.
+ * @return array
+ *   Returns the taxonomy context for the page.
+ */
+function visitor_actions_node_page_context($node = NULL, $primary = FALSE) {
+  // For each vocabulary, add any terms that are applied to the viewed node.
+  $page_context = &drupal_static(__FUNCTION__);
+  $has_taxonomy = module_exists('taxonomy');
+  if (!isset($page_context)) {
+    $page_context['vocabularies'] = array();
+    if ($has_taxonomy) {
+      $all_vocabularies = taxonomy_get_vocabularies();
+      foreach ($all_vocabularies as $vid => $vocabulary) {
+        $page_context['vocabularies'][$vid] = array(
+          'name' => $vocabulary->name,
+          'terms' => array()
+        );
+      }
+    }
+  }
+  // Add the content type of the page if this is the primary node displayed.
+  if ($primary) {
+    $page_context['type'] = $node->type;
+  }
+  // Add the node's taxonomy to the context.
+  if ($has_taxonomy && isset($node)) {
+    $results = db_query('SELECT tid FROM {taxonomy_index} WHERE nid = :nid', array(':nid' => $node->nid));
+    $terms = taxonomy_term_load_multiple($results->fetchCol());
+    foreach($terms as $term) {
+      $page_context['vocabularies'][$term->vid]['terms'][$term->tid] = $term->name;
+    }
+  }
+  return $page_context;
+}
+
+/**
+ * Gets the page context data.
+ *
+ * @return
+ *   An array of page context data.
+ */
+function visitor_actions_get_page_context() {
+  $page_context = array(
+    'InternalPath' => current_path(),
+    'RequestPath' => request_path(),
+    'Taxonomy' => array(),
+  );
+  // Add node-specific page context
+  $node_context = visitor_actions_node_page_context();
+  if (!empty($node_context['type'])) {
+    $page_context['ContentType'] = $node_context['type'];
+  }
+  // Add any taxonomy vocabularies/terms used on this request to the context.
+  foreach($node_context['vocabularies'] as $vocab) {
+    if (!empty($vocab['terms'])) {
+      $page_context['Taxonomy'][$vocab['name']] = array_values($vocab['terms']);
+    }
+  }
+  // Allow other modules to alter the page context to include additional data.
+  drupal_alter('visitor_actions_page_context', $page_context);
+  return $page_context;
+}
+
+/**
+ * Implements hook_visitor_actions_actionable_element().
+ *
+ * Invoked as a dynamic CTools hook plugin type.
+ */
+function visitor_actions_visitor_actions_actionable_element() {
+  $info = array();
+  $path = drupal_get_path('module', 'visitor_actions') . '/plugins/actionable_element';
+  $info['page'] = array(
+    'path' => $path,
+    'handler' => array(
+      'file' => 'PageActionableElement.inc',
+      'class' => 'PageActionableElement',
+    ),
+  );
+  $info['form'] = array(
+    'path' => $path,
+    'handler' => array(
+      'file' => 'FormActionableElement.inc',
+      'class' => 'FormActionableElement',
+    ),
+  );
+  $info['base_form'] = array(
+    'path' => $path,
+    'handler' => array(
+      'file' => 'BaseFormActionableElement.inc',
+      'class' => 'BaseFormActionableElement',
+    ),
+  );
+  $info['link'] = array(
+    'path' => $path,
+    'handler' => array(
+      'file' => 'LinkActionableElement.inc',
+      'class' => 'LinkActionableElement',
+    ),
+  );
+  return $info;
+}
+
+
+/**
+ * An element level validator to validate that a path is valid and that the user
+ * has access to the path.
+ *
+ * @param array $element
+ *   The form element to check. The form element may optionally include:
+ *   - #allow_external:  Boolean to indicate if external urls are allowed
+ *     (defaults to TRUE).
+ *   - #allow_dynamic: Boolean indicating if wildcard characters are allowed
+ *     for dynamic urls (defaults to FALSE).
+ * @param array $form_state
+ *   The current form state.
+ */
+function visitor_actions_form_element_path_validate($element, &$form_state) {
+  $value = $element['#value'];
+  if (empty($value)) {
+    return;
+  }
+  // Set defaults.
+  $element['#allow_external'] = isset($element['#allow_external']) ? $element['#allow_external'] : TRUE;
+  $element['#allow_dynamic'] = isset($element['#allow_dynamic']) ? $element['#allow_dynamic'] : FALSE;
+
+  // Get an array of paths to validate.
+  $validate = array();
+  if ($element['#type'] === 'textarea') {
+    foreach (preg_split('~[\r\n]+~', $value) as $line) {
+      if (empty($line)) {
+        continue;
+      }
+      $validate[] = $line;
+    }
+  }
+  else {
+    $validate[] = $value;
+  }
+  // Check each line and stop after adding an error message to avoid duplicate
+  // processing and messaging.
+  foreach ($validate as $path) {
+    if ($path === '<front>') {
+      continue;
+    }
+    // Check for external links.
+    if ($element['#allow_external'] == FALSE && url_is_external($path)) {
+      form_error($element, t('External paths are not allowed for %element', array(
+        '%element' => empty($element['#title']) ? $element['#name'] : $element['#title']
+      )));
+      break;
+    }
+
+    // Check if path is valid. drupal_valid_path checks for dynamic paths
+    // using % as the wildcard and is broken at that. As a result we test using
+    // the non-dynamic portion.
+    $dynamic = substr($path, -2) === '/*';
+    $static_path = $dynamic && $element['#allow_dynamic'] ? substr($path, 0, -2) : $path;
+    $language_list = language_list();
+    // Need to check if language_url_split_prefix() exists because the language may not be enabled.
+    $path_data = function_exists('language_url_split_prefix') ? language_url_split_prefix($static_path, $language_list) : array(false, $static_path);
+    list($language, $path_under_language) = $path_data;
+    $path_language = $language ? $language->language : NULL;
+    // If the given path does not match any internal or alias path, error out.
+    if (!drupal_valid_path(drupal_get_normal_path($path_under_language, $path_language))) {
+      form_error($element, t('You have specified an invalid path for %element', array(
+        '%element' => empty($element['#title']) ? $element['#name'] : $element['#title']
+      )));
+      break;
+    }
+  }
+}

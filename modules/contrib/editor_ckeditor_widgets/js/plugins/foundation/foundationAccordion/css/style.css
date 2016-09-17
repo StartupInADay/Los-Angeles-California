@@ -1,0 +1,20 @@
+/**
+ * @file
+ * Styles for administering foundation accordions.
+ */
+
+#foundationAccordion {}
+#foundationAccordion_Container {height:350px; overflow:auto; margin-bottom:1em;}
+#foundationAccordion table {width:100%; border-collapse:collapse;}
+#foundationAccordion th, #foundationAccordion td {padding:.5em;}
+#foundationAccordion th {font-weight:bold;}
+#foundationAccordion td {vertical-align:top;}
+#foundationAccordion input[type=text], #foundationAccordion textarea {padding:.3em; border:1px solid #ddd; -webkit-border-radius:3px; border-radius:3px; -webkit-box-shadow:inset 0 2px 2px rgba(0,0,0,0.075); box-shadow:inset 0 2px 2px rgba(0,0,0,0.075); background:rgba(0, 0, 0, .01); line-height:inherit; height:inherit;}
+#foundationAccordion input[type=text] {width:150px;}
+#foundationAccordion textarea {resize:none; width:295px; height:100px; white-space:pre-wrap;}
+#foundationAccordion .foundationAccordion_remove, #foundationAccordion .foundationAccordion_addNew, #foundationAccordion .foundationAccordion_up, #foundationAccordion .foundationAccordion_down {font-weight:bold; -webkit-border-radius:3px; border-radius:3px;}
+#foundationAccordion .foundationAccordion_remove {background:#A94442; padding:.3em .5em; color:#fff;}
+#foundationAccordion .foundationAccordion_remove:hover {text-decoration:none;}
+#foundationAccordion .foundationAccordion_addNew, #foundationAccordion .foundationAccordion_up, #foundationAccordion .foundationAccordion_down {float:right; padding:.5em; background:#f3f3f3; border:1px solid #ddd;}
+#foundationAccordion .foundationAccordion_addNew:hover {text-decoration:underline;}
+#foundationAccordion .foundationAccordion_up, #foundationAccordion .foundationAccordion_down {float:none; padding:.13em .4em;}

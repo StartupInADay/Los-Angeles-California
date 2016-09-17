@@ -1,0 +1,22 @@
+CKEDITOR.plugins.setLang('foundationAccordion', 'vi', {//Vietnamese
+	plugin 			: 'Quỹ Accordion',
+	title 			: 'Tiêu đề',
+	content 		: 'Nội Dung',
+	htmlIsAllowed	: 'HTML đang Phép',
+	addNewItem		: 'Add New Item',
+	minimum			: 'Plugin phải có ít nhất 1 sản phẩm',
+	link			: 'Liên kết',
+	style			: 'Phong Cách',
+	type			: 'Kiểu',
+	size			: 'Kích Thước',
+	blockLevel		: 'Lắc Tay',
+	active			: 'Hoạt động',
+	enabled			: 'Bật',
+	text			: 'Bản Văn',
+	preview			: 'Xem Trước',
+	optional		: 'Không Bắt Buộc',
+	badge			: 'Badge',
+	caption			: 'Phụ đề',
+	image			: 'hình ảnh',
+	delete			: 'Bạn có chắc chắn muốn xóa ảnh này?'
+});

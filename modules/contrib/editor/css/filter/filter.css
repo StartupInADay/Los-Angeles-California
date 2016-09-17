@@ -1,0 +1,34 @@
+
+.text-format-wrapper .form-item {
+  margin-bottom: 0;
+}
+.filter-wrapper {
+  border-top: 0;
+  margin: 0;
+  padding: 1.5em 0 1.5em;
+}
+.filter-wrapper .form-item label {
+  display: inline;
+}
+.text-format-wrapper .description {
+  margin-top: 0.5em;
+}
+
+#filter-order tr .form-item {
+  padding: 0.5em 0 0 3em;
+  white-space: normal;
+}
+#filter-order tr .form-type-checkbox .description {
+  padding: 0 0 0 2.5em;
+}
+input#edit-filters-filter-html-settings-allowed-html {
+  width: 100%;
+}
+
+.tips {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 0.9em;
+}

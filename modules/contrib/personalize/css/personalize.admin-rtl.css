@@ -1,0 +1,28 @@
+/**
+ * @file
+ * Styles for Personalize administrative interfaces.
+ */
+
+/**
+ * Content sets
+ */
+.personalize-admin-optional-trigger {
+  margin-right: 0.4em; /* RTL */
+}
+
+.personalize-wizard-section-title h2 {
+  margin-left: 1em; /* RTL */
+}
+
+#personalize-campaign-wizard #edit-agent-basic-info .personalize-campaign-overview {
+  float: left; /* RTL */
+}
+
+.personalize-wizard-section .personalize-option-header h3,
+.personalize-wizard-section .personalize-admin-enumerated-item {
+  margin-left: 1em; /* RTL */
+}
+
+.personalize-wizard-summary-item .personalize-wizard-summary-count {
+  margin-left: .25em; /* RTL */
+}

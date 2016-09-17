@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * Implements hook_ctools_plugin_director().
+ */
+function context_admin_wbm_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools' || $owner == 'context_admin') {
+    return 'plugins/' . $plugin_type;
+  }
+}
+
+/**
+ * Implements hook_panelizer_access
+ */
+function context_admin_wbm_panelizer_access($op, $entity_type, $bundle, $view_mode) {
+  // Panelizer deals with many view_modes, we only care about 'page_manager'.
+  if ($view_mode == 'page_manager' && $entity_type == 'node') {
+    // This replicates page_manager's version of this for context_admin plugins
+    // that call through to other page_manager page output types.
+    $page = context_admin_get_current_page();
+    // We're controlling access to the content/layout features of IPE and
+    // panelizer together, and this specifically matters to the
+    // workbench_moderation_node_draft plugin.
+    if ($page && !empty($page['handler']->conf['context_admin_options']) && $page['handler']->conf['context_admin_options'] == 'workbench_moderation_node_draft') {
+      $node_context = $page['handler']->conf['submitted_context'];
+      $node = $page['contexts'][$node_context]->data;
+      // Make sure that we're acting on the specified node type and that the
+      // operation is 'content'.
+      // @todo check panelizer and ipe for other potential op integrations.
+      if ($node->type == $bundle && $op == 'content') {
+        return (bool) $page['handler']->conf['panelizer_edit'];
+      }
+    }
+  }
+  return FALSE;
+}
+

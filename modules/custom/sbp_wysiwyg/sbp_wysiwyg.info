@@ -1,0 +1,15 @@
+name = SBP WYSIWYG
+description = Modifications and custom styles for the WYSIWYG editors
+core = 7.x
+package = Small Business Portal
+version = 7.x-1.0
+dependencies[] = ctools
+dependencies[] = editor
+dependencies[] = editor_ckeditor
+dependencies[] = editor_ckeditor_widgets
+dependencies[] = entity_embed
+dependencies[] = features
+dependencies[] = filter
+features[features_api][] = api:2
+features[filter][] = filtered_html
+features[filter][] = full_html

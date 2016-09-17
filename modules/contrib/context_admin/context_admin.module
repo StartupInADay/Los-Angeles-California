@@ -1,0 +1,290 @@
+<?php
+
+/**
+ * Implementation of hook_views_api().
+ */
+function context_admin_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'context_admin') . '/includes',
+  );
+}
+
+/**
+ * Implementation of hook_ctools_plugin_directory().
+ */
+function context_admin_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'page_manager' || $owner == 'ctools' || $owner == 'context_admin') {
+    return 'plugins/' . $plugin_type;
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function context_admin_ctools_plugin_type() {
+  return array(
+    'context_admin' => array(
+      'child plugins' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Return the Drupal base path, the module path, and the file name, 
+ * all made into a valid full path.
+ *
+ * $file - The name of the file we are creating a full path for.
+ * $base_path - Boolean (default FALSE) indicator to use the Drupal path
+ * $module - (default context_admin) that module that the file belongs to.
+ * RETURN: the path to, and including the $file
+ */
+function context_admin_get_path($file, $base_path = FALSE, $module = 'context_admin') {
+  $output = $base_path ? base_path() : '';
+  return $output . drupal_get_path('module', $module) . '/' . $file;
+}
+
+/**
+ * Return a new instance of a generic object.
+ *
+ * $name - The name assigned to the new object.
+ */
+function context_admin_create($name) {
+  $cache = new stdClass();
+  $cache->task_name = $name;
+  return $cache;
+}
+
+/**
+ * Return a CTools cache page identified by $name if it exists, or a new
+ * one if it does not.
+ */
+function context_admin_get_page_cache($name) {
+  ctools_include('object-cache');
+  $cache = ctools_object_cache_get('context_admin', $name);
+  if (!$cache) {
+    $cache = context_admin_create($name);
+    $cache->locked = ctools_object_cache_test('context_admin', $name);
+  }
+
+  return $cache;
+}
+
+/**
+ * Store changes to a task handler in the object cache.
+ */
+function context_admin_set_page_cache($name, $page) {
+  $page->changed = TRUE;
+  ctools_include('object-cache');
+  $cache = ctools_object_cache_set('context_admin', $name, $page);
+}
+
+/**
+ * Remove an item from the object cache.
+ */
+function context_admin_clear_page_cache($name) {
+  ctools_include('object-cache');
+  ctools_object_cache_clear('context_admin', $name);
+}
+
+/**
+ * Return info about all the plugins (currently in context_admin only) 
+ *
+ * $type - currently this always 'context_admin'. But the call was
+ *    written genericly 
+ * $options - An array of options. We are only looking for an 'id'
+ *    in this array.
+ */
+function context_admin_get_plugins($type, $options = array()) {
+  $id = isset($options['id']) ? $options['id'] : NULL;
+  ctools_include('plugins');
+  ctools_include('context');
+  if (is_null($id)) {
+    $plugins = ctools_get_plugins('context_admin', $type);
+  }
+  else {
+    $plugins = ctools_get_plugins('context_admin', $type, $id);
+  }
+  return $plugins;
+}
+
+/**
+ * Build a plugins array subset of context_admin where only the plugins
+ * that are needed in the passed context.
+ */
+function context_admin_get_contextual_plugins($contexts) {
+  $all_plugins = context_admin_get_plugins('context_admin');
+  $plugins = array();
+  foreach ($all_plugins as $id => $plugin) {
+    if (!empty($plugin['required context']) && !ctools_context_match_requirements($contexts, $plugin['required context'])) {
+      continue;
+    }
+    $plugins[$id] = $plugin;
+  }
+
+  return $plugins;
+}
+
+/**
+ * Helper function for exposing new core/contrib hooks or alter functions to
+ * context_admin plugins.
+ *
+ * $plugin_callback - the key within the $plugin array in the plugin for the
+ * hook or alter function specific to the plugin.
+ * $callback_type - either hook or alter, hooks will use func_get_args which
+ * passes by value, and alters will use debug_backtrace to pass by reference.
+ */
+function context_admin_plugin_callback_invoke($plugin_callback, $callback_type, $page = NULL) {
+  // Checking to make sure that we're on a context_admin generated page.
+  if (empty($page)) {
+    $page = page_manager_get_current_page();
+  }
+  $plugin = '';
+  if ($page) {
+    if (isset($page['handler']->conf['context_admin_options'])) {
+      $plugin = $page['handler']->conf['context_admin_options'];
+    }
+
+    ctools_include('plugins');
+    if ($callback_type == 'alter') {
+      $stack = debug_backtrace();
+      if (isset($stack[0]["args"])) {
+        $args = array();
+        for($i=0; $i < count($stack[0]["args"]); $i++) {
+          $args[$i] = &$stack[0]["args"][$i];
+        }
+      }
+    }
+    elseif ($callback_type == 'hook') {
+      $args = func_get_args();
+    }
+    unset($args[0]);
+    unset($args[1]);
+    unset($args[2]);
+    $args[] = $page;
+    if ($callback = ctools_plugin_load_function('context_admin', 'context_admin', $plugin, $plugin_callback)) {
+      call_user_func_array($callback, $args);
+    }
+  }
+}
+
+/**
+ * Implementation of hook_form_alter
+ */
+function context_admin_form_alter(&$form, &$form_state, $form_id) {
+  // We never want to deal with node_form_validate directly, always utilize our
+  // wrapper function instead.
+  switch($form_id) {
+    case 'context_admin_node_form_wrapper':
+      global $user;
+      $node_validate = array_search('node_form_validate', $form['#validate']);
+      $ca_validate = array_search('context_admin_node_form_wrapper_validate', $form['#validate']);
+      if ($node_validate !== FALSE && $ca_validate !== FALSE) {
+        unset($form['#validate'][$ca_validate]);
+        $form['#validate'][$node_validate] = 'context_admin_node_form_wrapper_validate';
+      }
+      elseif ($node_validate !== FALSE) {
+        $form['#validate'][$node_validate] = 'context_admin_node_form_wrapper_validate';
+      }
+      break;
+  }
+
+  // Expose hook_form_alter() to context_admin plugins.
+  $args = array(
+    'form alter',
+    'alter',
+    NULL,
+    &$form,
+    &$form_state,
+    $form_id
+  );
+  call_user_func_array('context_admin_plugin_callback_invoke', $args);
+}
+
+/**
+ * Implementation of hook_node_insert
+ */
+function context_admin_node_insert($node) {
+  context_admin_plugin_callback_invoke('node insert', 'hook', NULL, $node);
+}
+
+/**
+ * Build our own node_add style function so that we can do things core does not
+ * support. Also, we need to call a completely different form so that we can
+ * load the node.pages.inc file from drupal_get_form so that ajax fields
+ * continue to work.
+ */
+function context_admin_node_add_wrapper($type, $fields = array(), $use_panels = FALSE) {
+  global $user;
+
+  $types = node_type_get_types();
+  $node = new stdClass();
+  $fields += array(
+    'uid' => $user->uid,
+    'name' => (isset($user->name) ? $user->name : ''),
+    'type' => $type,
+    'language' => LANGUAGE_NONE,
+  );
+  foreach ($fields as $field_id => $value) {
+    if (is_array($value)) {
+      foreach ($value['values'] as $field_value) {
+        $node->{$field_id}[$value['language']][][$value['key']] = $field_value;
+      }
+    }
+    else {
+      $node->{$field_id} = $value;
+    }
+  }
+  if ($use_panels && module_exists('panels')) {
+    // Render form using Page Manager's node/%node/edit page
+    // Requires node/%node/edit page to be enabled.  Check for this and disable checkbox above?  FIXME
+    ctools_include("plugins");
+    $plugin = ctools_get_plugins("page_manager", "tasks", "node_edit");
+    global $user;
+    drupal_set_title(t('Create @name', array('@name' => $types[$type]->name)));
+    return page_manager_node_edit($node);
+  }
+  drupal_set_title(t('Create @name', array('@name' => $types[$type]->name)), PASS_THROUGH);
+  $page = page_manager_get_current_page();
+  return drupal_get_form('context_admin_node_form_wrapper', $node, $page);
+}
+
+/**
+ * Custom wrapper for node_form() so that we do not have to load node.pages.inc
+ * from a menu item. Being forced into loading it in the menu prevents any
+ * other module from being able to abstractly utilize node_add() since all
+ * field ajax will fail.
+ */
+function context_admin_node_form_wrapper($form, &$form_state, $node, $page) {
+  module_load_include('inc', 'node', 'node.pages');
+  if (!page_manager_get_current_page()) {
+    page_manager_get_current_page($page);
+  }
+  $form = node_form($form, $form_state, $node);
+  return $form;
+}
+
+/**
+ * Poll module and other such ajax appears to die without a wrapper around
+ * node_form_validate as well.
+ */
+function context_admin_node_form_wrapper_validate($form, &$form_state) {
+  module_load_include('inc', 'node', 'node.pages');
+  node_form_validate($form, $form_state);
+}
+
+/**
+ * A helper function for tracking current page_manager page.
+ *
+ * Page Manager provides a function that is identical to this, however certain
+ * context_admin plugin proxy to another page_manager task and the "current page"
+ * can get lost, so this allows those plugins to store another layer of page.
+ */
+function context_admin_get_current_page($page = NULL) {
+  static $current = array();
+  if (isset($page)) {
+    $current = $page;
+  }
+
+  return $current;
+}

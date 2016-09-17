@@ -1,0 +1,416 @@
+/**
+ * @file
+ * Styles required for the basic functionality of the Form Builder interface.
+ */
+
+#form-builder-wrapper {
+  overflow: hidden;
+  padding: 10px 0;
+}
+
+#form-builder-wrapper h3.form-builder-title {
+  margin: 0;
+}
+
+#form-builder-wrapper.with-palette #form-builder-fields {
+  float: right;
+  padding-left: 10px;
+  width: 260px;
+}
+
+#form-builder-wrapper.with-palette #form-builder {
+  float: none;
+  margin-right: 270px;
+  padding-right: 9px;
+  border-right: 1px solid #CCC;
+  position: relative;
+}
+
+#center #form-builder form,
+#form-builder form {
+  margin: 0;
+}
+
+#form-builder form.confirmation {
+  padding: 10px;
+}
+
+div.form-builder-wrapper {
+  padding: 1px;
+  margin-top: 4px; /* Match this to the Sortable drag threshold option. */
+  position: relative;
+  transition: background 1s;
+}
+
+div.form-builder-wrapper.highlighted {
+  background-color: #FEFC78;
+}
+
+div.form-builder-element {
+  margin: 4px 10px 4px 10px;
+}
+
+div.form-builder-hover {
+  border: 1px dashed #999;
+  padding: 0;
+}
+
+div.form-builder-active {
+  padding: 0;
+  border: 1px solid #999;
+}
+
+div.form-builder-wrapper form {
+  border-top: 1px dashed #999;
+}
+
+div.form-builder-element {
+  position: relative;
+}
+
+div.form-builder-draggable,
+div.form-builder-draggable input,
+div.form-builder-draggable textarea,
+div.form-builder-draggable label,
+div.form-builder-draggable .grippie {
+  cursor: move;
+}
+
+div.form-builder-clickable,
+div.form-builder-clickable input,
+div.form-builder-clickable textarea,
+div.form-builder-clickable label,
+div.form-builder-clickable .grippie {
+  cursor: pointer;
+}
+
+div.form-builder-element .form-builder-disable {
+  z-index: 100;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Empty fieldsets */
+#form-builder fieldset {
+  padding-bottom: 20px;
+}
+
+fieldset.form-builder-empty-fieldset,
+div.form-builder-empty-fieldset {
+  overflow: hidden;
+}
+
+div.form-builder-empty-placeholder {
+  border: none;
+  text-align: center;
+  color: #CCC;
+  overflow: hidden;
+}
+
+div.form-builder-empty-placeholder span {
+  display: block;
+  margin: 40px;
+}
+div.form-builder-empty-form span {
+  margin: 120px 40px;
+}
+
+/* Placeholders for drop position */
+div.form-builder-placeholder {
+  height: 60px;
+  margin-top: -30px;
+  position: absolute;
+  width: 100%;
+  border: 1px solid blue;
+}
+div.form-builder-placeholder-last {
+  height: 200px;
+}
+
+div.form-builder-placeholder-hover {
+  margin: 0;
+  position: relative;
+  border: 1px dashed #999;
+}
+
+/* This affects the fieldset placeholder text on hover */
+div.form-builder-placeholder-hover span {
+  visibility: hidden;
+}
+
+/* The item being dragged */
+#form-builder .ui-draggable-dragging {
+  width: 100%;
+}
+
+/* Title bar for form builder items */
+div.form-builder-title-bar {
+  position: relative;
+  z-index: 10;
+  padding-top: 4px;
+  height: 14px;
+  margin-bottom: -18px;
+  border-bottom: none;
+}
+
+div.ui-draggable div.form-builder-title-bar,
+div.ui-draggable div.form-builder-bottom-title-bar {
+  display: none;
+}
+
+div.ui-draggable div.form-builder-title-bar,
+div.ui-draggable div.form-builder-bottom-title-bar {
+  cursor: move;
+}
+
+span.form-builder-links {
+  position: absolute;
+  right: -4px;
+  z-index: 40;
+}
+
+span.form-builder-bottom-links {
+  position: absolute;
+  right: -4px;
+  bottom: -10px;
+  z-index: 40;
+}
+
+div.form-builder-hover div.form-builder-title-bar,
+div.form-builder-hover div.form-builder-bottom-title-bar,
+div.form-builder-active div.form-builder-title-bar {
+  display: block;
+}
+
+div.form-builder-hover div.form-builder-wrapper div.form-builder-title-bar,
+div.form-builder-hover div.form-builder-wrapper div.form-builder-bottom-title-bar,
+div.form-builder-active div.form-builder-wrapper div.form-builder-title-bar,
+div.form-builder-active div.form-builder-bottom-title-bar {
+  display: none;
+}
+
+span.form-builder-links a.remove,
+span.form-builder-links a.configure,
+span.form-builder-bottom-links a.clone {
+  float: right;
+  display: block;
+  text-decoration: none;
+  height: 16px;
+  width: 16px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+span.form-builder-links a.remove span,
+span.form-builder-links a.configure span,
+span.form-builder-bottom-links a.clone span {
+  display: none;
+}
+
+span.form-builder-links a.remove {
+  background: url(images/delete.png) no-repeat 0 0;
+}
+
+span.form-builder-links a.configure {
+  background: url(images/configure.png) no-repeat 0 0;
+}
+
+span.form-builder-bottom-links a.clone {
+  background: url(images/clone.png) no-repeat 0 0;
+}
+
+span.form-builder-links a.remove:hover,
+span.form-builder-links a.configure:hover,
+span.form-builder-bottom-links a.clone:hover {
+  background-position: 0 -20px;
+}
+
+span.form-builder-links a.progress,
+span.form-builder-links a.progress:hover,
+span.form-builder-bottom-links a.progress,
+span.form-builder-bottom-links a.progress:hover {
+  background: url(images/status-active.gif) no-repeat 2px 3px;
+}
+
+/* Field form tabs */
+#form-builder ul.form-builder-tabs {
+  margin: 0;
+  padding: 0;
+  float: left; /* RTL */
+  position: relative;
+}
+
+#form-builder ul.form-builder-tabs li {
+  float: left; /* RTL */
+  display: block;
+  border-width: 0 1px 0 0;
+  border-color: #999;
+  border-style: solid;
+  padding: 6px 10px;
+  margin: -1px -1px -1px 0px;
+  list-style-type: none;
+  list-style-image: none;
+  background: none;
+  cursor: pointer;
+  z-index: 20;
+  position: relative;
+}
+
+#form-builder ul.form-builder-tabs li.active {
+  margin-left: -1px;
+  border-left: 1px solid #999;
+  border-top: 1px dashed #999;
+  border-bottom: 1px solid #ffffff;
+  background: #ffffff;
+}
+
+#form-builder fieldset.form-builder-group {
+  float: left; /* RTL */
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-top: 1px solid #CCC;
+}
+
+#form-builder fieldset.form-builder-group .fieldset-wrapper {
+  padding: 10px 10px 0;
+}
+
+#form-builder fieldset.form-builder-group .form-item {
+  padding: 0;
+  margin: 0 0 10px;
+}
+
+#form-builder-field-configure .form-item-title small {
+  display: block;
+}
+
+#form-builder-field-configure #edit-form-builder-submit {
+  display: none;
+}
+
+#form-builder-field-configure a.close {
+  border: none;
+  margin: 0;
+  font-size: 80%;
+  float: right;
+  padding: 6px 10px;
+}
+
+/* Weight and parents form */
+form#form-builder-positions {
+  display: none;
+}
+
+/* New fields block */
+div.form-builder-new-field {
+  padding: 10px 20px;
+}
+
+div.form-builder-new-field span.progress {
+  padding-left: 16px;
+  background: url(images/status-active.gif) no-repeat center left;
+}
+
+#form-builder-field-palette .item-list {
+  margin: 0 0 10px 0;
+}
+
+#form-builder-field-palette h3 {
+  margin: 0;
+}
+
+#form-builder-field-palette ul.form-builder-fields {
+  width: 260px;
+  padding: 0;
+  margin: 0;
+}
+
+#form-builder-field-palette ul li {
+  list-style-type: none;
+  background: white none no-repeat 6px center;
+  padding: 2px 2px 2px 28px;
+  border: 1px solid #999;
+  margin: 2px;
+  float: left;
+  width: 80px;
+  font-size: 11px;
+  cursor: move;
+  display: block;
+}
+
+/* Make inside links fill the entire LI element */
+#form-builder-field-palette ul li a {
+  padding: 4px 4px 4px 28px;
+  margin: -4px -4px -4px -28px;
+  width: 100%;
+  display: inline-block;
+}
+#form-builder-field-palette ul li a.progress {
+  background: url(images/status-active.gif) no-repeat 94% 7px;
+  font-weight: normal;
+}
+
+#form-builder-field-palette ul li a,
+#form-builder-field-palette ul li a:hover,
+#form-builder-field-palette ul li a:active,
+#form-builder-field-palette ul li a:visited {
+  text-decoration: none;
+  cursor: move;
+  color: black;
+}
+
+#form-builder-field-palette ul li.field-checkboxes {
+  background-image: url(images/fields/checkboxes.png);
+}
+#form-builder-field-palette ul li.field-date {
+  background-image: url(images/fields/date.png);
+}
+#form-builder-field-palette ul li.field-email {
+  background-image: url(images/fields/email.png);
+}
+#form-builder-field-palette ul li.field-fieldset {
+  background-image: url(images/fields/fieldset.png);
+}
+#form-builder-field-palette ul li.field-file {
+  background-image: url(images/fields/file.png);
+}
+#form-builder-field-palette ul li.field-grid {
+  background-image: url(images/fields/grid.png);
+}
+#form-builder-field-palette ul li.field-hidden {
+  background-image: url(images/fields/hidden.png);
+}
+#form-builder-field-palette ul li.field-image {
+  background-image: url(images/fields/image.png);
+}
+#form-builder-field-palette ul li.field-markup {
+  background-image: url(images/fields/markup.png);
+}
+#form-builder-field-palette ul li.field-number {
+  background-image: url(images/fields/number.png);
+}
+#form-builder-field-palette ul li.field-pagebreak {
+  background-image: url(images/fields/pagebreak.png);
+}
+#form-builder-field-palette ul li.field-radios {
+  background-image: url(images/fields/radios.png);
+}
+#form-builder-field-palette ul li.field-select {
+  background-image: url(images/fields/select.png);
+}
+#form-builder-field-palette ul li.field-time {
+  background-image: url(images/fields/time.png);
+}
+#form-builder-field-palette ul li.field-textarea {
+  background-image: url(images/fields/textarea.png);
+}
+#form-builder-field-palette ul li.field-textfield {
+  background-image: url(images/fields/textfield.png);
+}
+
+#form-builder-webform-save-form {
+  margin-bottom: 200px;
+}

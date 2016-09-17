@@ -1,0 +1,43 @@
+<?php
+include_once "SPSManagerUnit.test";
+class SPSTestPluginControllerUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Test Plugin Controller Unit Tests',
+      'description' => 'Test the public interface to the TestPluginController object',
+      'group' => 'SPS',
+    );
+  }
+
+  public function testTestPluginController() {
+    $info = array(
+      'widget' => array(
+        'test_widget' => array(
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(),
+        ),
+      ),
+    );
+    $manager = new \Drupal\sps\Test\Manager();
+    $controller = new \Drupal\sps\Test\PluginController($info, $manager);
+    $this->assertEqual(
+      $controller->getPluginInfo('widget'),
+      $info['widget'],
+      "TestStorageController::getPluginInfo should get me all of the plugin infos for that type if i only pass it one param", 'SPS'
+    );
+    $this->assertEqual(
+      $controller->getPluginInfo('widget', 'test_widget'),
+      $info['widget']['test_widget'],
+      'TestStorageController::getPluginInfo should get the plugin info for  the plugin when passed two param', 'SPS'
+    );
+
+    $manager = new \Drupal\sps\Test\Manager();
+    $this->assertEqual(
+      $controller->getPlugin('widget', 'test_widget', $manager), 
+      new \Drupal\sps\Test\Override(array(), $manager),
+      'TestStorageController::getPlugin should build a obj from the plugin info', 'SPS'
+    );
+
+  }
+
+}

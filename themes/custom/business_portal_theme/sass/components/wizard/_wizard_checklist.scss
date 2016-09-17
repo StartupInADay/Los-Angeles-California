@@ -1,0 +1,140 @@
+// styles for the checklist screen
+
+.wizard__question--checklist {
+  font-family: Merriweather, serif;
+  font-weight: 400;
+  font-size: 1.667em;
+  margin: 0 0 20px 25px;
+  padding: 0;
+  @include wizard__content_width();
+  border: 0px solid red;
+  @include window_size(desktop) {
+    font-size: 2.571em;
+    margin: 0 0 20px 0;
+  }
+}
+
+.wizard__checklist_content {
+  border: 0px solid red;
+  width: 75%;
+  margin:4px 0 20px 0;
+  @include window_size(desktop) {
+    margin:4px 0 20px 0;
+    font-size: 1.143em;
+  }
+}
+.wizard__checklist_content--strong {
+  border: 0px solid red;
+  width: 75%;
+  margin:4px 0 20px 0;
+  font-weight: 700;
+  @include window_size(desktop) {
+    margin:4px 0 20px 0;
+    font-size: 1.143em;
+  }
+}
+
+.wizard__checklist_column_1_wrapper {
+  border: 0px solid green;
+  margin:0px 25px 20px 25px;
+  @include window_size(desktop) {
+    margin:4px 0 20px 0;
+  }
+}
+
+.wizard__button--checklist {
+  @include wizard__button--base;
+  margin: 0 0 20px 0px;
+  @include window_size(desktop) {
+
+  }
+}
+
+.wizard__content--results-list {
+  ul li {
+    list-style: none;
+  }
+  a {
+    text-decoration: underline;
+  }
+  @include wizard__content_width();
+}
+
+.wizard__result {
+  font-family: $roboto;
+  color: #0F2940;
+  font-size: 1.143em;
+  font-weight: 400;
+  text-transform: none;
+}
+
+.wizard__result p {
+  margin-top: 18px;
+  margin-bottom: 18px;
+  padding-top: 0;
+}
+
+.wizard__result h3 {
+  font-weight: 400;
+  font-size: 1.429em;
+  font-family: Merriweather, serif;
+  margin: 20px 0;
+  color: $dark_blue;
+}
+
+.wizard__result ul li,
+.wizard__result ol li {
+  display: list-item;
+  margin-bottom: 10px;
+  /*font-size: 87.5%;*/
+}
+
+.wizard__result ol {
+  list-style-type: decimal;
+}
+
+.wizard__result_buttons a {
+  @include wizard__button--base;
+}
+
+.wizard__step {
+  border-top: 2px solid white;
+  color:$white;
+  text-transform: uppercase;
+  font-weight: 900;
+  font-size: 0.857em;
+  margin-top: 25px;
+  padding: 10px 0 0 0;
+}
+
+.wizard__step_header {
+  border: 0px solid pink;
+  color: $dark_blue;
+  padding: 0;
+  margin: 0 0 20px 0px;
+  color: $dark_blue;
+  font-weight: 400;
+  font-size: 1.429em;
+  @include window_size(desktop) {
+    margin: 0 0 20px 0px;
+  }
+}
+
+.wizard__cheklist_ol {
+  border:0px solid red;
+  margin:4px 25px 20px 0;
+  padding: 0 0 0 20px;
+  @include window_size(desktop) {
+    margin: 0 0 20px 0px;
+  }
+}
+
+.wizard__cheklist_li {
+  border:0px solid pink;
+  margin:10px 0 10px 0;
+  padding: 0;
+}
+
+.wizard__content--results-cta {
+  margin-top: 1.5em;
+}

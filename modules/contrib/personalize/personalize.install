@@ -1,0 +1,711 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function personalize_schema() {
+  module_load_include('module', 'personalize');
+
+  $schema = array();
+
+  $schema['personalize_agent'] = array(
+    'description' => 'Stores Decision Agents for personalization.',
+    'export' => array(
+      'key' => 'machine_name',
+      'identifier' => 'personalize_agent',
+      'default hook' => 'personalize_default_agents',
+      'api' => array(
+        'owner' => 'personalize',
+        'api' => 'personalize',
+        'minimum_version' => 1,
+        'current_version' => 1,
+     ),
+      'export callback' => 'personalize_agent_export',
+    ),
+    'fields' => array(
+      'machine_name' => array(
+        'description' => 'The primary identifier of the agent.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'plugin' => array(
+        'description' => 'The plugin providing this agent.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'started' => array(
+        'description' => 'The Unix timestamp of when the agent was first activated.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'label' => array(
+        'description' => 'The administrative label for the agent.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data.',
+      ),
+    ),
+    'primary key' => array('machine_name'),
+  );
+
+  $schema['personalize_option_sets'] = array(
+    'description' => 'Stores Option Sets for personalization.',
+    'fields' => array(
+      'osid' => array(
+        'description' => 'The primary identifier for an option set.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'plugin' => array(
+        'description' => 'The plugin responsible for this Option Set.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'label' => array(
+        'description' => 'An administrative label for this Option Set.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'agent' => array(
+        'description' => 'The Decision Agent used with this Option Set.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'mvt' => array(
+        'description' => 'The name of the multivariate test this Option Set belongs to, if any.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'decision_name' => array(
+        'description' => 'The name of the decision for this option set.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'executor' => array(
+        'description' => 'The executor to use for this option set.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'options' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array specifying the options in this option set.',
+      ),
+      'winner' => array(
+        'description' => 'The ID of the winning option for this Option Set.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => FALSE,
+      ),
+      'stateful' => array(
+        'description' => 'Boolean indicating whether this is a stateful option set.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data.',
+      ),
+      'preview_link' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'The path to a local preview page for the option set.',
+      ),
+      'targeting' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array specifying any targeting rules for this option set.',
+      )
+    ),
+    'primary key' => array('osid'),
+    'foreign keys' => array(
+      'option_set_mvt' => array(
+        'table' => 'personalize_multivariate_test',
+        'columns' => array('mvt' => 'machine_name'),
+      ),
+    ),
+  );
+
+  $schema['personalize_multivariate_test'] = array(
+    'description' => 'Stores collections of Option Sets as multivariate tests.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for the MVT.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'machine_name' => array(
+        'description' => 'The machine-readable name of this MVT.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'label' => array(
+        'description' => 'An administrative label for this MVT.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'agent' => array(
+        'description' => 'The Decision Agent used with this MVT.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'stateful' => array(
+        'description' => 'Boolean indicating whether this is a stateful MVT.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'machine_name' => array('machine_name'),
+    ),
+  );
+
+  $schema['personalize_campaign_goals'] = array(
+    'description' => 'Stores visitor actions as goals for personalizations.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for this goal.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'action' => array(
+        'description' => 'The name of the action.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'agent' => array(
+        'description' => 'The Decision Agent this goal is for.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'value' => array(
+        'description' => 'The value of the goal.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'goal_action' => array('action'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook_enable().
+ */
+function personalize_enable() {
+  // If the module were previously enabled and had campaign goals set,
+  // the list of subscribers to those actions will need to be rebuilt.
+  rebuild_subscribers_for_goal_actions();
+}
+
+/**
+ * Implements hook_disable().
+ */
+function personalize_disable() {
+  if (isset($_SESSION['personalize_campaign'])) {
+    unset($_SESSION['personalize_campaign']);
+  }
+  // For all actions we were subscribed to for goals, the subscribers list
+  // will need to be rebuilt.
+  rebuild_subscribers_for_goal_actions();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function personalize_uninstall() {
+  // Delete variables.
+  variable_del('personalize_local_caching_expiration');
+  variable_del('personalize_local_caching_storage');
+  variable_del('personalize_use_admin_mode');
+  variable_del('personalize_enable_debug_mode');
+  variable_del('personalize_visitor_context_disabled');
+
+  // Delete the campaign status variables.
+  $result = db_select('personalize_agent', 'a')
+    ->fields('a')
+    ->execute();
+  foreach ($result as $row) {
+    variable_del("personalize_campaign_{$row->machine_name}_status");
+    variable_del("personalize_campaign_{$row->machine_name}_stop");
+    variable_del("personalize_campaign_{$row->machine_name}_start");
+  }
+}
+
+/**
+ * Rebuilds the cache of action subscribers for actions that goals are
+ * subscribed to.
+ */
+function rebuild_subscribers_for_goal_actions() {
+  $result = db_query('SELECT DISTINCT action FROM {personalize_campaign_goals}');
+  foreach ($result as $row) {
+    visitor_actions_clear_subscribers($row->action);
+  }
+}
+
+/**
+ * Add a database column for specifying an agent's status.
+ */
+function personalize_update_7001() {
+  drupal_load('module', 'personalize');
+  db_add_field('personalize_agent', 'status', array(
+    'description' => 'Integer representing the status of this agent.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => PERSONALIZE_STATUS_NOT_STARTED,
+  ));
+  // Existing campaigns should have their status set to 2, which means
+  // 'running' since there was no concept of an inactive campaign previously.
+  db_query("UPDATE {personalize_agent} SET status = :status", array(':status' => PERSONALIZE_STATUS_RUNNING));
+}
+
+/**
+ * Add database column for specifying the winner in an Option Set.
+ */
+function personalize_update_7002() {
+  db_add_field('personalize_option_sets', 'winner', array(
+    'description' => 'The ID of the winning option for this Option Set.',
+    'type' => 'varchar',
+    'length' => 64,
+    'not null' => FALSE,
+  ));
+}
+
+/**
+ * Add database column for specifying the time an agent is first activated.
+ */
+function personalize_update_7003() {
+  db_add_field('personalize_agent', 'started', array(
+    'description' => 'The Unix timestamp of when the agent was first activated.',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+}
+
+/**
+ * Rename the 'type' field in personalize_option_sets table to 'plugin'.
+ */
+function personalize_update_7004() {
+  db_change_field('personalize_option_sets', 'type', 'plugin', array(
+    'description' => 'The plugin responsible for this Option Set.',
+    'type' => 'varchar',
+    'length' => 64,
+    'not null' => TRUE,
+    'default' => '',
+  ));
+}
+
+/**
+ * Rename existing user_context info to visitor_context.
+ */
+function personalize_update_7005() {
+  $result = db_select('personalize_agent', 'a')
+    ->fields('a', array('machine_name', 'data'))
+    ->execute();
+  foreach ($result as $row) {
+    $data = unserialize($row->data);
+    if (isset($data['user_context'])) {
+      $data['visitor_context'] = $data['user_context'];
+      unset($data['user_context']);
+    }
+    db_update('personalize_agent')
+      ->condition('machine_name', $row->machine_name)
+      ->fields(array('data' => serialize($data)))
+      ->execute();
+  }
+}
+
+/**
+ * Add local storage caching setting to all agents and remove the global
+ * setting.
+ */
+function personalize_update_7006() {
+  $cache_decisions = variable_get('personalize_use_local_caching', 1);
+  $result = db_select('personalize_agent', 'a')
+    ->fields('a', array('machine_name', 'data'))
+    ->execute();
+  foreach ($result as $row) {
+    $data = unserialize($row->data);
+    $data['cache_decisions'] = $cache_decisions;
+    db_update('personalize_agent')
+      ->condition('machine_name', $row->machine_name)
+      ->fields(array('data' => serialize($data)))
+      ->execute();
+  }
+  variable_del('personalize_use_local_caching');
+}
+
+/**
+ * Add a preview link to the option sets table.
+ */
+function personalize_update_7007() {
+  db_add_field('personalize_option_sets', 'preview_link', array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+    'description' => 'The path to a local preview page for the option set.',
+  ));
+}
+
+
+/**
+ * Add fixed targeting rules for all existing fixed targeting feature strings.
+ *
+ * In addition to storing the feature string used for fixed targeting,
+ * we now also store the rule used to evaluate it.
+ */
+function personalize_update_7008() {
+  $result = db_select('personalize_option_sets', 'o')
+    ->fields('o', array('osid', 'options'))
+    ->execute();
+  foreach ($result as $row) {
+    $options = unserialize($row->options);
+    foreach ($options as &$option) {
+      if (isset($option['fixed_targeting'])) {
+        $fixed_targeting_rules = array();
+        foreach ($option['fixed_targeting'] as $i => $feature_string) {
+          if ($context = _personalize_convert_feature_string_to_context($feature_string)) {
+            $fixed_targeting_rules[$feature_string] = array(
+              'context' => $context['key'],
+              'operator' => 'equals',
+              'match' => $context['value'],
+            );
+          }
+          else {
+            // If for some reason we were not able to conver the feature string to
+            // a context, then we need to just remove that fixed targeting mapping.
+            unset($option['fixed_targeting'][$i]);
+          }
+        }
+        // Re-key the fixed targeting array in case some elements were removed.
+        $option['fixed_targeting'] = array_values($option['fixed_targeting']);
+        // Save the rules for evaluating each string.
+        $option['fixed_targeting_rules'] = $fixed_targeting_rules;
+      }
+    }
+    db_update('personalize_option_sets')
+      ->condition('osid', $row->osid)
+      ->fields(array('options' => serialize($options)))
+      ->execute();
+  }
+}
+
+/**
+ * Rename personalize element control fields.
+ */
+function personalize_update_7009() {
+  drupal_load('module', 'personalize');
+  // Update the option id and label for any control options in personalize
+  // elements option sets.
+  $result = db_select('personalize_option_sets', 'o')
+    ->condition('executor', 'personalizeElements')
+    ->fields('o', array('osid', 'options'))
+    ->execute();
+  foreach ($result as $row) {
+    $options = unserialize($row->options);
+    if ($options[0]['option_label'] === 'Control Option') {
+      $options[0]['option_label'] = PERSONALIZE_CONTROL_OPTION_LABEL;
+    }
+    if ($options[0]['option_id'] === 'control-option') {
+      $options[0]['option_id'] = PERSONALIZE_CONTROL_OPTION_ID;
+    }
+    db_update('personalize_option_sets')
+      ->condition('osid', $row->osid)
+      ->fields(array('options' => serialize($options)))
+      ->execute();
+  }
+}
+
+/**
+ * Delete any goals that belong to campaigns that no longer exist.
+ */
+function personalize_update_7010() {
+  drupal_load('module', 'personalize');
+  // Get all the current campaigns.
+  $all_agents = personalize_agent_load_multiple();
+  $agents = array_keys($all_agents);
+
+  // Find any goals that don't belong to an existing campaign and delete.
+  $result = db_select('personalize_campaign_goals', 'g')
+    ->fields('g', array('id', 'agent'))
+    ->execute();
+  foreach ($result as $row) {
+    if (!in_array($row->agent, $agents)) {
+      db_delete('personalize_campaign_goals')
+        ->condition('id', $row->id)
+        ->execute();
+    }
+  }
+}
+
+/**
+ * Update fixed targeting rules to reference the origin context plugin.
+ */
+function personalize_update_7011() {
+  if (!module_exists('personalize')) {
+    $plugin_options = array();
+  }
+  else {
+    // Get all possible targeting values for all context plugins.
+    ctools_include('plugins');
+    $contexts = personalize_get_visitor_contexts();
+    $plugin_options = array();
+    foreach ($contexts as $plugin_name => $info) {
+      if ($class = ctools_plugin_load_class('personalize', 'visitor_context', $plugin_name, 'handler')) {
+        $context_options = call_user_func(array($class, 'getOptions'));
+        $plugin_options = array_merge($plugin_options, array_fill_keys(array_keys($context_options), $plugin_name));
+      }
+    }
+    // Add all targeting values from Lift that are allowed for fixed targeting selections.
+    $lift_values = array("c-cen","c-geo-c3","c-geo-cont","c-geo-usr","c-geo-wrg","c-time-gwp","c-time-ldp","c-time-lwp","c-time-tz","c-ua-bb","c-ua-mo","c-ua-os","c-usr-tld","c-wea-cw");
+    $plugin_options = array_merge($plugin_options, array_fill_keys(array_values($lift_values), 'acquia_lift_context'));
+  }
+
+  // Update any existing fixed targeting rules with the plugin name.
+  $result = db_select('personalize_option_sets', 'o')
+    ->fields('o', array('osid', 'options'))
+    ->execute();
+  foreach ($result as $row) {
+    $options = unserialize($row->options);
+    foreach ($options as &$option) {
+      if (!empty($option['fixed_targeting_rules'])) {
+        foreach ($option['fixed_targeting_rules'] as $key => &$rule) {
+          // There is a rule without a plugin defined here.
+          // Update the plugin if it can be found.  If it cannot be found that
+          // indicates a targeting value that is no longer available.
+          if (isset($plugin_options[$rule['context']])) {
+            $rule['plugin'] = $plugin_options[$rule['context']];
+          }
+          else {
+            // Remove this from the list of fixed_targeting features used.
+            $feature_index = array_search($key, $option['fixed_targeting']);
+            unset($option['fixed_targeting'][$feature_index]);
+            // Also remove the rule.
+            unset($option['fixed_targeting_rules'][$key]);
+          }
+        }
+      }
+    }
+    // Save the updated options back to the database.
+    db_update('personalize_option_sets')
+      ->condition('osid', $row->osid)
+      ->fields(array('options' => serialize($options)))
+      ->execute();
+  }
+}
+
+/**
+ * Remove campaign status from exportable configuration data.
+ */
+function personalize_update_7012() {
+  drupal_load('module', 'personalize');
+  // Set the status for all existing campaigns into variables if not already
+  // done so via UI.
+  $result = db_select('personalize_agent', 'a')
+    ->fields('a')
+    ->execute();
+  foreach ($result as $row) {
+    $varname = _personalize_agent_get_status_variable($row->machine_name);
+    $already_set = variable_get($varname, NULL);
+    if (empty($already_set)) {
+      variable_set('personalize_campaign_' . $row->machine_name . '_status', $row->status);
+    }
+  }
+  // Delete the column in the database.
+  db_drop_field('personalize_agent', 'status');
+}
+
+/**
+ * Add UUID support.
+ */
+function personalize_update_7013() {
+  // Make sure to add UUID field
+  if (!db_field_exists('personalize_option_sets', 'uuid')) {
+    db_add_field('personalize_option_sets', 'uuid', array('type' => 'char', 'length' => 36, 'default' => '', 'description' => 'The Universally Unique Identifier.'));
+  }
+}
+
+/**
+ * Add UUID support for campaign goals.
+ */
+function personalize_update_7014() {
+  // Make sure to add UUID field
+  if (!db_field_exists('personalize_campaign_goals', 'uuid')) {
+    db_add_field('personalize_campaign_goals', 'uuid', array('type' => 'char', 'length' => 36, 'default' => '', 'description' => 'The Universally Unique Identifier.'));
+  }
+}
+
+/**
+ * Add targeting column for Option Sets.
+ */
+function personalize_update_7015() {
+  if (!db_field_exists('personalize_option_sets', 'targeting')) {
+    db_add_field('personalize_option_sets', 'targeting', array(
+      'type' => 'blob',
+      'not null' => FALSE,
+      'size' => 'big',
+      'serialize' => TRUE,
+      'description' => 'A serialized array specifying any targeting rules for this option set.',
+    ));
+  }
+
+  // Move any existing fixed targeting rules to the new targeting column.
+  $result = db_select('personalize_option_sets', 'o')
+    ->fields('o', array('osid', 'options'))
+    ->execute();
+
+  foreach ($result as $row) {
+    $targeting = array();
+    $options = unserialize($row->options);
+    foreach ($options as &$option) {
+      if (!empty($option['fixed_targeting'])) {
+        $targ = array(
+          'option_id' => $option['option_id'],
+          'targeting_features' => $option['fixed_targeting']
+        );
+
+        if (isset($option['fixed_targeting_rules'])) {
+          $targ['targeting_rules'] = $option['fixed_targeting_rules'];
+          unset($option['fixed_targeting_rules']);
+        }
+        if (isset($option['fixed_targeting_strategy'])) {
+          $targ['targeting_strategy'] = $option['fixed_targeting_strategy'];
+          unset($option['fixed_targeting_strategy']);
+        }
+        unset($option['fixed_targeting']);
+        $targeting[] = $targ;
+      }
+    }
+
+    if (!empty($targeting)) {
+      $fields = array('options' => serialize($options));
+      $fields['targeting'] = serialize($targeting);
+      // Save the updated options back to the database.
+      db_update('personalize_option_sets')
+        ->condition('osid', $row->osid)
+        ->fields($fields)
+        ->execute();
+    }
+  }
+}
+
+/**
+ * Introduces identifiers for targeting rules.
+ */
+function personalize_update_7016() {
+  $result = db_select('personalize_option_sets', 'o')
+    ->fields('o', array('osid', 'targeting'))
+    ->execute();
+  // Start with a base string to create our machine names from.
+  $str = 'target_';
+  foreach ($result as $row) {
+    if (!empty($row->targeting)) {
+      $targeting = unserialize($row->targeting);
+      $new_targeting = array();
+      foreach ($targeting as $index => $targ) {
+        $name = $str . ($index + 1);
+        $new_targeting[$name] = $targ;
+        $new_targeting[$name]['weight'] = $index;
+      }
+      // Save the updated options back to the database.
+      db_update('personalize_option_sets')
+        ->condition('osid', $row->osid)
+        ->fields(array('targeting' => serialize($new_targeting)))
+        ->execute();
+    }
+  }
+}
+
+/**
+ * Converts a feature string to an array with 'key' and 'value' elements.
+ *
+ * It is not really possible to reliably convert a feature string to a context,
+ * because feature string generation is lossy. However, for the purposes of
+ * updating existing fixed targeting information to the new format, which
+ * requires storing exactly how the feature's value is calculated, we have to
+ * simply guess at how each existing string was produced. In the vast majority
+ * of cases, it will have been produces simply as key::value.
+ *
+ * @param $feature_string
+ *   The feature string to convert to a context.
+ *
+ * @return array
+ *   An associative array with keys 'key' and 'value', where 'key' is the name
+ *   of a visitor context, e.g. 'gender', and 'value' is the value of that
+ *   context, e.g. 'female'.
+ */
+function _personalize_convert_feature_string_to_context($feature_string) {
+  $separator = NULL;
+  if (strpos($feature_string, '::') !== FALSE) {
+    $separator = '::';
+  }
+  elseif (strpos($feature_string, ':') !== FALSE) {
+    $separator = ':';
+  }
+  elseif (strpos($feature_string, '--') !== FALSE) {
+    $separator = '--';
+  }
+  if (!$separator) {
+    return NULL;
+  }
+  $context = explode($separator, $feature_string);
+  return array(
+    'key' => $context[0],
+    'value' => $context[1]
+  );
+}

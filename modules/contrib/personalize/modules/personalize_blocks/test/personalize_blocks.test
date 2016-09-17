@@ -1,0 +1,410 @@
+<?php
+
+class PersonalizeBlocksTest extends PersonalizeBaseTest {
+  protected $adminUser;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Personalize Blocks tests'),
+      'description' => t('Test basic functionality of Personalize Blocks module.'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  public function setUp() {
+    parent::setUp(array('personalize_test', 'personalize_blocks', 'contextual', 'personalize_blocks_test'));
+
+    $this->adminUser = $this->drupalCreateUser(array(
+      'access administration pages',
+      'manage personalized content',
+      'administer blocks',
+      'access contextual links',
+      'personalize block test'
+    ));
+
+    $this->drupalLogin($this->adminUser);
+  }
+
+  public function testCreatePersonalizeBlocks() {
+    $edit = array(
+      'title' => '',
+      'blocks[0][option_label]' => '',
+      'blocks[1][option_label]' => '',
+      'blocks[0][block][bid]' => '',
+      'blocks[1][block][bid]' => '',
+    );
+    $pblock = $this->createPersonalizeBlock($edit, FALSE);
+
+    $this->assertText('Title field is required');
+    $this->assertText('A label is required for each block option');
+    $this->assertText('You must add at least 2 blocks to your personalized block');
+
+    $edit += array(
+      'agent_select' => '__new__',
+      'agent_basic_info[title]' => '',
+    );
+
+    $pblock = $this->createPersonalizeBlock($edit, FALSE);
+
+    $this->assertText('Personalization name is required');
+
+    $edit = array(
+      'agent_select' => '__new__',
+      'agent_basic_info[title]' => $this->randomName(),
+    );
+
+    $pblock = $this->createPersonalizeBlock($edit);
+
+    $this->drupalGet('admin/structure/personalize');
+
+    $this->assertText($edit['agent_basic_info[title]']);
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $pblock->agent . '');
+
+    $this->assertRaw($pblock->agent);
+    $this->assertRaw($edit['agent_basic_info[title]']);
+    $this->assertRaw($pblock->label);
+  }
+
+  /**
+   * Tests creating blocks inline within the personalized admin block form.
+   */
+  public function testAddBlocksInline() {
+    $this->drupalGet('admin/structure/personalize/variations/personalize-blocks/add');
+
+    // Check for the add fields on the existing two fields.
+    $this->assertAddBlockFields(0);
+    $this->assertAddBlockFields(1);
+
+    // Click Add another and make sure the add fields are present.
+    $this->drupalPost(NULL, array(), t('Add another'));
+    $this->assertAddBlockFields(2);
+
+    // Create a new personalized block with a new block.
+    $pblock_label = $this->randomName();
+    $edit = array(
+      'title' => $pblock_label,
+      'blocks[0][option_label]' => $this->randomName(),
+      'blocks[0][block][bid]' => 'personalize_blocks_test_delta_custom_block_3',
+      'blocks[1][option_label]' => $this->randomName(),
+      'blocks[1][block][block_type]' => 'add',
+      'blocks[1][block][add][body][value]' => $this->randomName(25),
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Make sure that fields are validated when block description is omitted.
+    $this->assertText(t('A block description is required when creating a new block.'));
+
+    // Correct and re-submit.
+    $add_block_info = $this->randomName();
+    $edit['blocks[1][block][add][info]'] = $add_block_info;
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Verify that the block was created.
+    $this->assertText(t('The block @title has been created.', array('@title' => $edit['blocks[1][block][add][info]'])));
+    // Find the most recently created custom block.
+    $block = db_query("SELECT * FROM {block_custom} ORDER BY bid DESC")->fetchAssoc();
+    $this->assertEqual($add_block_info, $block['info']);
+
+    // Edit this personalized block and ensure the new block is selected.
+    $this->drupalGet('admin/structure/personalize/variations/personalize-blocks/manage/1/edit');
+    $this->assertRaw('<option value="block_delta_' . $block['bid'] . '" selected="selected">' . $add_block_info . ' (block:' . $block['bid']  . ')</option>');
+
+    // Edit the first block to be a new block instead of the existing block.
+    $add_block_info_2 = $this->randomName(10);
+    unset($edit['blocks[0][block][add][info]']);
+    unset($edit['blocks[0][block][add][body][value]']);
+    $edit['blocks[0][block][block_type]'] = 'add';
+    $edit['blocks[0][block][add][info]'] = $add_block_info_2;
+    $edit['blocks[0][block][add][body][value]'] = $this->randomName(25);
+    // Edit the second block to be the block created above.
+    $edit['blocks[1][block][block_type]'] = 'select';
+    $edit['blocks[1][block][bid]'] = 'block_delta_' . $block['bid'];
+
+    // Submit and verify that the new block was created.
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Find the most recently created custom block.
+    $block2 = db_query("SELECT * FROM {block_custom} ORDER BY bid DESC")->fetchAssoc();
+    $this->assertEqual($add_block_info_2, $block2['info']);
+
+    // Load the option set for this personalized block and verify that the two
+    // new blocks are in it.
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('label' => $pblock_label), TRUE);
+    $option_set = array_shift($option_sets);
+    $this->assertEqual($option_set->options[0]['bid'], 'block_delta_' . $block2['bid']);
+    $this->assertEqual($option_set->options[1]['bid'], 'block_delta_' . $block['bid']);
+
+    // Make sure the option ids were generated based on the option labels.
+    foreach ($option_set->options as $option) {
+      $this->assertEqual($option['option_id'], personalize_generate_machine_name($option['option_label']));
+    }
+
+    // Delete the personalized block.
+    personalize_option_set_delete($option_set->osid);
+
+    // Verify that the two new blocks remain.
+    $block1 = block_custom_block_get($block['bid']);
+    $block2 = block_custom_block_get($block2['bid']);
+    $this->assertEqual($add_block_info, $block1['info']);
+    $this->assertEqual($add_block_info_2, $block2['info']);
+  }
+
+  /**
+   * Tests adding more than the minimum required number of blocks in a set.
+   */
+  public function testAddPersonalizedBlocks() {
+    // There should be two options specified initially.
+    $this->drupalGet('admin/structure/personalize/variations/personalize-blocks/add');
+    $this->assertFieldByName('blocks[0][option_label]', personalize_generate_option_label(0));
+    $this->assertFieldByName('blocks[1][option_label]', personalize_generate_option_label(1));
+
+    // Add another option
+    $this->drupalPost(NULL, array(), t('Add another'));
+    $this->assertFieldByName('blocks[2][option_label]', personalize_generate_option_label(2));
+
+    // Add a fourth option
+    $this->drupalPost(NULL, array(), t('Add another'));
+    $this->assertFieldByName('blocks[3][option_label]', personalize_generate_option_label(3));
+
+    // Submit them all
+    $edit = array(
+      'blocks[2][option_label]' => $this->randomName(),
+      'blocks[3][option_label]' => $this->randomName(),
+      'blocks[2][block][bid]' => 'personalize_blocks_test_delta_custom_block_3',
+      'blocks[3][block][bid]' => 'personalize_blocks_test_delta_custom_block_4',
+    );
+    $this->createPersonalizeBlock($edit, TRUE, FALSE);
+
+    // Check for the extra two block options.
+    $this->assertRaw($edit['blocks[2][option_label]']);
+    $this->assertRaw($edit['blocks[3][option_label]']);
+    $this->assertRaw('<option value="' . $edit['blocks[2][block][bid]'] . '" selected="selected">');
+    $this->assertRaw('<option value="' . $edit['blocks[3][block][bid]'] . '" selected="selected">');
+  }
+
+  public function testRenderBlocks() {
+    $pblock = $this->createPersonalizeBlock();
+    $edit = array(
+      'blocks[personalize_blocks_' . $pblock->osid . '][region]' => 'content',
+    );
+    $this->drupalPost('admin/structure/block', $edit, t('Save blocks'));
+
+    $agent_name = 'test-agent';
+    personalize_agent_set_status($agent_name, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+
+    $option_sets = personalize_option_set_load_by_agent($agent_name);
+    $option_set = reset($option_sets);
+    $osid = $option_set->osid;
+
+    $this->drupalGet('<front>');
+    $settings = $this->drupalGetSettings();
+    $personalize_settings = $settings['personalize'];
+    $expected_agent_map = array(
+      $agent_name => array(
+        'type' => 'test_agent',
+        'label' => 'My Test Agent',
+        'active' => PERSONALIZE_STATUS_RUNNING,
+        'enabled_contexts' => array(),
+        'cache_decisions' => TRUE,
+      )
+    );
+    $this->assertEqual($expected_agent_map, $personalize_settings['agent_map']);
+    // Assert that the js for the agent has been loaded.
+    $this->assertRaw('personalize_test.js');
+
+    // Assert that the option set has been output.
+    $this->assertOptionSet($osid);
+    $this->assertOptionSetSettings($personalize_settings, 'osid-' . $osid, 'osid-' . $osid, 'osid-' . $osid, $agent_name, 2, $option_set->options);
+
+    // Now set the campaign's status to completed and confirm that it is rendered in
+    // PHP and no js settings are there.
+    personalize_agent_set_status($agent_name, PERSONALIZE_STATUS_COMPLETED);
+    $this->resetAll();
+
+    $this->drupalGet('<front>');
+    $settings = $this->drupalGetSettings();
+    $personalize_settings = $settings['personalize'];
+    $this->assertFalse(isset($personalize_settings['agent_map']));
+
+    // Assert that the js for the agent has not been loaded.
+    $this->assertNoRaw('personalize_test.js');
+
+    // Assert that the option set has not been output.
+    $this->assertNoOptionSet($osid);
+    $this->assertFalse(isset($personalize_settings['option_sets']));
+
+    // Assert that the content of the first option has been output.
+    $this->assertText('Custom block 1');
+    $this->assertNoText('Custom block 2');
+
+    // Now set the winner of the option set to the second option.
+    $option_set->winner = $option_set->options[1]['option_id'];
+    personalize_option_set_save($option_set);
+
+    $this->drupalGet('<front>');
+    $settings = $this->drupalGetSettings();
+    $personalize_settings = $settings['personalize'];
+    $this->assertFalse(isset($personalize_settings['agent_map']));
+
+    // Assert that the js for the agent has been loaded.
+    $this->assertNoRaw('personalize_test.js');
+
+    // Assert that the option set has not been output.
+    $this->assertNoOptionSet($osid);
+    $this->assertFalse(isset($personalize_settings['option_sets']));
+
+    // Assert that the content of the second option has been output.
+    $this->assertNoText('Custom block 1');
+    $this->assertText('Custom block 2');
+
+  }
+
+  public function testRenderBlocksInAdmin() {
+    $pblock = $this->createPersonalizeBlock();
+    $edit = array(
+      'blocks[personalize_blocks_' . $pblock->osid . '][region]' => 'content',
+    );
+    $this->drupalPost('admin/structure/block', $edit, t('Save blocks'));
+
+    $agent_name = 'test-agent';
+    personalize_agent_set_status($agent_name, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+
+    $this->drupalGet('admin/structure');
+    $settings = $this->drupalGetSettings();
+    $personalize_settings = $settings['personalize'];
+    // Assert that there is no 'agent_map' in personalize_settings.
+    $this->assertFalse(array_key_exists('agent_map', $personalize_settings));
+    // Assert that the js for the agent has not been loaded.
+    $this->assertNoRaw('personalize_test.js');
+    // Assert that the content of the first option has been output.
+    $this->assertText('Custom block 1');
+    $this->assertNoText('Custom block 2');
+  }
+
+  public function testContextualLinks() {
+    $pblock = $this->createPersonalizeBlock();
+
+    $edit = array(
+      'blocks[personalize_blocks_' . $pblock->osid . '][region]' => 'content',
+    );
+
+    $this->drupalPost('admin/structure/block', $edit, t('Save blocks'));
+
+    $this->drupalGet('<front>');
+
+    $this->assertLink(t('Edit Personalized Block'));
+  }
+
+  public function testRenderRestrictedBlocks() {
+    $edit = array(
+      'blocks[0][block][bid]' => 'personalize_blocks_test_delta_custom_block_4',
+    );
+    $pblock = $this->createPersonalizeBlock($edit);
+
+    $edit = array(
+      'blocks[personalize_blocks_' . $pblock->osid . '][region]' => 'content',
+    );
+
+
+    $this->drupalPost('admin/structure/block', $edit, t('Save blocks'));
+
+    db_insert('block_role')
+      ->fields(array('module' => 'personalize_blocks_test', 'delta' => 'custom_block_4', 'rid' => 2))
+      ->execute();
+
+    $this->drupalLogout();
+    $this->drupalGet('<front>');
+
+    $this->assertNoText('Custom block 4');
+    $this->assertText('Custom block 2');
+
+    $settings = $this->drupalGetSettings();
+
+    $this->assertTrue(empty($settings['personalize']['option_sets'][$pblock->decision_name]));
+
+//    $this->drupalLogin($this->adminUser);
+//    $edit = array(
+//      'blocks[0][block][bid]' => 'personalize_blocks_test_delta_custom_block_4',
+//    );
+//
+//    $this->drupalPost('admin/structure/personalize/variations/personalize-blocks/manage/' . $pblock->osid . '/edit', $edit, t('Save'));
+//    $this->drupalLogout();
+//    $this->drupalGet('<front>');
+//
+//    $this->assertNoText('Custom block 1');
+//    $this->assertText('Custom block 1');
+//    $this->assertTrue(!empty($settings['personalize']['option_sets'][$pblock->decision_name]));
+//    $this->drupalLogin($this->adminUser);
+//    $edit = array(
+//      'blocks[0][block][bid]' => 'personalize_blocks_test_delta_custom_block_5',
+//    );
+//
+//    $this->drupalPost('admin/structure/personalize/variations/personalize-blocks/manage/' . $pblock->osid . '/edit', $edit, t('Save'));
+//    $this->drupalLogout();
+//    $this->drupalGet('<front>');
+//
+//    $this->assertNoText('Custom block 1');
+//    $this->assertText('Custom block 1');
+//    $this->assertTrue(empty($settings['personalize']['option_sets'][$pblock->decision_name]));
+  }
+
+  protected function createPersonalizeBlock($edit = array(), $assertResult = TRUE, $load = TRUE) {
+    $edit += array(
+      'title' => $this->randomName(),
+      'blocks[0][option_label]' => $this->randomName(),
+      'blocks[1][option_label]' => $this->randomName(),
+      // Use test-agent as connected agent as we included personalize_test module
+      'agent_select' => 'test-agent',
+      'blocks[0][block][bid]' => 'personalize_blocks_test_delta_custom_block_1',
+      'blocks[1][block][bid]' => 'personalize_blocks_test_delta_custom_block_2',
+    );
+
+    $path = 'admin/structure/personalize/variations/personalize-blocks/add';
+    if (!$load) {
+      $path = NULL;
+    }
+    $this->drupalPost($path, $edit, t('Save'));
+
+    $pblocks = personalize_option_set_load_multiple(FALSE, array('label' => $edit['title']), TRUE);
+
+    $pblock = reset($pblocks);
+
+    if ($assertResult) {
+      $this->assertTRUE(!empty($pblock) && !empty($pblock) && $pblock->label == $edit['title']);
+      $this->assertText($edit['title']);
+
+      $this->drupalGet('admin/structure/personalize/variations/personalize-blocks/manage/' . $pblock->osid . '/edit');
+
+      $this->assertRaw($edit['title']);
+      $this->assertRaw($edit['blocks[0][option_label]']);
+      $this->assertRaw($edit['blocks[1][option_label]']);
+      $this->assertRaw('<option value="' . $edit['blocks[0][block][bid]'] . '" selected="selected">');
+      $this->assertRaw('<option value="' . $edit['blocks[1][block][bid]'] . '" selected="selected">');
+
+      // Make sure the option ids were generated based on the option labels.
+      foreach ($pblock->options as $option) {
+        $this->assertEqual($option['option_id'], personalize_generate_machine_name($option['option_label']));
+      }
+    }
+
+    return $pblock;
+  }
+
+  /**
+   * Helper function to assert the existing of fields to add a new personalized
+   * block.
+   *
+   * @param $index
+   *   The index to check (the occurrence of the block within the personalized
+   *   block form.
+   */
+  protected function assertAddBlockFields($index) {
+    $this->assertFieldByName('blocks[' . $index . '][block][add][title]');
+    $this->assertFieldByName('blocks[' . $index . '][block][add][info]');
+    $this->assertFieldByName('blocks[' . $index . '][block][add][body][value]');
+    $this->assertFieldByName('blocks[' . $index . '][block][add][body][format]');
+  }
+}

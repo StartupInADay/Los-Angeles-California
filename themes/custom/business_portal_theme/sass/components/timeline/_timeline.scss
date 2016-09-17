@@ -1,0 +1,380 @@
+/*************************************
+*         Layout
+**************************************/
+
+.panel__timeline {
+  min-height: 270px;
+  clear: both;
+  position: relative;
+  display: block;
+  overflow: hidden !important;
+  -animation-speed: 0.8s;
+  
+  .timeline-items {
+    padding-left: 84px;
+  }
+  
+  // Previous and Next buttons
+  .timeline__arrow {
+    font-size: 41px;
+    width: 44px;
+    font-family: $heading-font;
+    color: rgba(255,255,255, 0.3);
+    display: block;
+    height: 100%;
+    z-index: 4;
+    border: none;
+    outline: none;
+    -webkit-appearance: none;
+    background-size: 50% !important;
+    background-color: $timeline__orange--dark !important;
+    &.prev,
+    &.next {
+      /*opacity: .5;*/
+      &:hover,
+      &:focus {
+        opacity: 1;
+        outline: none;
+        background-color: $timeline__orange--dark;
+        color: $white;
+      }
+    }
+
+    &.prev {
+      //float: left;
+      position: absolute;
+      background: url('../images/subsections/arrow-left.svg') no-repeat 50% transparent;
+      left:0;
+      top: 0;
+    }
+
+    &.next {
+      position: absolute;
+      background: url('../images/subsections/arrow-right.svg') no-repeat 50%;
+      right:0;
+      top: 0;
+    }
+  }
+
+  .timeline__item {
+    vertical-align: top;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    width: 260px;
+
+    &:first-child {
+/*      .timeline__item--inner{
+        padding-left: 50px;
+      }*/
+    }
+
+    &:last-child {
+      .timeline__item--inner{
+        //padding-right: 10px;
+        //margin-right: 0;
+        //width: 280px;
+      }
+    }
+    &:focus {
+      outline:0;
+    }
+
+    &.right-spacer {
+      width: 10px !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+  }
+
+  .timeline__item--inner {
+    padding: 11.1px 25px 44px;
+    font-size: 12px;
+    line-height: 1.5;
+
+  }
+
+  .timeline__item__image {
+    width: 100%;
+    max-width: 400px;
+    margin-top: 13px;
+  }
+
+  .timeline__item__title{
+    font-family: $heading-font;
+    font-weight: bold;
+    font-size: 20px;
+  }
+
+  hr.timeline__item__hr {
+    @include hr-thin;
+    background: #fff;
+    margin-top: 15px;
+    margin-bottom: 17px;
+  }
+
+  .timeline__item__button {
+    @include panel__button--base($white, $dark_blue);
+  }
+
+  // PROVIDED BY TOMORROW PARTNERS
+
+
+  .timeline {
+    //border: 1px solid red;
+    position: relative;
+    //height: 490px;
+    top: 200px;
+    background-color: #FDB743;
+  }
+  .timeline-arrow_left {
+    width: 53px;
+    height: 100%;
+    background-color: #F0A82C;
+    position: relative;
+    z-index: 10;
+    background-image: image-url("timeline/timeline-arrow_left.svg");
+    background-repeat: no-repeat;
+    background-position: 12px center;
+    cursor: pointer;
+  }
+  .timeline-arrow_right {
+    width: 53px;
+    height: 100%;
+    background-color: #F0A82C;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 10;
+    background-image: image-url("timeline/timeline-arrow_right.svg");
+    background-repeat: no-repeat;
+    background-position: 15px center;
+    cursor: pointer;
+  }
+
+  /*
+   * Stationary elements
+   */
+
+  .timeline-illustration {
+    //position: absolute;
+    height: 186px;
+    width: 100%;
+    overflow: hidden;
+    background-repeat: no-repeat;
+    background-position: left bottom;
+    opacity: 0.9;
+    z-index: 1;
+  }
+  .timeline-truck {
+    width:98px;
+    height: 58px;
+    background-repeat: no-repeat;
+    background-image: image-url("timeline/timeline-truck.svg");
+    position: absolute;
+    top: 123px;
+    left: 42%;
+  }
+
+  /*
+   * Buildings
+   */
+  .timeline-bldgs_move1, 
+  .timeline-bldgs_move2, 
+  .timeline-bldgs_move3 {
+    width: 2400px;
+    height: 180px;
+    background-repeat: no-repeat;
+    position: absolute;
+    top: 34px;
+  }
+  .timeline-bldgs_move1 {
+    background-image: image-url("timeline/timeline-bldgs.svg");
+    animation: bldgs_move1 70s 0s linear infinite both;
+    left: 0;
+  }
+  .timeline-bldgs_move2 {
+    background-image: image-url("timeline/timeline-bldgs.svg");
+    animation: bldgs_move2 70s 0s linear infinite both;
+    left: 1800px;
+    opacity: .8;
+  }
+  .timeline-bldgs_move3 {
+    background-image: image-url("timeline/timeline-bldgs.svg");
+    animation: bldgs_move3 70s 0s linear infinite both;
+    right: 0;
+    opacity: .8;
+  }
+
+  /*
+   * Food Truck
+   */
+  .timeline-food_truck {
+    width: 95px;
+    height: 107px;
+    background-repeat: no-repeat;
+    background-image: image-url("timeline/timeline-food_truck.svg");
+    animation: food_truck_move 50s 0s linear infinite forwards;
+    position: absolute;
+    top: 74px;
+    left: -100px;
+  }
+  
+  @media (max-width: 600px){
+    .timeline-food_truck {
+      display: none;
+    }
+  }
+  /*
+   * Blimp
+   */
+  .timeline-blimp {
+    width: 90px;
+    height: 48px;
+    /*border: 10px solid red;*/
+    background-image: image-url("timeline/timeline-blimp.svg");
+    background-repeat: no-repeat;
+    animation: blimp_move 24s 0s linear infinite backwards;
+    position: absolute;
+    left: -100%;
+    top: 28px;
+  }
+  
+
+  /*
+   * Clouds
+   */
+  .timeline-large_cloud {
+    width: 60px;
+    height: 32px;
+    background-repeat: no-repeat;
+    background-image: image-url("timeline/timeline-large_cloud.svg");
+    animation: large_cloud_move 17s 0s linear infinite both;
+    position: absolute;
+    top: 50px;
+    left: -60px;
+  }
+  
+
+  .timeline-small_cloud {
+    width: 39px;
+    height: 21px;
+    background-repeat: no-repeat;
+    background-image: image-url("timeline/timeline-small_cloud.svg");
+    animation: small_cloud_move 20s 0s linear infinite both;
+    position: absolute;
+    top: 42px;
+    left: -260px;
+  }
+  
+
+  .timeline__container {
+    //border: 1px solid green;
+    //border: 1px solid red;
+    //height: 280px;
+    width: 100%;
+    overflow: hidden;
+    cursor: move;
+    /* fallback if grab cursor is unsupported  */
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+    z-index: 3;
+    background-color: #FDB743;//$timeline__orange--dark;
+  }
+  .timeline-content_area {
+    //    border: 1px solid red;
+    //height: 280px;
+    width: 100%;
+    cursor: grab;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  .content_block {
+    //border: 1px solid red;
+    width: 200px;
+    position: absolute;
+    color: #0F2940;
+  }
+  .content_block h1 {
+    //border: 1px solid red;
+    font-family: Merriweather;
+    font-size: 20px;
+  }
+  .content_block p {
+    font-family: Roboto;
+    font-size: 12px;
+  }
+  .content_block a {
+    font-family: Roboto;
+    font-size: 12px;
+    color: #0F2940;
+    text-decoration: none;
+  }
+
+  // END PROVIDED BY TOMORROW PARTNERS
+}
+
+
+.draggable {
+  cursor: move; /* fallback if grab cursor is unsupported */
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
+}
+
+/* (Optional) Apply a "closed-hand" cursor during drag operation. */
+.draggable:active {
+  cursor: grabbing;
+  cursor: -moz-grabbing;
+  cursor: -webkit-grabbing;
+}
+
+@keyframes bldgs_move1 {
+    0%{left:0px; opacity: 1;}
+    25%{left:-1200px; opacity: 1;}
+    49%{opacity: 1;}
+    50%{left:-2400px; opacity: 0;}
+    75%{left:-2400px; opacity: 0;}
+    100%{left: 0px; opacity: 0;}
+  }
+  
+  @keyframes bldgs_move2 {
+    0%{left:2400px; opacity: 1;}
+    24%{opacity:1;}
+    25%{left:1200px; opacity: 1;}
+    50%{left:0px; opacity: 1;}
+    75%{left:-1200px; opacity: 1;}
+    100%{left: -2400px; opacity: 1;}
+  }
+  
+@keyframes bldgs_move3 {
+    0%{left:-2400px; opacity: 0;}
+    25%{left: -2400px; opacity: 0;}
+    49%{opacity: 0;}
+    50%{left:2400px; opacity: 1;}
+    75%{left:1200px; opacity: 1;}
+    100%{left:0px; opacity: 1;}
+  }
+  
+  @keyframes food_truck_move {
+    0%{left:100%;}
+    100% {left: 0%;}
+  }
+  
+  @keyframes blimp_move {
+    0%{left:100%;}
+    15%{left: 82%;}
+    100% {left: 0%;}
+  }
+  
+  @keyframes large_cloud_move {
+    0%{left:100%;}
+    100% {left: 0%;}
+  }
+  
+  @keyframes small_cloud_move {
+    0%{left:100%;}
+    100% {left: 0%;}
+  }

@@ -1,0 +1,16 @@
+.search-api-autocomplete-suggestion {
+  position: relative;
+}
+
+.search-api-autocomplete-suggestion .autocomplete-suggestion-note {
+  font-size: 90%;
+}
+
+.search-api-autocomplete-suggestion .autocomplete-user-input {
+  font-weight: bold;
+}
+
+.search-api-autocomplete-suggestion .autocomplete-suggestion-results {
+  position: absolute;
+  right: 0.2em;
+}

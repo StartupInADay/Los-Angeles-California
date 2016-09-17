@@ -1,0 +1,597 @@
+<?php
+
+/**
+ * @file
+ * Defines hierarchical text field types.
+ */
+
+
+/**
+ * Implements hook_field_info().
+ */
+function text_hierarchical_field_info() {
+  return array(
+    'text_hierarchical' => array(
+      'label' => t('Hierarchical text'),
+      'description' => t('This field stores varchar text in the database.'),
+      'settings' => array('max_length' => 255),
+      'instance_settings' => array('text_processing' => 0),
+      'default_widget' => 'text_hierarchical_textfield',
+      'default_formatter' => 'text_hierarchical_default',
+    ),
+    'text_hierarchical_long' => array(
+      'label' => t('Hierarchical long text'),
+      'description' => t('This field stores long text in the database.'),
+      'instance_settings' => array('text_processing' => 0),
+      'default_widget' => 'text_hierarchical_textarea',
+      'default_formatter' => 'text_hierarchical_default',
+    ),
+    'text_hierarchical_with_summary' => array(
+      'label' => t('Hierarchical long text and summary'),
+      'description' => t('This field stores long text in the database along with optional summary text.'),
+      'instance_settings' => array('text_processing' => 1, 'display_summary' => 0),
+      'default_widget' => 'text_hierarchical_textarea_with_summary',
+      'default_formatter' => 'text_hierarchical_default',
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_field_settings_form().
+ */
+function text_hierarchical_field_settings_form($field, $instance, $has_data) {
+  $settings = $field['settings'];
+  $form = array();
+  if ('text_hierarchical' == $field['type']) {
+    $form['max_length'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Maximum length'),
+      '#default_value' => $settings['max_length'],
+      '#required' => TRUE,
+      '#description' => t('The maximum length of the field in characters.'),
+      '#element_validate' => array('element_validate_integer_positive'),
+      '#disabled' => $has_data,
+    );
+  }
+
+  return $form;
+}
+
+
+/**
+ * Implements hook_field_instance_settings_form().
+ */
+function text_hierarchical_field_instance_settings_form($field, $instance) {
+  $settings = $instance['settings'];
+  $form['text_processing'] = array(
+    '#type' => 'radios',
+    '#title' => t('Text processing'),
+    '#default_value' => $settings['text_processing'],
+    '#options' => array(
+      t('Plain text'),
+      t('Filtered text (user selects text format)'),
+    ),
+  );
+  if ('text_hierarchical_with_summary' == $field['type']) {
+    $form['display_summary'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Summary input'),
+      '#default_value' => $settings['display_summary'],
+      '#description' => t('This allows authors to input an explicit summary, to be displayed instead of the automatically trimmed text when using the "Summary or trimmed" display type.'),
+    );
+  }
+
+  return $form;
+}
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function text_hierarchical_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
+  if ('field_ui_field_edit_form' == $form_id) {
+    $types = array(
+      'text_hierarchical',
+      'text_hierarchical_long',
+      'text_hierarchical_with_summary',
+    );
+    if (in_array($form['#field']['type'], $types)) {
+      $form['field']['cardinality']['#default_value'] = FIELD_CARDINALITY_UNLIMITED;
+      $form['field']['cardinality']['#access'] = FALSE;
+    }
+  }
+}
+
+
+/**
+ * Implements hook_field_validate().
+ */
+function text_hierarchical_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  text_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, $errors);
+}
+
+
+/**
+ * Implements hook_field_load().
+ */
+function text_hierarchical_field_load($entity_type, $entities, $field, $instances, $langcode, &$items) {
+  foreach ($entities as $id => $entity) {
+    foreach ($items[$id] as $delta => $item) {
+      if (empty($instances[$id]['settings']['text_processing']) || filter_format_allowcache($item['format'])) {
+        $items[$id][$delta]['safe_value'] = isset($item['value']) ? _text_sanitize($instances[$id], $langcode, $item, 'value') : '';
+        if ($field['type'] == 'text_hierarchical_with_summary') {
+          $items[$id][$delta]['safe_summary'] = isset($item['summary']) ? _text_sanitize($instances[$id], $langcode, $item, 'summary') : '';
+        }
+      }
+    }
+  }
+}
+
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function text_hierarchical_field_is_empty($item) {
+  return text_field_is_empty($item, NULL);
+}
+
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function text_hierarchical_field_formatter_info() {
+  $types = array(
+    'text_hierarchical',
+    'text_hierarchical_long',
+    'text_hierarchical_with_summary',
+  );
+  return array(
+    'text_hierarchical_default' => array(
+      'label' => t('Default'),
+      'field types' => $types,
+    ),
+    'text_hierarchical_plain' => array(
+      'label' => t('Plain text'),
+      'field types' => $types,
+    ),
+    'text_hierarchical_trimmed' => array(
+      'label' => t('Trimmed'),
+      'field types' => $types,
+      'settings' => array('trim_length' => 600),
+    ),
+    'text_hierarchical_summary_or_trimmed' => array(
+      'label' => t('Summary or trimmed'),
+      'field types' => array('text_hierarchical_with_summary'),
+      'settings' => array('trim_length' => 600),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function text_hierarchical_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  return text_field_formatter_settings_form($field, $instance, $view_mode, $form, $form_state);
+}
+
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function text_hierarchical_field_formatter_settings_summary($field, $instance, $view_mode) {
+  return text_field_formatter_settings_summary($field, $instance, $view_mode);
+}
+
+
+/**
+ * Recursive function to render children items in tree.
+ * @param $parent
+ * @param $items
+ */
+function _text_hierarchical_field_formatter_render_children($parent, $level, $items, $elements) {
+  $render_array = array();
+
+  // Loop over items and identify children.
+  foreach ($items as $delta=>$item) {
+    if ($item['parent'] == $parent) {
+      $current_index = count($render_array);
+      $render_array[] = array(
+        'data' => '<div class="field-value field-value-' . ($delta + 1) . '">' . $elements[$delta]['#markup'] . '</div>',
+        'class' => array('depth depth-' . $level),
+      );
+      $render_array[$current_index]['children'] = _text_hierarchical_field_formatter_render_children($delta, ($level+1), $items, $elements);
+    }
+  }
+
+  return $render_array;
+
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function text_hierarchical_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  switch ($display['type']) {
+    case 'text_hierarchical_default':
+    case 'text_hierarchical_trimmed':
+      foreach ($items as $delta => $item) {
+        $output = _text_sanitize($instance, $langcode, $item, 'value');
+        if ($display['type'] == 'text_hierarchical_trimmed') {
+          $output = text_summary($output, $instance['settings']['text_processing'] ? $item['format'] : NULL, $display['settings']['trim_length']);
+        }
+        $element[$delta] = array('#markup' => $output);
+      }
+      break;
+
+    case 'text_hierarchical_summary_or_trimmed':
+      foreach ($items as $delta => $item) {
+        if (!empty($item['summary'])) {
+          $output = _text_sanitize($instance, $langcode, $item, 'summary');
+        }
+        else {
+          $output = _text_sanitize($instance, $langcode, $item, 'value');
+          $output = text_summary($output, $instance['settings']['text_processing'] ? $item['format'] : NULL, $display['settings']['trim_length']);
+        }
+        $element[$delta] = array('#markup' => $output);
+      }
+      break;
+
+    case 'text_hierarchical_plain':
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array('#markup' => strip_tags($item['value']));
+      }
+      break;
+  }
+
+  $refs = _text_hierarchical_field_formatter_render_children('-1', '0', $items, $element);
+
+  $result = array(
+    array(
+      '#markup' => theme('item_list', array(
+        'items' => $refs,
+        'attributes' => array('class' => array('depth', 'depth-0')),
+      )),
+    ),
+  );
+
+
+  return $result;
+}
+
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function text_hierarchical_field_widget_info() {
+  return array(
+    'text_hierarchical_textfield' => array(
+      'label' => t('Text field'),
+      'field types' => array('text_hierarchical'),
+      'settings' => array('size' => 60),
+    ),
+    'text_hierarchical_textarea' => array(
+      'label' => t('Text area (multiple rows)'),
+      'field types' => array('text_hierarchical_long'),
+      'settings' => array('rows' => 5),
+    ),
+    'text_hierarchical_textarea_with_summary' => array(
+      'label' => t('Text area with a summary'),
+      'field types' => array('text_hierarchical_with_summary'),
+      'settings' => array('rows' => 20, 'summary_rows' => 5),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_field_widget_settings_form().
+ */
+function text_hierarchical_field_widget_settings_form($field, $instance) {
+  $widget = $instance['widget'];
+  $settings = $widget['settings'];
+  if ('text_hierarchical_textfield' == $widget['type']) {
+    $form['size'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Size of textfield'),
+      '#default_value' => $settings['size'],
+      '#required' => TRUE,
+      '#element_validate' => array('element_validate_integer_positive'),
+    );
+  }
+  else {
+    $form['rows'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Rows'),
+      '#default_value' => $settings['rows'],
+      '#required' => TRUE,
+      '#element_validate' => array('element_validate_integer_positive'),
+    );
+  }
+
+  return $form;
+}
+
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function text_hierarchical_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $summary_widget = array();
+  $main_widget = array();
+  switch ($instance['widget']['type']) {
+    case 'text_hierarchical_textfield':
+      $main_widget = $element + array(
+        '#type' => 'textfield',
+        '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : NULL,
+        '#size' => $instance['widget']['settings']['size'],
+        '#maxlength' => $field['settings']['max_length'],
+        '#attributes' => array('class' => array('text-full')),
+      );
+      break;
+
+    case 'text_hierarchical_textarea_with_summary':
+      $display = !empty($items[$delta]['summary']) || !empty($instance['settings']['display_summary']);
+      $summary_widget = array(
+        '#type' => $display ? 'textarea' : 'value',
+        '#default_value' => isset($items[$delta]['summary']) ? $items[$delta]['summary'] : NULL,
+        '#title' => t('Summary'),
+        '#rows' => $instance['widget']['settings']['summary_rows'],
+        '#description' => t('Leave blank to use trimmed value of full text as the summary.'),
+        '#attached' => array(
+          'js' => array(drupal_get_path('module', 'text') . '/text.js'),
+        ),
+        '#attributes' => array('class' => array('text-summary')),
+        '#prefix' => '<div class="text-summary-wrapper">',
+        '#suffix' => '</div>',
+        '#weight' => -10,
+      );
+
+    case 'text_hierarchical_textarea':
+      $main_widget = $element + array(
+        '#type' => 'textarea',
+        '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : NULL,
+        '#rows' => $instance['widget']['settings']['rows'],
+        '#attributes' => array('class' => array('text-full')),
+      );
+      break;
+  }
+
+  if ($main_widget) {
+    if ($instance['settings']['text_processing']) {
+      $element = $main_widget;
+      $element['#type'] = 'text_format';
+      $element['#format'] = isset($items[$delta]['format']) ? $items[$delta]['format'] : NULL;
+      $element['#base_type'] = $main_widget['#type'];
+    }
+    else {
+      $element['value'] = $main_widget;
+    }
+  }
+  if ($summary_widget) {
+    $element['summary'] = $summary_widget;
+  }
+
+  return $element;
+}
+
+
+/**
+ * Implements hook_field_widget_error().
+ */
+function text_hierarchical_field_widget_error($element, $error, $form, &$form_state) {
+  text_field_widget_error($element, $error, $form, $form_state);
+}
+
+
+/**
+ * Wrapper for hook_field_attach_form() and hook_field_attach_submit().
+ */
+function _text_hierarchical_field_invoke($op, $entity_type, $entity, &$form, &$form_state) {
+  list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+  $instances = field_info_instances($entity_type, $bundle);
+  $function = '_text_hierarchical_field_' . $op;
+  $types = array(
+    'text_hierarchical',
+    'text_hierarchical_long',
+    'text_hierarchical_with_summary',
+  );
+  foreach ($instances as $instance) {
+    $field_name = $instance['field_name'];
+    $field = field_info_field($field_name);
+    if (in_array($field['type'], $types)) {
+      $function($field_name, $entity, $form, $form_state);
+    }
+  }
+}
+
+
+/**
+ * Implements hook_field_attach_form().
+ */
+function text_hierarchical_field_attach_form($entity_type, $entity, &$form, &$form_state) {
+  _text_hierarchical_field_invoke('form', $entity_type, $entity, $form, $form_state);
+}
+
+
+/**
+ * Implements hook_field_attach_submit().
+ */
+function text_hierarchical_field_attach_submit($entity_type, $entity, $form, &$form_state) {
+  _text_hierarchical_field_invoke('submit', $entity_type, $entity, $form, $form_state);
+}
+
+
+/**
+ * Extends field's form with hierarchical functionality.
+ */
+function _text_hierarchical_field_form($name, $entity, &$form, $form_state) {
+  foreach ($form[$name] as $l => &$field) {
+    if ('#' !== $l[0]) {
+      foreach ($field as $delta => &$item) {
+        if (is_numeric($delta)) {
+          $item['parent'] = array(
+            '#type' => 'hidden',
+            '#title' => t('Parent'),
+            '#default_value' => isset($entity->{$name}[$l][$delta]['parent']) ? $entity->{$name}[$l][$delta]['parent'] : -1,
+            '#attributes' => array(
+              'class' => array('parent'),
+            ),
+          );
+          $item['delta'] = array(
+            '#type' => 'hidden',
+            '#title' => t('Delta'),
+            '#default_value' => $delta,
+            '#attributes' => array(
+              'class' => array('delta'),
+            ),
+          );
+        }
+      }
+      $field['#theme'] = 'text_hierarchical';
+    }
+  }
+}
+
+
+/**
+ * Perform necessary operations on field data submitted by a form.
+ */
+function _text_hierarchical_field_submit($name, $entity, $form, &$form_state) {
+
+  if (empty($form_state['values'][$name])) {
+    return;
+  }
+
+  foreach ($form_state['values'][$name] as $l => &$items) {
+    if (isset($items['add_more'])) {
+      unset($items['add_more']);
+    }
+    $weights = array();
+    foreach ($items as $delta => $item) {
+      $weights[] = $items[$delta]['_weight'];
+    }
+    sort($weights);
+    $weights = array_flip($weights);
+    foreach ($items as $delta => $item) {
+      $items[$delta]['parent'] = -1 != $items[$delta]['parent'] ? $weights[$items[$items[$delta]['parent']]['_weight']] + 1 : 0;
+    }
+    usort($items, '_field_sort_items_helper');
+    $items[0]['parent'] = 0;
+    while (count($items) && !$items[count($items) - 1]['value']) {
+      array_pop($items);
+    }
+    if (array() !== $items || isset($entity->{$name}[$l])) {
+      $entity->{$name}[$l] = $items;
+    }
+  }
+}
+
+
+/**
+ * Implements hook_field_prepare_translation().
+ */
+function text_hierarchical_field_prepare_translation($entity_type, $entity, $field, $instance, $langcode, &$items, $source_entity, $source_langcode) {
+  text_field_prepare_translation($entity_type, $entity, $field, $instance, $langcode, $items, $source_entity, $source_langcode);
+}
+
+
+/**
+ * Implements hook_filter_format_update().
+ */
+function text_hierarchical_filter_format_update($format) {
+  field_cache_clear();
+}
+
+/**
+ * Implements hook_filter_format_disable().
+ */
+function text_hierarchical_filter_format_disable($format) {
+  field_cache_clear();
+}
+
+
+/**
+ * Implements hook_theme().
+ */
+function text_hierarchical_theme() {
+  return array(
+    'text_hierarchical' => array(
+      'render element' => 'element',
+    ),
+  );
+}
+
+
+/**
+ * Returns HTML for text hierarchical widget.
+ */
+function theme_text_hierarchical($vars) {
+  $element = $vars['element'];
+  $output = '';
+  $table_id = drupal_html_id($element['#field_name'] . '_values');
+  $required = !empty($element['#required']) ? theme('form_required_marker', $vars) : '';
+  $header = array(
+    array(
+      'data' => t('Items'),
+      'class' => array('tabledrag-hide'),
+    ),
+    t('Order'),
+  );
+  $rows = array();
+  $items = array();
+  foreach (element_children($element) as $key) {
+    if ('add_more' === $key) {
+      $add_more_button = &$element[$key];
+    }
+    else {
+      $items[] = &$element[$key];
+    }
+  }
+  $depths = array(-1 => -1);
+  foreach ($items as $item) {
+    $item['_weight']['#attributes']['class'] = array('weight');
+    $depth = 0;
+    if (isset($depths[$item['parent']['#value']])) {
+      $depth = $depths[$item['parent']['#value']] + 1;
+      $depths[$item['delta']['#value']] = $depth;
+    }
+    $weight = drupal_render($item['_weight']);
+    $cells = array(
+      theme('indentation', array('size' => $depth)) . '<div class="text-hierarchical-form-item">' . drupal_render($item) . '</div>',
+      $weight,
+    );
+    $rows[] = array(
+      'data' => $cells,
+      'class' => array('draggable'),
+    );
+  }
+  $output = '<div class="form-item">' . theme('table', array(
+    'header' => $header,
+    'rows' => $rows,
+    'attributes' => array('id' => $table_id),
+  )) . ($element['#description'] ? '<div class="description">' . $element['#description'] . '</div>' : '')
+    . '<div class="clearfix">' . drupal_render($add_more_button) . '</div></div>';
+  drupal_add_tabledrag($table_id, 'match', 'parent', 'parent', NULL, 'delta', FALSE);
+  drupal_add_tabledrag($table_id, 'order', 'sibling', 'weight', NULL, 'weight');
+  drupal_add_css(drupal_get_path('module', 'text_hierarchical') . '/text_hierarchical.css');
+  drupal_add_js(drupal_get_path('module', 'text_hierarchical') . '/text_hierarchical.js');
+  $output = array(
+    'items' => array(
+      '#type' => 'fieldset',
+      '#title' => t('!title !required', array(
+        '!title' => $element['#title'],
+        '!required' => $required,
+      )),
+      '#attributes' => array('class' => array('collapsible')),
+      'content' => array(
+        '#markup' => $output,
+      ),
+    ),
+    '#attached' => array('js' => array('misc/collapse.js', 'misc/form.js')),
+  );
+
+  return drupal_render($output);
+}

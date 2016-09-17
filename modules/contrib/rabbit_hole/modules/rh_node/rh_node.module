@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * @file
+ * Main module file for Rabbit Hole nodes module.
+ *
+ * This module will add the Rabbit Hole functionality to nodes.
+ */
+
+/**
+ * Implements hook_rabbit_hole().
+ */
+function rh_node_rabbit_hole() {
+  return array(
+    'rh_node' => array(
+      'entity type' => 'node',
+      'base table' => 'node',
+      'view path' => 'node/%/view',
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This will add Rabbit Hole options to the node type form. These settings will
+ * be used as default for every node of this node type.
+ */
+function rh_node_form_node_type_form_alter(&$form, $form_state) {
+  // Add the Rabbit Hole form, and add an extra javascript file that's needed
+  // for the fieldset summary.
+  rabbit_hole_form($form, 'node', $form['#node_type']->type, 'rh_node');
+  $form['#attached']['js'][] = drupal_get_path('module', 'rh_node') . '/rh-node.js';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This will add Rabbit Hole options to the node form. The user will be able to
+ * override the default Rabbit Hole options.
+ */
+function rh_node_form_node_form_alter(&$form, $form_state) {
+  // Add the Rabbit Hole form, and add an extra javascript file that's needed
+  // for the fieldset summary.
+  rabbit_hole_form($form, 'node', $form['#node']->type, 'rh_node', $form['#node']);
+  $form['#attached']['js'][] = drupal_get_path('module', 'rh_node') . '/rh-node.js';
+
+  // Add a custom submit function. This is used to disable the redirect to
+  // node/123 if Rabbit Hole is enabled and the user doesn't have the bypass
+  // rh_node permission.
+  if (!user_access('bypass rh_node')) {
+    $form['actions']['submit']['#submit'][] = 'rh_node_node_form_submit';
+  }
+}
+
+/**
+ * Custom submit function for the node form.
+ *
+ * This will fire after the regular submit function, and it's purpose is to make
+ * sure that the user doesn't get redirected to node/123 after saving the node,
+ * if any Rabbit Hole action is enabled. This works by redirecting the user to
+ * node/123/edit, if a destination parameter hasn't been set.
+ *
+ * @see node_form_submit()
+ */
+function rh_node_node_form_submit($form, &$form_state) {
+  // Get the action. Either the one specified for this node, or the default
+  // value for the content type.
+  $action = isset($form_state['values']['rh_action']) && $form_state['values']['rh_action'] != RABBIT_HOLE_USE_DEFAULT ? $form_state['values']['rh_action'] : rabbit_hole_get_action_bundle('node', $form['#node']->type);
+
+  // If the action says anything else than to display the content, make sure
+  // that the user doesn't land on the node view page. We'll check if a custom
+  // redirect path has been set, otherwise, we'll redirect the user to the edit
+  // page again.
+  if ($action != RABBIT_HOLE_DISPLAY_CONTENT && $form_state['redirect'] == 'node/' . $form_state['values']['nid']) {
+    $form_state['redirect'] = 'node/' . $form_state['values']['nid'] . '/edit';
+  }
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function rh_node_node_view($node, $view_mode, $langcode) {
+  // Execute Rabbit Hole, if the node is being viewed at its own page using the
+  // full view mode, and the current user isn't able to override Rabbit Hole.
+  if ($view_mode == 'full' && node_is_page($node) && !user_access('bypass rh_node')) {
+    rabbit_hole_execute('node', $node);
+  }
+}
+
+/**
+ * Implements hook_node_type_delete().
+ */
+function rh_node_node_type_delete($type) {
+  // Delete variables connected to this content type.
+  rabbit_hole_delete_variables('node', $type->type);
+}

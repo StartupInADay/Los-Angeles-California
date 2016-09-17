@@ -1,0 +1,117 @@
+<?php
+define('FILE_ENTITY_LINK_SETTINGS_VAR', 'file_entity_link_settings');
+
+/**
+ * Implements hook_theme
+ * Enter description here ...
+ */
+function file_entity_link_theme(){
+  return array(
+    'file_entity_link_add_link' => array(
+      'render element' => 'element',
+    )
+  );
+}
+
+/**
+ * Theme function
+ * Enter description here ...
+ * @param unknown_type $vars
+ */
+function theme_file_entity_link_add_link($vars){
+  $element = $vars['element'];
+  $children = drupal_render($element['#contents']);
+  $element['#uri']['options']['html'] = TRUE;
+  return l($children, $element['#uri']['path'], $element['#uri']['options']);
+}
+
+/**
+ * Implements hook_file_view
+ * Enter description here ...
+ * @param unknown_type $file
+ * @param unknown_type $view_mode
+ * @param unknown_type $langcode
+ */
+function file_entity_link_file_view($file, $view_mode, $langcode){
+  $settings = variable_get(FILE_ENTITY_LINK_SETTINGS_VAR, array());
+  if(isset($settings[$file->type][$view_mode]) && $settings[$file->type][$view_mode] && !empty($file->referencing_entity)) {
+    $entity_type = '';
+    
+    // If we are on a Field Collection Item
+    if ($file->referencing_entity instanceof FieldCollectionItemEntity) {
+      // Load the host entity
+      $host_entity = field_collection_item_get_host_entity($file->referencing_entity);
+      $info = $host_entity->info();
+      $entity_type = $info['type'];
+      $entity_id = $host_entity->getIdentifier();
+    }
+    else {
+      if(isset($file->referencing_entity->nid)) {
+        $entity_type = 'node';
+        $entity_id = $file->referencing_entity->nid;
+      }
+      elseif(isset($file->referencing_entity->tid)) {
+        $entity_type = 'node';
+        $entity_id = $file->referencing_entity->tid;
+      }
+    }
+    
+    switch ($entity_type) {
+      case 'node':
+        $path = 'node/' . $entity_id;
+        break;
+    
+      case 'taxonomy_term':
+        $path = 'taxonomy/term/' . $entity_id;
+        break;
+        
+      case 'user':
+        $path = 'user/' . $entity_id;
+        break;
+    }
+    
+    if(!empty($path)) {
+      $file->content['file'] = array(
+     	'#contents' => $file->content['file'],
+        '#uri' => array('path' => $path),
+        '#theme' => 'file_entity_link_add_link'
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_form_alter
+ * Enter description here ...
+ * @param unknown_type $form
+ * @param unknown_type $form_state
+ * @param unknown_type $form_id
+ */
+function file_entity_link_form_alter(&$form, &$form_state, $form_id){
+  if($form_id == 'file_entity_file_display_form'){
+    $settings = variable_get(FILE_ENTITY_LINK_SETTINGS_VAR, array());
+    $form['link'] = array(
+      '#type' => 'item',
+      '#title' => 'Link options',
+      'link_file' => array(
+        '#type' => 'checkbox',
+        '#title' => 'Link file to referencing entity',
+        '#default_value' => (isset($settings[$form['#file_type']][$form['#view_mode']]) ? $settings[$form['#file_type']][$form['#view_mode']] : FALSE),
+      )
+    );
+    $form['#submit'][] = 'file_entity_link_display_form_submit';
+  }
+}
+
+/**
+ * Submit handler for file display form
+ * Enter description here ...
+ * @param unknown_type $form
+ * @param unknown_type $form_state
+ */
+function file_entity_link_display_form_submit($form, &$form_state){
+  $settings = variable_get(FILE_ENTITY_LINK_SETTINGS_VAR, array());
+  if(!isset($settings[$form['#file_type']])) $settings[$form['#file_type']] = array();
+  $settings[$form['#file_type']][$form['#view_mode']]  = $form_state['values']['link']['link_file'];
+  variable_set(FILE_ENTITY_LINK_SETTINGS_VAR, $settings);
+}

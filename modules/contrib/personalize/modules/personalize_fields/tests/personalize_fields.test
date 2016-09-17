@@ -1,0 +1,996 @@
+<?php
+
+/**
+ * @file
+ * Tests for Personalize Fields module.
+ */
+
+class PersonalizeFieldsTest extends PersonalizeBaseTest {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Personalize Fields Tests'),
+      'description' => t('Tests basic functionality of Personalize Fields module.'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('personalize_fields', 'personalize_test'));
+    // Make sure the default agent is persisted in the database.
+    $agent = personalize_agent_load('test-agent');
+    personalize_agent_save($agent);
+  }
+
+  function testPersonalizeFieldsConfig() {
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    // Add personalizable field to the article node type.
+    $field = array(
+      'type' => 'text',
+      'field_name' => 'article_headline',
+      'cardinality' => -1,
+      'settings' => array(
+        'personalize' => array(
+          'enabled' => 1,
+        ),
+      ),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'article_headline',
+      'entity_type' => 'node',
+      'label' => 'Personalizable Headline',
+      'bundle' => 'article',
+      'required' => FALSE
+    );
+    field_create_instance($instance);
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['article_headline[und][0][value]'] = 'first option';
+    $edit['article_headline[und][1][value]'] = 'second option';
+    $this->drupalGet('node/add/article');
+    $this->drupalPost(NULL, NULL, t('Add another item'));
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertText('No personalization type has been configured for this field. Please go to the field settings and specify the personalization type to use.');
+
+    $old_instance = field_info_instance('node', 'article_headline', 'article');
+    field_delete_instance($old_instance);
+    field_delete_field('article_headline');
+    // Now change the field settings to use an existing agent type.
+    $field['settings']['personalize']['agent_type'] = 'non_existent_agent';
+    field_create_field($field);
+    field_create_instance($instance);
+
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['article_headline[und][0][value]'] = 'first option';
+    $edit['article_headline[und][1][value]'] = 'second option';
+    $this->drupalGet('node/add/article');
+    $this->drupalPost(NULL, NULL, t('Add another item'));
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertText('The personalization type specified for this field does not exist. Please go to the field settings and choose an existing personalization type.');
+
+    $old_instance = field_info_instance('node', 'article_headline', 'article');
+    field_delete_instance($old_instance);
+    field_delete_field('article_headline');
+    // Now change the field settings to use an existing agent type.
+    $field['settings']['personalize']['agent_type'] = 'test_agent';
+    field_create_field($field);
+    field_create_instance($instance);
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['article_headline[und][0][value]'] = 'first option';
+    $edit['article_headline[und][1][value]'] = 'second option';
+    $this->drupalGet('node/add/article');
+    $this->drupalPost(NULL, NULL, t('Add another item'));
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertNoText('The personalization type specified for this field does not exist. Please go to the field settings and choose an existing personalization type.');
+    $this->assertNoText('No personalization type has been configured for this field. Please go to the field settings and specify the personalization type to use.');
+    // Assert that we can load the new option set from the db.
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('agent' => 'article-personalizable-headline'));
+    $this->assertEqual(1, count($option_sets));
+  }
+
+  /**
+   * Tests adding a personalized field to a node and deleting the node.
+   */
+  function testPersonalizeFieldsCreate() {
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    // Add personalizable field to the article node type.
+    $field = array(
+      'type' => 'text',
+      'field_name' => 'article_headline',
+      'cardinality' => -1,
+      'settings' => array(
+        'personalize' => array(
+          'enabled' => 1,
+          'agent_type' => 'test_agent',
+          'options' => array(
+            'test_agent' => array(
+              'use_client_side_goal_processing' => 1
+            )
+          )
+        ),
+      ),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'article_headline',
+      'entity_type' => 'node',
+      'label' => 'Personalizable Headline',
+      'bundle' => 'article',
+      'required' => FALSE
+    );
+    field_create_instance($instance);
+
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['article_headline[und][0][value]'] = 'first option';
+    $edit['article_headline[und][1][value]'] = '<div class="some-stuff">ridiculously long long long long long long long long long long long long long long long.</div><p><a href="test.com">long</a> long long long long</p>long long long long long ridiculous content that should be truncated';
+    $this->drupalGet('node/add/article');
+    $this->drupalPost(NULL, NULL, t('Add another item'));
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertNoText('The personalization type specified for this field does not exist. Please go to the field settings and choose an existing personalization type.');
+    $nid = $this->getNidFromCurrentUrl();
+    // The agent machine name will have been generated based on the entity type
+    // and field label.
+    $first_agent = 'article-personalizable-headline';
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('agent' => $first_agent));
+    $option_set = reset($option_sets);
+    $osid1 = $option_set->osid;
+    $this->assertEqual(1, count($option_sets));
+    $this->assertEqual('fields', $option_set->plugin);
+
+    // Confirm that the agent's human-readable name has been generated correctly.
+    $agent = personalize_agent_load($first_agent);
+    $this->assertEqual('Article Personalizable Headline 1', $agent->label);
+
+    $field_info = array(
+      'entity_type' => 'node',
+      'entity_id' => $nid,
+      'field_name' => 'article_headline',
+    );
+    $this->assertEqual($field_info, $option_set->field_info);
+
+    $options = array(
+      array(
+        'option_id' => 'first-option',
+        'option_label' => 'first option',
+      ),
+      array(
+        'option_id' => 'ridiculously-long-long-long-long-long-long-long',
+        'option_label' => 'ridiculously long long long long long long long...',
+      ),
+    );
+    $this->assertEqual($options, $option_set->options);
+
+    // Confirm that there's also a corresponding record in the cache table.
+    $cid = _personalize_fields_get_cid_for_field('node', $nid, 'article_headline');
+    $cached = cache_get($cid, PERSONALIZE_FIELDS_CACHE_BIN);
+    $this->assertTrue($cached->data);
+
+    // Create another node with a personalized headline
+    // Set up two headline options
+    $this->drupalGet('node/add/article');
+    $this->drupalPost(NULL, NULL, t('Add another item'));
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['article_headline[und][0][value]'] = 'first option';
+    $edit['article_headline[und][1][value]'] = 'second option';
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $nid2 = $this->getNidFromCurrentUrl();
+
+    $second_agent = 'article-personalizable-headline-2';
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('agent' => $second_agent));
+    $option_set2 = reset($option_sets);
+    $osid2 = $option_set2->osid;
+    $this->assertEqual(1, count($option_sets));
+
+    // Confirm that the agent's human-readable name has been generated correctly.
+    $agent = personalize_agent_load($second_agent);
+    $this->assertEqual('Article Personalizable Headline 2', $agent->label);
+    // Add another headline option to the first node and confirm that the agent is paused.
+    personalize_agent_set_status($first_agent, PERSONALIZE_STATUS_RUNNING);
+    $this->drupalPost("node/$nid/edit", NULL, t('Add another item'));
+    $edit = array();
+    $edit['article_headline[und][2][value]'] = 'third option';
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    $option_set = personalize_option_set_load($osid1, TRUE);
+    $options[] = array(
+      'option_id' => 'third-option',
+      'option_label' => 'third option',
+    );
+
+    $this->assertEqual($options, $option_set->options);
+    personalize_option_set_load_by_agent($first_agent, TRUE);
+
+    // Restart the agent and confirm that removing an option pauses the agent.
+    $this->drupalGet("node/$nid/edit");
+    personalize_agent_set_status($first_agent, PERSONALIZE_STATUS_RUNNING);
+    $edit = array();
+    $edit['article_headline[und][2][value]'] = '';
+    $this->drupalPost(NULL, $edit, t('Save'));
+    unset($edit['article_headline[und][2][value]']);
+
+    unset($options[2]);
+    $option_set = personalize_option_set_load($osid1, TRUE);
+    $this->assertEqual($options, $option_set->options);
+
+    // Now restart the agent and add/remove a field in the same form to
+    // confirm that it is still detected as a change.
+    $this->drupalGet("node/$nid/edit");
+    personalize_agent_set_status($first_agent, PERSONALIZE_STATUS_RUNNING);
+    $edit = array();
+    $edit['article_headline[und][1][value]'] = '';
+    $edit['article_headline[und][2][value]'] = $this->randomName();
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    $edit['article_headline[und][1][value]'] = $edit['article_headline[und][2][value]'];
+    unset($edit['article_headline[und][2][value]']);
+
+    unset($options[1]);
+    $options[] = array(
+      'option_id' => personalize_generate_machine_name($edit['article_headline[und][1][value]']),
+      'option_label' => $edit['article_headline[und][1][value]'],
+    );
+    $options = array_values($options);
+    $option_set = personalize_option_set_load($osid1, TRUE);
+    $this->assertEqual($options, array_values($option_set->options));
+
+    // Restart the agent and make sure that changing a field value causes pausing.
+    $this->drupalGet("node/$nid/edit");
+    personalize_agent_set_status($first_agent, PERSONALIZE_STATUS_RUNNING);
+    $edit['title'] = $this->randomName(8);
+    $edit['article_headline[und][0][value]'] = 'first option: edited';
+
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    $option_set = personalize_option_set_load($osid1, TRUE);
+    $options[0]['option_label'] = 'first option: edited';
+    $this->assertEqual($options, array_values($option_set->options));
+
+    // Delete the first node and confirm that the option set gets deleted.
+    node_delete($nid);
+    drupal_static_reset();
+    $option_set = personalize_option_set_load($osid1, TRUE);
+    $this->assertFalse($option_set);
+
+    // Confirm that the record has also been deleted from the cache.
+    $cid = _personalize_fields_get_cid_for_field('node', $nid, 'article_headline');
+    $cached = cache_get($cid, PERSONALIZE_FIELDS_CACHE_BIN);
+    $this->assertFalse($cached);
+
+    // Confirm that the other option set still exists.
+    $option_set = personalize_option_set_load($osid2, TRUE);
+    $this->assertEqual('fields', $option_set->plugin);
+    $field_info = array(
+      'entity_type' => 'node',
+      'entity_id' => $nid2,
+      'field_name' => 'article_headline',
+    );
+    $this->assertEqual($field_info, $option_set->field_info);
+
+    // Confirm that there's also a corresponding record in the cache table.
+    $cid = _personalize_fields_get_cid_for_field('node', $nid2, 'article_headline');
+    $cached = cache_get($cid, PERSONALIZE_FIELDS_CACHE_BIN);
+    $this->assertTrue($cached->data);
+
+    // Create a node but only add one value for the headline. It should not
+    // create an Option Set.
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['article_headline[und][0][value]'] = 'only option';
+    $this->drupalPost('node/add/article', $edit, t('Save'));
+    $nid3 = $this->getNidFromCurrentUrl();
+    // Confirm that there is no new option set.
+    $option_sets = personalize_option_set_load_multiple(FALSE, array(), TRUE);
+    $this->assertEqual(array($osid2), array_keys($option_sets));
+
+    // Assert that no option sets are loaded onto the node.
+    $node = node_load($nid3);
+    $this->assertFalse(isset($node->option_sets));
+    // Confirm that there is a cache entry for this field.
+    $cid = _personalize_fields_get_cid_for_field('node', $nid3, 'article_headline');
+    $cached = cache_get($cid, PERSONALIZE_FIELDS_CACHE_BIN);
+    $this->assertNotNull($cached);
+    $this->assertEqual(0, $cached->data);
+
+    // Create another node with a personalized headline
+    // Set up two headline fields
+    $this->drupalGet('node/add/article');
+    $this->drupalPost(NULL, NULL, t('Add another item'));
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['article_headline[und][0][value]'] = 'first option';
+    $edit['article_headline[und][1][value]'] = 'second option';
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $nid4 = $this->getNidFromCurrentUrl();
+    // Confirm that an option set has been created for this node.
+    $third_agent = 'article-personalizable-headline-3';
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('agent' => $third_agent));
+    $option_set3 = reset($option_sets);
+    $osid3 = $option_set3->osid;
+    $this->assertEqual('fields', $option_set3->plugin);
+    $field_info = array(
+      'entity_type' => 'node',
+      'entity_id' => $nid4,
+      'field_name' => 'article_headline',
+    );
+    $this->assertEqual($field_info, $option_set3->field_info);
+
+    personalize_agent_set_status($third_agent, PERSONALIZE_STATUS_RUNNING);
+    // Now remove all but one option.
+    $edit['article_headline[und][1][value]'] = '';
+    $edit['article_headline[und][2][value]'] = '';
+    $this->drupalPost("node/$nid4/edit", $edit, t('Save'));
+
+    // Confirm that the Option Set has been deleted.
+    $option_set = personalize_option_set_load($osid3, TRUE);
+    $this->assertFalse($option_set);
+
+    // Now delete the field instance from the article content type.
+    $instance = field_info_instance('node', 'article_headline', 'article');
+    field_delete_instance($instance);
+    drupal_static_reset();
+    // Confirm that the option set has also been deleted.
+    $option_set = personalize_option_set_load($osid2);
+    $this->assertFalse($option_set);
+
+    // Confirm that the records have also been deleted from the cache.
+    $cid = _personalize_fields_get_cid_for_field('node', $nid2, 'article_headline');
+    $cached = cache_get($cid, PERSONALIZE_FIELDS_CACHE_BIN);
+    $this->assertFalse($cached);
+  }
+
+  /**
+   * Tests creation of multiple personalized fields on the same entity.
+   */
+  function testPersonalizeFieldsMultiple() {
+    // Enable our other test module that provides an extra agent type.
+    module_enable(array('personalize_test_extra_agent'));
+    $this->resetAll();
+    $this->resetAll();
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    $fields = array(
+      'article_headline' => array(
+        'agent_type' => 'test_agent',
+        'label' => 'Personalizable Headline',
+        'cardinality' => -1
+      ),
+      'article_abstract' => array(
+        'agent_type' => 'test_extra_agent',
+        'label' => 'Personalizable Abstract',
+        'cardinality' => 2
+      )
+    );
+    foreach ($fields as $field_name => $info) {
+      // Add personalizable field to the article node type.
+      $field = array(
+        'type' => 'text',
+        'field_name' => $field_name,
+        'cardinality' => $info['cardinality'],
+        'settings' => array(
+          'personalize' => array(
+            'enabled' => 1,
+            'agent_type' => $info['agent_type'],
+            'options' => array()
+          ),
+        ),
+      );
+      field_create_field($field);
+      $instance = array(
+        'field_name' => $field_name,
+        'entity_type' => 'node',
+        'label' => $info['label'],
+        'bundle' => 'article',
+        'required' => FALSE
+      );
+      field_create_instance($instance);
+    }
+
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['article_headline[und][0][value]'] = 'first headline option';
+    $edit['article_headline[und][1][value]'] = 'second headline option';
+    $this->drupalGet('node/add/article');
+    $this->drupalPost(NULL, NULL, t('Add another item'));
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $nid = $this->getNidFromCurrentUrl();
+
+    // Assert that we can load the new option set from the db.
+    $first_agent = 'article-personalizable-headline';
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('agent' => $first_agent));
+    $option_set = reset($option_sets);
+    $osid1 = $option_set->osid;
+    $this->assertEqual($first_agent, $option_set->agent);
+    $this->assertEqual(array(
+      'entity_type' => 'node',
+      'entity_id' => $nid,
+      'field_name' => 'article_headline',
+    ), $option_set->field_info);
+    $this->assertEqual(array(
+      array(
+        'option_id' => 'first-headline-option',
+        'option_label' => 'first headline option',
+      ),
+      array(
+        'option_id' => 'second-headline-option',
+        'option_label' => 'second headline option',
+      ),
+    ), $option_set->options);
+
+    // Now edit the node and enter values for the second personalizable field.
+    $edit['article_abstract[und][0][value]'] = 'first abstract option';
+    $edit['article_abstract[und][1][value]'] = 'second abstract option';
+    $this->drupalPost("node/$nid/edit", $edit, t('Save'));
+    $option_sets = personalize_option_set_load_by_type('fields');
+    $this->assertEqual(2, count($option_sets));
+    $second_agent = 'article-personalizable-abstract';
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('agent' => $second_agent));
+    $option_set2 = reset($option_sets);
+    $osid2 = $option_set2->osid;
+    $this->assertEqual($second_agent, $option_set2->agent);
+    $this->assertEqual(array(
+      'entity_type' => 'node',
+      'entity_id' => $nid,
+      'field_name' => 'article_abstract',
+    ), $option_set2->field_info);
+    $this->assertEqual(array(
+      array(
+        'option_id' => 'first-abstract-option',
+        'option_label' => 'first abstract option',
+      ),
+      array(
+        'option_id' => 'second-abstract-option',
+        'option_label' => 'second abstract option',
+      ),
+    ), $option_set2->options);
+    // Confirm the two different agent types that were created.
+    $agents = personalize_agent_load_multiple(array(), array(), TRUE);
+    // There should be 5 agents altogether: the 3 default agents provided by the
+    // test module, plus the 2 created for the 2 fields.
+    $this->assertEqual(5, count($agents));
+    $this->assertEqual('test_agent', $agents['article-personalizable-headline']->plugin);
+    $this->assertEqual('test_extra_agent', $agents['article-personalizable-abstract']->plugin);
+
+    // Now create another article with both fields populated and test the names
+    // generated for the new agents.
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['article_headline[und][0][value]'] = 'first headline option';
+    $edit['article_headline[und][1][value]'] = 'second headline option';
+    $edit['article_abstract[und][0][value]'] = 'first abstract option';
+    $edit['article_abstract[und][1][value]'] = 'second abstract option';
+    $this->drupalGet('node/add/article');
+    $this->drupalPost(NULL, NULL, t('Add another item'));
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $agents = personalize_agent_load_multiple(array(), array(), TRUE);
+    // There should now be 7 agents altogether.
+    $this->assertEqual(7, count($agents));
+    $this->assertTrue(isset($agents['article-personalizable-headline-2']));
+    $this->assertTrue(isset($agents['article-personalizable-abstract-2']));
+
+    // Enable personalize_fields_test module and test that the auto-generated name is altered
+    module_enable(array("personalize_fields_test"));
+    $this->resetAll();
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['article_headline[und][0][value]'] = 'first headline option';
+    $edit['article_headline[und][1][value]'] = 'second headline option';
+    $edit['article_abstract[und][0][value]'] = 'first abstract option';
+    $edit['article_abstract[und][1][value]'] = 'second abstract option';
+    $this->drupalGet('node/add/article');
+    $this->drupalPost(NULL, NULL, t('Add another item'));
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $nid = $this->getNidFromCurrentUrl();
+    $agents = personalize_agent_load_multiple(array(), array(), TRUE);
+    // There should now be 7 agents altogether.
+    $this->assertEqual(9, count($agents));
+    $this->assertTrue(isset($agents['article-personalizable-headline-3']));
+    $this->assertTrue(isset($agents['article-personalizable-abstract-3']));
+    $this->assertEqual('Altered article_headline' . $nid, $agents['article-personalizable-headline-3']->label);
+    $this->assertEqual('Altered article_abstract' . $nid, $agents['article-personalizable-abstract-3']->label);
+  }
+
+  /**
+   * Tests the behavior of personalized field forms when users don't have permission
+   * to personalize content.
+   */
+  function testPersonalizeFieldsEdit() {
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    // Add personalizable field to the article node type.
+    $field = array(
+      'type' => 'text',
+      'field_name' => 'article_headline',
+      'cardinality' => 2,
+      'settings' => array(
+        'personalize' => array(
+          'enabled' => 1,
+          'agent_type' => 'test_agent',
+          'options' => array(
+            'test_agent' => array(
+              'use_client_side_goal_processing' => 1
+            )
+          )
+        ),
+      ),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'article_headline',
+      'entity_type' => 'node',
+      'label' => 'Personalizable Headline',
+      'bundle' => 'article',
+      'required' => FALSE
+    );
+    field_create_instance($instance);
+    // First, as a user with permission to manage personalized content, create
+    // a node with a personalized headline.
+    $first_node_title = $this->randomName(8);
+    $edit = array();
+    $edit['title'] = $first_node_title;
+    $edit['article_headline[und][0][value]'] = 'first option';
+    $edit['article_headline[und][1][value]'] = 'second option';
+    $this->drupalPost('node/add/article', $edit, t('Save'));
+    $nid = $this->getNidFromCurrentUrl();
+
+    // Confirm that there's also a corresponding record in the cache table.
+    $cid = _personalize_fields_get_cid_for_field('node', $nid, 'article_headline');
+    $cached = cache_get($cid, PERSONALIZE_FIELDS_CACHE_BIN);
+    $this->assertTrue($cached->data);
+    $osid = $cached->data;
+
+
+    // Create a second node, adding just one value in the headline, so it is not
+    // a personalized node.
+    $second_node_title = $this->randomName(8);
+    $edit = array();
+    $edit['title'] = $second_node_title;
+    $edit['article_headline[und][0][value]'] = 'only option';
+    $this->drupalPost('node/add/article', $edit, t('Save'));
+    $nid2 = $this->getNidFromCurrentUrl();
+
+
+    $this->drupalLogout();
+    // Now log in as another admin user, but one who does not have the 'manage
+    // personalized content' permission.
+    $other_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access'));
+    $this->drupalLogin($other_user);
+    // We should be able to make changes to the node as long as we're not changing
+    // the personalized field.
+    $edit = array();
+    $edit['title'] = $first_node_title . ' edited';
+    $edit['article_headline[und][0][value]'] = 'first option';
+    $edit['article_headline[und][1][value]'] = 'second option';
+    $this->drupalPost("node/$nid/edit", $edit, t('Save'));
+    $this->resetAll();
+    // Assert that the node has been edited.
+    $node = node_load($nid);
+    $this->assertEqual($node->title, $first_node_title . ' edited');
+    // Now try to change the personalized field.
+    $edit = array();
+    $edit['title'] = $first_node_title . ' edited';
+    $edit['article_headline[und][0][value]'] = 'first option';
+    $edit['article_headline[und][1][value]'] = 'second option blah';
+    $this->drupalPost("node/$nid/edit", $edit, t('Save'));
+    $this->assertText(t('You have attempted to change a personalized field, but do not have permission to manage personalized content'));
+    // Try to remove one of the options
+    $edit['article_headline[und][1][value]'] = '';
+    $this->drupalPost("node/$nid/edit", $edit, t('Save'));
+    $this->assertText(t('You have attempted to change a personalized field, but do not have permission to manage personalized content'));
+    $this->resetAll();
+    // Confirm that our option set is intact.
+    $option_set = personalize_option_set_load($osid);
+
+    $this->assertEqual('fields', $option_set->plugin);
+    $field_info = array(
+      'entity_type' => 'node',
+      'entity_id' => $nid,
+      'field_name' => 'article_headline',
+    );
+    $this->assertEqual($field_info, $option_set->field_info);
+    $this->assertEqual(2, count($option_set->options));
+
+    // Try to edit the second node. As long as we're just changing the
+    // first and only value in the personalizable field, we shouldn't
+    // get an error as it isn't actually personalized yet.
+    $edit = array();
+    $edit['title'] = $second_node_title;
+    $edit['article_headline[und][0][value]'] = 'only option - changed';
+    $this->drupalPost("node/$nid2/edit", $edit, t('Save'));
+    $this->resetAll();
+    // Assert that the node has been edited.
+    $node = node_load($nid2);
+    $this->assertEqual('only option - changed', $node->article_headline[LANGUAGE_NONE][0]['value']);
+
+    // Try to add another option.
+    $edit['article_headline[und][1][value]'] = 'another option';
+    $this->drupalPost("node/$nid2/edit", $edit, t('Save'));
+    $this->resetAll();
+    // Assert that no option set has been created.
+    $node = node_load($nid2);
+    $this->assertFalse(isset($node->option_sets));
+    $this->assertEqual(1, count($node->article_headline[LANGUAGE_NONE]));
+
+    // Try to create a new node, just adding one option.
+    $third_node_title = $this->randomName(8);
+    $edit = array();
+    $edit['title'] = $third_node_title;
+    $edit['article_headline[und][0][value]'] = 'first option';
+    $this->drupalPost('node/add/article', $edit, t('Save'));
+    $nid3 = $this->getNidFromCurrentUrl();
+
+    $node = node_load($nid3);
+    $this->assertEqual($third_node_title, $node->title);
+    $this->assertFalse(isset($node->option_sets));
+
+    $fourth_node_title = $this->randomName(8);
+    $edit = array();
+    $edit['title'] = $fourth_node_title;
+    $edit['article_headline[und][0][value]'] = 'first option';
+    $edit['article_headline[und][1][value]'] = 'second option';
+    $this->drupalPost('node/add/article', $edit, t('Save'));
+    $this->assertText(t('You have attempted to create a personalized field, but do not have permission to manage personalized content'));
+    $nid4 = $this->getNidFromCurrentUrl();
+
+    $this->assertNull($nid4);
+  }
+
+  /**
+   * Tests rendering of personalized fields.
+   */
+  function testPersonalizeFieldsRender() {
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    // Add personalizable field to the article node type.
+    $field = array(
+      'type' => 'text',
+      'field_name' => 'article_headline',
+      'cardinality' => -1,
+      'settings' => array(
+        'personalize' => array(
+          'enabled' => 1,
+          'agent_type' => 'test_agent',
+          'options' => array(
+            'test_agent' => array(
+              'use_client_side_goal_processing' => 1
+            )
+          )
+        ),
+      ),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'article_headline',
+      'entity_type' => 'node',
+      'label' => 'Personalizable Headline',
+      'bundle' => 'article',
+      'required' => FALSE
+    );
+    field_create_instance($instance);
+
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit['article_headline[und][0][value]'] = 'first option';
+    $edit['article_headline[und][1][value]'] = 'second option';
+    $this->drupalGet('node/add/article');
+    $this->drupalPost(NULL, NULL, t('Add another item'));
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $nid = $this->getNidFromCurrentUrl();
+
+    $agent_name = 'article-personalizable-headline';
+    personalize_agent_set_status($agent_name, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+
+    $option_sets = personalize_option_set_load_by_agent($agent_name);
+    $this->assertEqual(1, count($option_sets));
+    $option_set = reset($option_sets);
+    $osid = $option_set->osid;
+
+    $this->drupalGet('node/' . $nid);
+    $settings = $this->drupalGetSettings();
+    $personalize_settings = $settings['personalize'];
+    $expected_agent_map = array(
+      $agent_name => array(
+        'type' => 'test_agent',
+        'label' => 'Article Personalizable Headline 1',
+        'active' => PERSONALIZE_STATUS_RUNNING,
+        'enabled_contexts' => array(),
+        'cache_decisions' => TRUE,
+      )
+    );
+    $this->assertEqual($expected_agent_map, $personalize_settings['agent_map']);
+    // Assert that the js for the agent has been loaded.
+    $this->assertRaw('personalize_test.js');
+
+    // Assert that the option set has been output.
+    $this->assertOptionSet($osid);
+    $expected_options = array(
+      array(
+        'option_id' => 'first-option',
+        'option_label' => 'first option',
+      ),
+      array(
+        'option_id' => 'second-option',
+        'option_label' => 'second option',
+      )
+    );
+    $this->assertOptionSetSettings($personalize_settings, 'osid-' . $osid, 'osid-' . $osid, 'osid-' . $osid, $agent_name, 2, $expected_options);
+
+    // Now set the campaign's status to completed and confirm that it is rendered in
+    // PHP and no js settings are there.
+    personalize_agent_set_status($agent_name, PERSONALIZE_STATUS_COMPLETED);
+    $this->resetAll();
+
+    $this->drupalGet('node/' . $nid);
+    $settings = $this->drupalGetSettings();
+    $personalize_settings = $settings['personalize'];
+    $this->assertFalse(isset($personalize_settings['agent_map']));
+
+    // Assert that the js for the agent has not been loaded.
+    $this->assertNoRaw('personalize_test.js');
+
+    // Assert that the option set has not been output.
+    $this->assertNoOptionSet($osid);
+    $this->assertFalse(isset($personalize_settings['option_sets']));
+
+    // Assert that the content of only the first option has been output.
+    $this->assertText('first option' );
+    $this->assertNoText('second option');
+
+    // Now set the winner of the option set to the second option.
+    $option_set->winner = 'second-option';
+    personalize_option_set_save($option_set);
+
+    $this->drupalGet('node/' . $nid);
+    $settings = $this->drupalGetSettings();
+    $personalize_settings = $settings['personalize'];
+    $this->assertFalse(isset($personalize_settings['agent_map']));
+
+    // Assert that the js for the agent has not been loaded.
+    $this->assertNoRaw('personalize_test.js');
+
+    // Assert that the option set has not been output.
+    $this->assertNoOptionSet($osid);
+    $this->assertFalse(isset($personalize_settings['option_sets']));
+
+    // Assert that the content of only the second option has been output.
+    $this->assertNoText('first option');
+    $this->assertText('second option');
+  }
+
+  /**
+   * Test that a personalized indicator is added only to personalized fields.
+   */
+  function testPersonalizedFieldIndicator() {
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    // Add non-personalized multi-value field to the article node type.
+    $field = array(
+      'type' => 'text',
+      'field_name' => 'article_headline',
+      'cardinality' => 2,
+      'settings' => array(
+        'personalize' => array(
+          'enabled' => 0,
+        ),
+      ),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'article_headline',
+      'entity_type' => 'node',
+      'label' => 'Regular Headline',
+      'bundle' => 'article',
+      'required' => FALSE
+    );
+    field_create_instance($instance);
+    $this->drupalGet('node/add/article');
+    $this->assertNoPattern('/class=".*?personalize-fields-personalized.*?"/', 'personalize-fields-personalized class not found');
+
+    // Add personalized multi-value field to the article node type.
+    $field = array(
+      'type' => 'text',
+      'field_name' => 'personalized_article_headline',
+      'cardinality' => 2,
+      'settings' => array(
+        'personalize' => array(
+          'enabled' => 1,
+          'agent_type' => 'test_agent',
+          'options' => array(
+            'test_agent' => array(
+              'use_client_side_goal_processing' => 1
+            )
+          )
+        ),
+      ),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'personalized_article_headline',
+      'entity_type' => 'node',
+      'label' => 'Personalized Headline',
+      'bundle' => 'article',
+      'required' => FALSE
+    );
+    field_create_instance($instance);
+    $this->drupalGet('node/add/article');
+    $this->assertPattern('/class=".*?personalize-fields-personalized.*?"/', 'personalize-fields-personalized class found');
+  }
+
+  /**
+   * Tests supported and unsupported field widgets.
+   */
+  function testPersonalizeFieldCustomWidget() {
+    module_enable(array('field_test'));
+    $this->resetAll();
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+
+    // Multivalue image fields should be supported..
+    $this->drupalGet('admin/structure/types/manage/article/fields/field_image');
+    $this->assertFieldByName('field[settings][personalize][enabled]');
+
+    // Add a multi-value text field to the article node type.
+    $field = array(
+      'type' => 'text',
+      'field_name' => 'article_headline',
+      'cardinality' => -1,
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'article_headline',
+      'entity_type' => 'node',
+      'label' => 'Headline',
+      'bundle' => 'article',
+      'required' => FALSE
+    );
+    field_create_instance($instance);
+    // An ordinary text field uses a widget that uses default multi-value handling so
+    // the "Make this field personalizable" checkbox should show up.
+    $this->drupalGet('admin/structure/types/manage/article/fields/article_headline');
+    $this->assertFieldByName('field[settings][personalize][enabled]');
+
+    $field = array(
+      'type' => 'test_field',
+      'field_name' => 'my_test_field',
+      'cardinality' => -1,
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'my_test_field',
+      'entity_type' => 'node',
+      'label' => 'My test field',
+      'bundle' => 'article',
+      'required' => FALSE,
+      'widget' => array('type' => 'test_field_widget_multiple', 'settings' => array('test_widget_setting' => 'Some setting')),
+    );
+    field_create_instance($instance);
+
+    // The test_field_widget_multiple widget type uses non-default handling for multiple
+    // values so we should not get a "Make this field personalizable" checkbox.
+    $this->drupalGet('admin/structure/types/manage/article/fields/my_test_field');
+    $this->assertNoFieldByName('field[settings][personalize][enabled]');
+  }
+
+  /**
+   * Tests rendering of personalized fields when a value is missing.
+   */
+  function testPersonalizeFieldsMissingValue() {
+    // Add personalizable field to the article node type.
+    $field = array(
+      'type' => 'text',
+      'field_name' => 'article_headline',
+      'cardinality' => -1,
+      'settings' => array(
+        'personalize' => array(
+          'enabled' => 1,
+          'agent_type' => 'test_agent',
+          'options' => array(
+            'test_agent' => array(
+              'use_client_side_goal_processing' => 1
+            )
+          )
+        ),
+      ),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'article_headline',
+      'entity_type' => 'node',
+      'label' => 'Personalizable Headline',
+      'bundle' => 'article',
+      'required' => FALSE,
+    );
+    field_create_instance($instance);
+
+    // Create a node with 3 values of the personalized field, one of which is
+    // empty.
+    $node = new stdClass();
+    $node->type = 'article';
+    $node->language = LANGUAGE_NONE;
+    node_object_prepare($node);
+    $node->title = $this->randomName();
+    $node->article_headline['und'][0] = array('value' => 'first value');
+    $node->article_headline['und'][1] = array('value' => '');
+    $node->article_headline['und'][2] = array('value' => 'third value');
+    node_save($node);
+
+    $this->resetAll();
+
+    // Now create the option set.
+    $option_set = new stdClass();
+    $option_set->is_new = TRUE;
+    $option_set->data = array();
+    $option_set->options = array();
+    $option_set->plugin = 'fields';
+    $option_set->new_agent_title = 'Article: Personalizable Headline';
+    $option_set->options = array(
+      array(
+        'option_label' => personalize_fields_generate_option_label(0, array('value' => 'first value'))
+      ),
+      array(
+        'option_label' => personalize_fields_generate_option_label(1, array('value' => 'second value'))
+      ),
+      array(
+        'option_label' => personalize_fields_generate_option_label(2, array('value' => 'third value'))
+      )
+    );
+    $entity_id = $node->nid;
+    if (personalize_fields_option_set_prepare($option_set, 'node', $entity_id, $node, 'article_headline')) {
+      personalize_fields_option_set_save($option_set, 'node', $entity_id, 'article_headline');
+    }
+
+    $first_osid = 'osid-' . $option_set->osid;
+    $this->resetAll();
+
+    $agent_name = 'article-personalizable-headline';
+    personalize_agent_set_status($agent_name, PERSONALIZE_STATUS_RUNNING);
+    $this->assertEqual(3, count($option_set->options));
+
+    $this->drupalGet('node/' . $node->nid);
+    // There should be no personalization js settings on the page for this option
+    // set.
+    $settings = $this->drupalGetSettings();
+    $this->assertFalse(isset($settings['personalize']['option_sets']));
+    // Make sure only the first value is being output and there is no personalization
+    // mark-up.
+    $this->assertText('first value');
+    $this->assertNoText('third value');
+    $this->assertNoRaw('<script type="text/template" data-personalize-script="osid-1">');
+
+    // Now make the second value non-empty.
+    $node->article_headline['und'][1] = array('value' => 'second value');
+    node_save($node);
+    $this->resetAll();
+    $this->drupalGet('node/' . $node->nid);
+    // Assert the js settings are now present for this option set.
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(isset($settings['personalize']['option_sets'][$first_osid]));
+    // Assert that the normal personalization markup is being output, containing
+    // all three field values.
+    $html = <<<EOT
+<div class="personalize-option-set" data-personalize="osid-1"><noscript>first value</noscript><script type="text/template" data-personalize-script="osid-1">{"first-value":{"html":"first value","index":0},"second-value":{"html":"second value","index":1},"third-value":{"html":"third value","index":2}}</script></div>
+EOT;
+
+    $this->assertRaw($html);
+  }
+
+  /**
+   * Helper to grab the nid from the url so that we don't have to make assumptions
+   * about the nid of the node we just created.
+   */
+  protected function getNidFromCurrentUrl() {
+    $url = $this->getUrl();
+    $matches = array();
+    if (preg_match('/node\/(\d+)/', $url, $matches)) {
+      return $matches[1];
+    }
+    return NULL;
+  }
+}

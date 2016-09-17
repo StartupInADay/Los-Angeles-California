@@ -1,0 +1,18 @@
+name = Shortcut per Role
+description = Allows creating default shortcut per role
+core = 7.x
+dependencies[] = shortcut
+configure = admin/config/user-interface/shortcut-per-role
+; Information added by drupal.org packaging script on 2012-09-19
+version = "7.x-1.1"
+core = "7.x"
+project = "shortcutperrole"
+datestamp = "1348084490"
+
+
+; Information added by Drupal.org packaging script on 2014-12-09
+version = "7.x-1.2"
+core = "7.x"
+project = "shortcutperrole"
+datestamp = "1418122749"
+

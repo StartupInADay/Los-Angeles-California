@@ -1,0 +1,227 @@
+<?php
+class SPSTestConditionUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Test Condition Unit Tests',
+      'description' => 'Test the public interface to the Test Condition object',
+      'group' => 'SPS',
+    );
+  }
+
+  public function testTestCondition() {
+    $manager = self::getManager();
+    $settings = array(
+      'element_form' => array(
+        'test' => array(
+          '#markup' => 'This is Test Markup',
+        ),
+      ),
+      'validate_fail_message' => "There was an error",
+      'validate_fail_name' => "error_item",
+      'override' => new \Drupal\sps\Test\Override(array(), $manager),
+    );
+    $condition = new \Drupal\sps\Test\Condition($settings, $manager);
+    $form = array();
+    $form_state = array();
+    $this->assertEqual(
+      $condition->getElement($form, $form_state),
+      $settings['element_form'],
+      "TestCondition::getElement should return the element_form from settings", 'SPS'
+    );
+    $this->assertEqual(
+      $condition->getOverride(),
+      NULL,
+      "TestCondition::getOverride should return NULL if the submit has not yet been called", 'SPS'
+    );
+
+    form_clear_error();
+    $condition->validateElement($form, $form_state);
+    $this->assertEqual(
+      form_get_errors(),
+      array($settings['validate_fail_name'] => $settings['validate_fail_message']),
+      "TestCondition::validateElement should log a form error if validate_fail_message or validate_Fail_name are set", 'SPS'
+    );
+    $condition->submitElement($form, $form_state);
+    $this->assertEqual(
+      $condition->getOverride(),
+      $settings['override'],
+      "TestCondition::getOverride should return the override in settings if submitElement has been called", 'SPS'
+    );
+  }
+
+  public function testBasicCondition() {
+    $manager = self::getManager();
+
+    $settings = array(
+      'name' => 'basic',
+      'widget' => new \Drupal\sps\Test\Widget(array(), $manager)
+    );
+
+    //BasicCondition should take configuration and the manager in constructor i.e. implement PluginInterface
+    $condition = new \Drupal\sps\Plugins\Condition\BasicCondition($settings, $manager);
+    $this->assertCheckInterface('Drupal\sps\Plugins\PluginInterface', $condition, "BasicCondition should implement Drupal\sps\Plugins\PluginInterface");
+
+    //BasicCondition should construct the correct widget and properly get its form
+    $test_widget = new \Drupal\sps\Test\Widget(array(), $manager);
+    $state = array();
+    $widget = $test_widget->getPreviewForm(array(), $state);
+
+    $state = array();
+    $element = $condition->getElement(array(), $state);
+    //for right now, we're just assuming the widget's form will be a sub array of the condition form, we should refine this
+    $widget['#tree'] = TRUE;
+    if (!in_array($widget, $element)) {
+      $this->fail('BasicCondition should construct the correct widget from the settings and properly return its form.');
+    }
+    else {
+      $this->pass('BasicCondition should construct the correct widget from the settings and properly return its form.');
+    }
+
+    //BasicCondition should validate the form through the widget
+    $condition->validateElement($element, $state);
+
+    $errors = form_get_errors();
+    if (empty($errors)) {
+      $this->fail('BasicCondition should validate form through widget - Failed to add form error.');
+    }
+    else {
+      $this->pass('BasicCondition should validate form through widget - Properly added form error.');
+    }
+    form_clear_error();
+
+    $good_state = array(
+      'values' => array(
+        'widget' => array(
+          'text_input' => 'value'
+        ),
+      )
+    );
+
+    $condition->validateElement($element, $good_state);
+    $errors = form_get_errors();
+    if (empty($errors)) {
+      $this->pass('BasicCondition should validate form through widget - Properly passed validation.');
+    }
+    else {
+      $this->fail('BasicCondition should validate form through widget - Error given in good state.');
+    }
+
+    //BasicCondition should return false for getOverride if the form hasn't been submitted.
+    $override = $condition->getOverride();
+    $this->assertEqual($override, FALSE, 'BasicCondition should return false for getOverride when form is not yet submitted.');
+  }
+
+  public function testAggregatorOverride() {
+    $table1 = array(
+      'panels' => array(
+        12 => 123,
+        43 => 11,
+        4500 => 3,
+      ),
+    );
+
+    $table2 = array(
+      'node' => array(
+        11 => 12,
+        43 => 10,
+      ),
+    );
+
+    $table3 = array(
+      'box' => array(
+        'twitter_pull-testing' => 11
+      ),
+    );
+
+    $endGoal = array(
+      'node' => array(
+        11 => 12,
+        43 => 10,
+      ),
+      'box' => array(
+        'twitter_pull-testing' => 11
+      ),
+      'panels' => array(
+        12 => 123,
+        43 => 11,
+        4500 => 3,
+      ),
+    );
+
+    $manager = self::getManager();
+
+    $override1 = new \Drupal\sps\Test\Override(array(), $manager);
+    $override2 = new \Drupal\sps\Test\Override(array(), $manager);
+    $override3 = new \Drupal\sps\Test\Override(array(), $manager);
+
+    $override1->setData($table1);
+    $override2->setData($table2);
+    $override3->setData($table3);
+
+    $aggregator = new \Drupal\sps\Plugins\Override\AggregatorOverride();
+    $aggregator->setData(array($override1, $override2, $override3));
+    $this->assertEqual($aggregator->getOverrides(), $endGoal, 'AggregatorOverride should combine overrides.');
+
+    $override4 = new \Drupal\sps\Test\Override(array(), $manager);
+    $override4->setData($table1);
+
+    $this->assertThrows(function() use ($override1, $override2, $override3, $override4) {
+      $aggregator2 = new \Drupal\sps\Plugins\Override\AggregatorOverride();
+      $aggregator2->setData(array($override1, $override2, $override3, $override4));
+    }, '\Drupal\sps\Exception\InvalidOverrideException',
+    'AggregatorOverride may not be passed two overrides that handle the same type.',
+    'AggregatorOverride should thrown an exception if 2 overrides with the same type are given.');
+  }
+  /**
+   * Helper function to return a manager object for passing into plugins
+   */
+  protected static function getManager() {
+    $plugins = array(
+      'override' => array(
+        'test1' => array(
+          'name' => 'test1',
+          'condition' => 'basic',
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(
+            'type' => 'node',
+          ),
+        ),
+        'test2' => array(
+          'name' => 'test2',
+          'condition' => 'basic',
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(
+            'type' => 'box',
+          ),
+        ),
+        'test3' => array(
+          'name' => 'test3',
+          'condition' => 'client',
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(),
+        ),
+      ),
+      'condition' => array(
+        'basic' => array(
+          'name' => 'basic',
+          'class' => '\Drupal\sps\Plugins\Condition\BasicCondition',
+          'instance_settings' => array(
+            'widget' => 'basicWidget',
+            'name' => 'basic',
+          ),
+        ),
+      ),
+      'widget' => array(
+        'basicWidget' => array(
+          'name' => 'basicWidget',
+          'class' => '\Drupal\sps\Test\Widget',
+          'instance_settings' => array(),
+        ),
+      )
+    );
+
+    $config_controller = new Drupal\sps\Test\ConfigController();
+    $config_controller->default[SPS_CONFIG_PLUGIN_CONTROLLER]['instance_settings'] = $plugins;
+    return new Drupal\sps\Test\Manager($config_controller);
+  }
+}

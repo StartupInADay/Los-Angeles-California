@@ -1,0 +1,34 @@
+<textarea id="ckContent"></textarea>
+<input type="button" value="Save Changes" id="saveChanges" onClick="save()" />
+<input type="button" value="Cancel" id="cancel" onClick="window.close()" />
+
+<script type="text/javascript" src="http://localhost/ckeditor/ckeditor/ckeditor.js"></script>
+<script type="text/javascript">
+// configure your editor here and pass it to "editor" variable
+var editor = CKEDITOR.replace('ckContent', {height:'75%'});
+
+// do not alter codes below
+var param = Array();
+param = queryString();
+document.getElementById('ckContent').innerHTML = window.opener.CKEDITOR.dialog.getCurrent()._.element.$.getElementsByClassName(param['edit'])[param['content']].value;
+function save(){
+	window.opener.CKEDITOR.dialog.getCurrent()._.element.$.getElementsByClassName(param['edit'])[param['content']].value = editor.getData();
+	window.close();
+};
+function queryString(){
+	var qs = (location.search).replace('?', '').split('&');
+	var par = Array();
+	for(var i in qs){
+		var tmp = qs[i].split('=');
+		par[tmp[0]] = tmp[1];
+	}
+	return par;
+};
+</script>
+<style type="text/css">
+body {text-align:right;}
+input {outline:none; padding:6px 9px; margin:2px; cursor:pointer; font-family:Arial, Helvetica, sans-serif; -webkit-border-radius:3px; border-radius:3px; -webkit-box-shadow:inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 1px rgba(0, 0, 0, 0.15); box-shadow:inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 1px rgba(0, 0, 0, 0.15); background-color:#e0e0e0; color:#666; text-shadow:none; border:1px solid #ababab;}
+#saveChanges {background-color:#63a730; color:#fff; border:1px solid #62a62f; background-image:-webkit-linear-gradient(#7ebe4c,#63a730); background-image:linear-gradient(#7ebe4c,#63a730);}
+#cancel {background-image:-webkit-linear-gradient(#e8e5e5,#e0e0e0); background-image:linear-gradient(#e8e5e5,#e0e0e0);}
+input:active {-webkit-box-shadow:inset 0 0 6px rgba(0, 0, 0, 0.2); box-shadow:inset 0 0 6px rgba(0, 0, 0, 0.2)}
+</style>

@@ -1,0 +1,59 @@
+/** Styling the Footer sponsors region **/
+
+.region--footer-sponsors {
+  background: $navy;
+  .region {
+    max-width: $max-site-width;
+    margin: auto;
+    width: 100%;
+    > .block:first-child {
+      margin-bottom: 0;
+      padding: 25px 25px 15px;
+    }
+    @include window_size(desktop) {
+      padding-bottom: 37px;
+      > .block:first-child {
+        padding: 28px 0 0;
+      }
+    }
+  }
+}
+
+.view-bp-sponsors .view-content {
+  .bp-sponsor {
+    .sponsors__logo {
+      display: none;
+      @include window_size(desktop) {
+        display: block;
+        max-width: 70px;
+        height: auto;
+      }
+    }
+    .sponsors__title {
+      margin-bottom: 15px;
+      line-height: 1.25;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+  }
+  
+  @include window_size(desktop) {
+/*    &::after {
+      content: "."; 
+      visibility: hidden;
+      display: block; 
+      height: 0 !important;
+      clear: both;
+    }*/
+    .bp-sponsor {
+      display: inline-block;
+      vertical-align: top;
+      width: 102px;
+      margin-right: 35px;
+      &:last-child {
+        margin: 0;
+      }
+    }
+  }
+}

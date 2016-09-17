@@ -1,0 +1,240 @@
+<?php
+
+/**
+ * @file
+ * Tests for Personalize URL Context module.
+ */
+
+class PersonalizeUrlContextTest extends DrupalWebTestCase {
+
+  protected $adminUser;
+  protected $managerUser;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Personalize URL Context Tests'),
+      'description' => t('Tests basic functionality of Personalize URL Context module.'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('ctools', 'personalize', 'personalize_test', 'personalize_url_context'));
+    $this->adminUser = $this->drupalCreateUser(array('administer personalize configuration', 'access administration pages', 'manage personalized content'));
+  }
+
+  function testQuerystringConfiguration() {
+   $this->drupalLogin($this->adminUser);
+
+    $this->drupalPost('admin/config/content/personalize/browser_context', array(), t('Save'));
+    $params = variable_get('personalize_url_querystring_contexts', array());
+    $expected = array(
+      'utm_campaign',
+      'utm_source',
+      'utm_medium',
+      'utm_content',
+      'utm_term',
+    );
+    $this->assertEqual($expected, $params);
+    $this->drupalPost('admin/config/content/personalize/browser_context', array('querystring_contexts' => "some-param"), t('Save'));
+    $params = variable_get('personalize_url_querystring_contexts', array());
+    $expected = array(
+      'some-param'
+    );
+    $this->assertEqual($expected, $params);
+
+    // Submit them all
+    $edit = array(
+      'querystring_contexts' => "some-param\r\nparam2 \r\nparam3",
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $params = variable_get('personalize_url_querystring_contexts', array());
+    $expected = array('some-param', 'param2', 'param3');
+    $this->assertEqual($expected, $params);
+    $this->resetAll();
+    ctools_include('plugins');
+    $class = ctools_plugin_load_class('personalize', 'visitor_context', 'querystring_context', 'handler');
+
+    // Test that getOptions returns the right values.
+    $options = call_user_func(array($class, 'getOptions'));
+    $expected_param_names = array();
+    foreach (array('some-param', 'param2', 'param3') as $name) {
+      $expected_param_names[$name] = array(
+        'name' => $name,
+        'group' => 'Querystring Params',
+        'cache_type' => 'session',
+      );
+    }
+    $expected_param_names['referrer_url'] = array(
+      'name' => t('Most recent referrer'),
+      'cache_type' => 'session',
+    );
+    $expected_param_names['original_referrer_url'] = array(
+      'name' => t('First referrer'),
+      'cache_type' => 'local',
+      'cache_expiration' => 'none',
+    );
+    $this->assertEqual($expected_param_names, $options);
+
+    // Test that getPossibleValues returns the right values. For this we
+    // need to instantiate the plugin, which requires an agent.
+    $agent = personalize_agent_load_agent('test-agent');
+    $context_plugin = call_user_func_array(array($class, 'create'), array($agent, array('param2', 'param3')));
+    $expected_values = array();
+    foreach (array('some-param', 'param2', 'param3') as $name) {
+      $expected_values[$name] = array(
+        'value type' => 'string'
+      );
+    }
+    $expected_values['referrer_url'] = array(
+      'value type' => 'string',
+      'friendly name' => t('Most recent referrer')
+    );
+    $expected_values['original_referrer_url'] = array(
+      'value type' => 'string',
+      'friendly name' => t('First referrer')
+    );
+    $possible_values = $context_plugin->getPossibleValues();
+    $this->assertEqual($expected_values, $possible_values);
+  }
+
+  /**
+   * Test that url context options for a visitor contexts are passed to JS.
+   */
+  function testCacheExpiration() {
+    $this->drupalLogin($this->adminUser);
+
+    // Add visitor context to a test agent.
+    $agent = personalize_agent_load('test-agent');
+
+    // Create a generic option set.
+    $option_set = array(
+      'agent' => $agent->machine_name,
+      'plugin' => 'test',
+      'label' => $this->randomName(),
+      'options' => array(
+        array(
+          'option_id' => 'option-A',
+          'option_label' => 'Option A',
+        ),
+        array(
+          'option_id' => 'option-B',
+          'option_label' => 'Option B',
+        ),
+      ),
+    );
+    $option_set = personalize_option_set_save((object) $option_set);
+    // Add targeting to the option set.
+    module_load_include('inc', 'personalize', 'personalize.admin');
+    module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+    // Ensure that we get the expected targeting values available for use by our
+    // agent for fixed targeting.
+    $targeting_values = personalize_get_targeting_options_for_agent($agent);
+    // This simulates having selected our fields from the dropdown list.
+    $form_state = array(
+      'values' => array(
+        'option_sets' => array(
+          'option_set_1' => array(
+            'options' => array(
+              'option-A' => array(
+                'explicit_targeting' => array(
+                  'mapping' => array(
+                    'contexts' => array(
+                      array(
+                        'context' => 'querystring_context__utm_campaign',
+                        'value' => array(
+                          'operator' => 'equals',
+                          'match' => '',
+                        ),
+                      ),
+                      array(
+                        'context' => 'querystring_context__referrer_url',
+                        'value' => array(
+                          'operator' => 'equals',
+                          'match' => '',
+                        ),
+                      ),
+                      array(
+                        'context' => 'querystring_context__original_referrer_url',
+                        'value' => array(
+                          'operator' => 'equals',
+                          'match' => '',
+                        ),
+                      ),
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    );
+    personalize_campaign_wizard_submit_targeting(array(), $form_state, $agent);
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+
+    $this->resetAll();
+    // Load a page and verify cache settings.
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertEqual('session', $settings['personalize']['cacheExpiration']['visitor_context:querystring_context:utm_campaign']);
+    $this->assertEqual('session', $settings['personalize']['cacheExpiration']['visitor_context:querystring_context:referrer_url']);
+    $this->assertEqual('none', $settings['personalize']['cacheExpiration']['visitor_context:querystring_context:original_referrer_url']);
+  }
+
+
+  function testCookieConfiguration() {
+    $this->drupalLogin($this->adminUser);
+
+    $this->drupalPost('admin/config/content/personalize/browser_context', array(), t('Save'));
+
+    $this->drupalPost('admin/config/content/personalize/browser_context', array('cookie_contexts' => "some-cookie"), t('Save'));
+    $params = variable_get('personalize_cookie_contexts', array());
+    $expected = array(
+      'some-cookie'
+    );
+    $this->assertEqual($expected, $params);
+
+    // Submit them all
+    $edit = array(
+      'cookie_contexts' => "some-cookie\r\ncookie2 \r\ncookie3",
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $params = variable_get('personalize_cookie_contexts', array());
+    $expected = array('some-cookie', 'cookie2', 'cookie3');
+    $this->assertEqual($expected, $params);
+    $this->resetAll();
+    ctools_include('plugins');
+    $class = ctools_plugin_load_class('personalize', 'visitor_context', 'cookie_context', 'handler');
+
+    // Test that getOptions returns the right values.
+    $options = call_user_func(array($class, 'getOptions'));
+    $expected_param_names = array();
+    foreach (array('some-cookie', 'cookie2', 'cookie3') as $name) {
+      $expected_param_names[$name] = array(
+        'name' => $name,
+        'group' => 'Cookies',
+        'cache_type' => 'session',
+      );
+    }
+    $this->assertEqual($expected_param_names, $options);
+
+    // Test that getPossibleValues returns the right values. For this we
+    // need to instantiate the plugin, which requires an agent.
+    $agent = personalize_agent_load_agent('test-agent');
+    $context_plugin = call_user_func_array(array($class, 'create'), array($agent, array('cookie2', 'cookie3')));
+    $expected_values = array();
+    foreach (array('some-cookie', 'cookie2', 'cookie3') as $name) {
+      $expected_values[$name] = array(
+        'value type' => 'string'
+      );
+      $expected_values[PERSONALIZE_COOKIE_EXISTS_PREFIX . $name] = array(
+        'friendly name' => t('Cookie exists: @cookie', array('@cookie' => $name)),
+        'value type' => 'boolean',
+      );
+    }
+
+    $possible_values = $context_plugin->getPossibleValues();
+    $this->assertEqual($expected_values, $possible_values);
+  }
+}

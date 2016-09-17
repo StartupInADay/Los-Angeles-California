@@ -1,0 +1,113 @@
+.panel__pull_quote {
+  display: block;
+  
+  .panel__content_wrapper {
+    position: relative;
+  }
+  .panel__quote_col_1 {
+    display: none;
+  }
+  .panel__quote_col_2 {
+    display: block;
+    padding: 30px 0;
+  }
+  .panel__quote_quote {
+    @include small-headline($heading-font, $zen-grid-width);
+    padding: 60px 0 50px 0;
+    position: relative;
+    box-sizing: border-box;
+    &::before, &::after {
+      font-family: $merriweather;
+      font-size: 55px;
+      font-weight: 900;
+      line-height: 0.68;
+      color: #ffffff;
+      position: absolute;
+      
+    }
+    &::before {
+      top: 10px; left: 0;
+      content: open-quote;
+    }
+    &::after {
+      bottom: -25px; right: 0;
+      content: close-quote;
+    }
+  }
+
+  .panel__quote-line {
+    @include hr-full;
+    height: 2px;
+    background-color: white !important;
+    border-color: white !important;
+  }
+
+  .panel__quote_attribution {
+    padding: 20px 0 0 60px;
+    position: relative;
+    color: $navy;
+    &::before {
+      content: '';
+      height: 2px;
+      width: 40px;
+      background: $navy;
+      position: absolute;
+      top: 30px;
+      left: 0;
+    }
+  }
+  .panel__quote_author {
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .panel__quote_subtitle {
+    font-size: 14px;
+  }
+
+  @include window_size(desktop){
+    .panel__quote_col_1 {
+      display: block;
+      position: absolute;
+      width: 340px;
+      top: 82px; left: 0;
+      img {
+        width: 100%;
+        height: auto;
+      }
+    }
+    .panel__quote_col_2 {
+      padding-left: 400px;
+      min-height: 340px;
+      padding: 100px 70px 72px 400px;
+    }
+    
+    .panel__quote_quote {
+      padding: 0 60px 0 0;
+      &::before, &::after {
+        font-size: 72px;
+        top: 20px;
+      }
+      &::before {
+        left: -60px;
+      }
+      &::after {
+        right: -25px;
+      }
+    }
+
+    .panel__quote-line {
+      height: 4px;
+    }
+
+    .panel__quote_attribution {
+      &::before {
+        top: 33px;
+      }
+    }
+    .panel__quote_author {
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+  }
+}

@@ -1,0 +1,146 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the entity_embed module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function entity_embed_schema() {
+  $schema['entity_embed'] = array(
+    'export' => array(
+      'key' => 'name',
+      'key name' => 'Name',
+      'primary key' => 'cid',
+      'identifier' => 'configuration', // Exports will be defined as $configuration.
+      'default hook' => 'default_entity_embed_configuration', // Function hook name.
+      'create callback' => 'entity_embed_embed_button_new',
+      'load callback' => 'entity_embed_embed_button_load',
+      'load multiple callback' => 'entity_embed_embed_button_load_multiple',
+      'load all callback' => 'entity_embed_embed_button_load_all',
+      'save callback' => 'entity_embed_embed_button_save',
+      'delete callback' => 'entity_embed_embed_button_delete',
+      'cache defaults' => TRUE,
+      'default cache bin' => 'cache_entity_embed',
+      'api' => array(
+        'owner' => 'entity_embed',
+        'api' => 'default_entity_embed_configurations', // Base name for api include files.
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'description' => 'Stores entity embed button configurations.',
+    'fields' => array(
+      'cid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Primary ID field for the table. Not used for anything except internal lookups.',
+        'no export' => TRUE, // Do not export database-only keys.
+      ),
+      'admin_title' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Configuration human readable title.',
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Configuration machine name.',
+      ),
+      'entity_type' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Entity type.',
+      ),
+      'entity_type_bundles' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+        'object default' => array(),
+        'description' => 'Entity type bundles.',
+      ),
+      'button_icon_fid' => array(
+        'description' => 'The {file_managed}.fid of the image representing the button.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'unsigned' => TRUE,
+      ),
+      'display_plugins' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+        'object default' => array(),
+        'description' => 'Allowed display plugins.',
+      ),
+    ),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+    'primary key' => array('cid'),
+  );
+
+  $schema['cache_entity_embed'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_entity_embed']['description'] = 'Cache table for the Entity Embed module to store embed button configurations.';
+
+  return $schema;
+}
+
+/**
+ * Add support for restricting embedding to specific entity bundles.
+ */
+function entity_embed_update_7100() {
+  // Add new columns to {entity_embed}.
+  db_add_field('entity_embed', 'entity_type_bundles', array(
+    'type' => 'text',
+    'size' => 'big',
+    'not null' => TRUE,
+    'serialize' => TRUE,
+    'object default' => array(),
+    'initial' => serialize(array()), // Set the value of 'entity_type_bundles' to a serialized empty array for all existing embed buttons.
+    'description' => 'Entity type bundles.',
+  ));
+
+  // Clear the cache_entity_embed cache.
+  cache_clear_all(NULL, 'cache_entity_embed');
+}
+
+/**
+ * Add support for restricting embedding to specific display plugins.
+ */
+function entity_embed_update_7300() {
+  // Add new columns to {entity_embed}.
+  db_add_field('entity_embed', 'display_plugins', array(
+    'type' => 'text',
+    'size' => 'big',
+    'not null' => TRUE,
+    'serialize' => TRUE,
+    'object default' => array(),
+    'initial' => serialize(array()), // Set the value of 'display_plugins' to a serialized empty array for all existing embed buttons.
+    'description' => 'Allowed display plugins.',
+  ));
+
+  // Clear the cache_entity_embed cache.
+  cache_clear_all(NULL, 'cache_entity_embed');
+}
+
+/**
+ * Merge CKEditor button label and entity label.
+ */
+function entity_embed_update_7301() {
+  // Drop old 'button_label' column from {entity_embed}.
+  db_drop_field('entity_embed', 'button_label');
+
+  // Clear the cache_entity_embed cache.
+  cache_clear_all(NULL, 'cache_entity_embed');
+}

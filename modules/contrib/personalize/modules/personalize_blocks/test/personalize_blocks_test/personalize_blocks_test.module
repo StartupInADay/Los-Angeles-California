@@ -1,0 +1,79 @@
+<?php
+
+/**
+ * Implements hook_block_info().
+ */
+function personalize_blocks_test_block_info() {
+  // This example comes from node.module.
+  $blocks['custom_block_1'] = array(
+    'info' => t('Custom block 1'),
+  );
+
+  $blocks['custom_block_2'] = array(
+    'info' => t('Custom block 2'),
+  );
+
+  $blocks['custom_block_3'] = array(
+    'info' => t('Custom block with page restrictions'),
+    'visibility' => BLOCK_VISIBILITY_NOTLISTED,
+    'pages' => '<front>',
+  );
+
+  $blocks['custom_block_4'] = array(
+    'info' => t('Custom block with role restrictions'),
+  );
+
+  $blocks['custom_block_5'] = array(
+    'info' => t('Custom block with inner permission restrictions'),
+  );
+
+  // @todo add blocks for caching tests
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_permission()
+ */
+function personalize_blocks_test_permission() {
+  return array(
+    'personalize block test' => array(
+      'title' => t('Personalize block test permissions'),
+      'description' => t('Personalize block test permissions.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function personalize_blocks_test_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'custom_block_1':
+      $block['subject'] = t('Custom block 1');
+      $block['content'] = 'BLOCK CONTENT TEXT';
+      break;
+    case 'custom_block_2':
+      $block['subject'] = t('Custom block 2');
+      $block['content'] = 'ANOTHER BLOCK CONTENT TEXT';
+      break;
+    case 'custom_block_3':
+      $block['subject'] = t('Custom block 3');
+      $block['content'] = 'BLOCK WITH PAGE RESTRICTIONS CONTENT TEXT';
+      break;
+    case 'custom_block_4':
+      $block['subject'] = t('Custom block 4');
+      $block['content'] = 'BLOCK WITH ROLE RESTRICTIONS CONTENT TEXT';
+      break;
+    case 'custom_block_5':
+      if (user_access('personalize block test')) {
+        $block['subject'] = t('Custom block 5');
+        $block['content'] = 'BLOCK WITH INNER PERMISSION RESTRICTIONS CONTENT TEXT';
+      }
+      break;
+  }
+
+  return $block;
+}

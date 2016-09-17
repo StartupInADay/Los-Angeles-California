@@ -1,0 +1,51 @@
+/**
+ * Workbench Styles
+ */
+
+/* Override Ember table themes for tablesaw-enabled tables */
+@media (max-width: 39.9375em) {
+    .tablesaw-stack tbody td {
+        position: relative;
+        padding-left: inherit;
+        background-color:inherit;
+    }
+
+    .tablesaw-stack th:nth-child(2), .tablesaw-stack td:nth-child(2) {
+		border-right:none;
+    }
+
+    .tablesaw-stack tbody tr {
+		border-bottom: 4px solid #dfdfdf!important;
+		margin-bottom: 15px;
+		margin-top: 10px;
+		float: left;
+    }
+
+	.tablesaw-stack .ember-support-workbench-clone {
+		display: block;
+	}
+}
+
+@media only all {
+	.tablesaw-stack td .tablesaw-cell-label, .tablesaw-stack th .tablesaw-cell-label {
+		width: 45% !important;
+		padding-left: 10px !important;
+	}
+
+	.tablesaw-stack td .tablesaw-cell-label a img, .tablesaw-stack th .tablesaw-cell-label a img {
+		display: inline-block;
+		vertical-align: middle;
+		padding-left: 5px;
+	}
+
+	.tablesaw-cell-content h3 {
+		font-size: 24px;
+		font-weight: bold;
+		margin-left: 10px;
+	}
+
+	.tablesaw-stack td.active {
+		background-color: inherit;
+
+	}
+}

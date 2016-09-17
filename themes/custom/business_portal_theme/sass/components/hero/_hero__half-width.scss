@@ -1,0 +1,213 @@
+/*****************************
+*     Half Width
+******************************/
+.hero__layout--half {
+  box-sizing: border-box;
+  @include window_size(desktop){
+    min-height: 100%;
+  }
+  
+  /*========== Layout ======== */
+  //Mobile-first layout
+  $zen-grid-width: 100%;
+  $zen-column-count:  10;
+  //$zen-gutter-width:  20px;
+
+  .hero__content-wrapper {
+    @include zen-grid-container();
+    @include clearfix;
+    width: 100%;
+    padding-left: 0;
+    position: relative;
+  }
+
+  @include window_size(desktop){
+    .left  {
+      /*@include zen-grid-item (3, 1);*/
+      width: -webkit-calc(50% - 230px);
+      width:   expression(50% - 230px);
+      width:    -moz-calc(50% - 230px);
+      width:      -o-calc(50% - 230px);
+      width:         calc(50% - 230px);
+      height: 100%;
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+    }
+    .right {
+      /*@include zen-grid-item (7, 4);*/
+      float: right;
+      width: -webkit-calc(50% + 230px);
+      width:   expression(50% + 230px);
+      width:    -moz-calc(50% + 230px);
+      width:      -o-calc(50% + 230px);
+      width:         calc(50% + 230px);
+      padding: 0;
+    }
+    .left, .right {
+      box-sizing: border-box;
+    }
+  }
+  
+  .hero__header--inner {
+    padding: 25px;
+    position: relative;
+    @include window_size(desktop) {
+      max-width: $max-content-width;
+      padding: 125px 0 40px 30px;
+      box-sizing: border-box;
+    }
+  }
+  
+  .left {
+    .hero__header--inner {
+      padding-top: 90px;
+      @include window_size(desktop) {
+        padding-top: 125px;
+        max-width: 100%;
+      }
+    }
+  }
+  
+  
+  .hero__icon,
+  .hero__icon--mobile {
+    img {
+      width: 100%;
+      max-width: 100px;
+    }
+  }
+  // Mobile and Desktop headers & icons displayed in different regions
+  .hero__icon,
+  .hero__headline--half{ display: none;}
+  .hero__icon--mobile {}
+
+  @include window_size(desktop) {
+    .hero__icon,
+    .hero__headline--half { display: block;}
+    .hero__icon--mobile,
+    .hero__headline--half--mobile { display: none;}
+  }
+  
+  
+  .hero__headline,
+  .hero__headline--half,
+  .hero__headline--half--mobile {
+    font-size: 1.8em ;
+    @include window_size(desktop){
+      font-size: 2.6em;
+      margin: 15px 0 0;
+    }
+  }
+  .hero__headline--half--mobile {
+    margin: 10px 0 0 0;
+    font-size: 1.4em;
+  }
+
+
+  hr.hero__line,
+  hr.hero__line--half {
+    @include hr-thick;
+    margin: 25px 0 0;
+  }
+
+
+  .hero__description {
+    margin: 0;
+    font-size: 1.143em;
+    max-width: 90%;
+
+    @include window-size(desktop) {
+      font-size: 1.429em;
+      line-height: 1.4;
+      margin: 25px 0 0;
+    }
+  }
+
+  .hero__bottom_align--bn {
+    max-width: 250px;
+    padding: 20px 0 0;
+    margin-bottom: 0;
+    display: none;
+    @include window_size(desktop){
+      position: absolute;
+      z-index: 999;
+      right: 0; bottom: 40px;
+      padding: 0;
+      max-width: 250px;
+      display: block;
+    }
+  }
+
+  .hero__business__name {
+    color: #fff;
+    font-size: 1.1em;
+    margin-bottom: 0;
+    font-weight: bold;
+    width: 160px;
+  }
+
+  .hero__business__description {
+    color: #fff;
+    font-size: 1em;
+    font-weight: 400;
+    width: 160px;
+    padding-right: 5em;
+    @include window_size(desktop) {
+      padding-right: 90px;
+    }
+  }
+
+  // Hide business name and description in mobile screens
+  .hero__business__name,
+  .hero__business__description,
+  .hero__line--half {
+    display: none;
+    @include window_size(desktop) {
+      display: block;
+    }
+  }
+  
+  .hero__call-to-action--wrapper {
+    margin-top: 20px;
+  }
+
+  // Call to action buttons
+  .hero__call-to-action--item {
+    text-transform: uppercase;
+    background: #fff;
+    display: inline-block;
+    border-radius: 25px;
+    margin: 0 10px 20px 0;
+    padding: 10px 20px;
+    font-weight: bold;
+    a {
+      color: $dark_blue;
+    }
+    @include window_size(tab-wide-up) {
+
+    }
+    @include window_size(desktop) {
+      font-size: 1.143em;
+    }
+  }
+  
+  .hero__background-image {
+    background-position: 50%;
+    background-size: cover;
+    @include window_size(desktop) {
+      background-size: auto 100%;
+      height: 100%;
+    }
+  }
+
+  .hero__image--overlay {
+    position: relative;
+    /*overflow: hidden;*/
+    @include window_size(desktop){
+      height: 100%;
+    }
+    .hero__header--inner {
+      height: 100%;
+    }
+  }
+}

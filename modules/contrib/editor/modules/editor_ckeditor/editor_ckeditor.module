@@ -1,0 +1,737 @@
+<?php
+
+/**
+ * @file
+ * Adds CKEditor as a supported editor.
+ */
+
+define('CKEDITOR_VERSION', '4.5.5');
+
+/**
+ * Implements hook_init().
+ */
+function editor_ckeditor_init() {
+  $path = drupal_get_path('module', 'editor_ckeditor');
+  // Add the CSS for this module. These aren't in editor_ckeditor.info, because
+  // they need to be in the CSS_SYSTEM group rather than the CSS_DEFAULT group.
+  drupal_add_css($path . '/css/plugins/drupalimagecaption/editor_ckeditor.drupalimagecaption.css', array('group' => CSS_SYSTEM, 'every_page' => TRUE));
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function editor_ckeditor_hook_info() {
+  $hooks = array(
+    'editor_ckeditor_plugins',
+    'editor_ckeditor_plugins_alter',
+    'editor_ckeditor_settings',
+    'editor_ckeditor_css_alter',
+  );
+
+  return array_fill_keys($hooks, array('group' => 'editor_ckeditor'));
+}
+
+/**
+ * Implements hook_menu().
+ */
+function editor_ckeditor_menu() {
+  $items['editor-ckeditor/dialog/link/%filter_format'] = array(
+    'title' => 'Edit image',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('editor_ckeditor_link_dialog_form', 3),
+    'access callback' => 'editor_format_access',
+    'access arguments' => array(3),
+    'theme callback' => 'ajax_base_page_theme',
+    'type' => MENU_CALLBACK,
+    'file' => 'includes/editor_ckeditor.pages.inc',
+  );
+  $items['editor-ckeditor/dialog/image/%filter_format'] = array(
+    'title' => 'Edit image',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('editor_ckeditor_image_dialog_form', 3),
+    'access callback' => 'editor_format_access',
+    'access arguments' => array(3),
+    'theme callback' => 'ajax_base_page_theme',
+    'type' => MENU_CALLBACK,
+    'file' => 'includes/editor_ckeditor.pages.inc',
+  );
+  $items['editor-ckeditor/autocomplete-entity/%/%'] = array(
+    'title' => 'Autocomplete for embedded entities',
+    'page callback' => 'editor_ckeditor_autocomplete_entity',
+    'page arguments' => array(2, 3),
+    'access callback' => 'entity_access',
+    'access arguments' => array('view', 2),
+    'type' => MENU_CALLBACK
+  );
+
+  return $items;
+}
+
+/**
+ * Loads a text format object from the database.
+ *
+ * @param $format_id
+ *   The format ID.
+ *
+ * @return
+ *   A fully-populated text format object, if the requested format exists and
+ *   is enabled. If the format does not exist, or exists in the database but
+ *   has been marked as disabled, FALSE is returned.
+ *
+ * @see filter_format_exists()
+ */
+function editor_ckeditor_filter_format_load($format_id) {
+  $formats = filter_formats();
+
+  return isset($formats[$format_id]) ? $formats[$format_id] : FALSE;
+}
+
+/**
+ * Page callback: Autocomplete for entities.
+ *
+ * @param $entity_type
+ *   The type of entity to search for.
+ * @param $entity_type_bundles
+ *   The entity type bundles to restrict results to.
+ * @param $string
+ *   The search string.
+ *
+ * @return
+ *   Any matching entities output as JSON.
+ */
+function editor_ckeditor_autocomplete_entity($entity_type, $entity_type_bundles = NULL, $string) {
+  $matches = array();
+
+  $entity_type_info = entity_get_info($entity_type);
+
+  // Prevent errors if the entity type has no label key.
+  if (empty($entity_type_info['entity keys']['label'])) {
+    return drupal_json_output($matches);
+  }
+
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', $entity_type)
+    ->propertyCondition($entity_type_info['entity keys']['label'], $string, 'STARTS_WITH')
+    ->range(0, 10)
+    ->propertyOrderBy($entity_type_info['entity keys']['label'], 'DESC')
+    ->execute();
+
+  // Add optional bundle restrictions.
+  if (!empty($entity_type_bundles)) {
+    $query->entityCondition('bundle', array_keys($entity_type_bundles));
+  }
+
+  $results = $query->execute();
+
+  if (!empty($results)) {
+    $ids = array_keys($results[$entity_type]);
+    $entities = entity_load($entity_type, $ids);
+
+    foreach ($entities as $entity) {
+      $label = entity_label($entity_type, $entity);
+
+      $matches[$label] = check_plain($label);
+    }
+  }
+
+  return drupal_json_output($matches);
+}
+
+/**
+ * Implements hook_theme().
+ */
+function editor_ckeditor_theme() {
+  return array(
+    'editor_ckeditor_settings_toolbar' => array(
+      'variables' => array('format' => NULL, 'plugins' => NULL),
+      'file' => 'includes/editor_ckeditor.theme.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_library().
+ */
+function editor_ckeditor_library() {
+  $path = drupal_get_path('module', 'editor_ckeditor');
+
+  $libraries['drupal.editor_ckeditor.admin'] = array(
+    'title' => 'Administrative library for configuring CKEditor.',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/editor_ckeditor.admin.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/editor_ckeditor.admin.css' => array(), // Ensure that this comes after seven's style.css
+    ),
+    'dependencies' => array(
+      array('system', 'ui.sortable'),
+      array('system', 'ui.draggable'),
+    ),
+  );
+
+  $libraries['drupal.ckeditor'] = array(
+    'title' => 'Drupal behavior to enable CKEditor on textareas.',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/ckeditor.js' => array(
+        // Core libraries cannot depend on contrib libraries, so we give the
+        // CKEditor initialization JS a low weight to ensure it comes after the
+        // CKEditor library itself.
+        'weight' => 2,
+      ),
+    ),
+    'css' => array(
+      $path . '/css/ckeditor.css' => array(),
+    ),
+    'dependencies' => array(
+      array('filter', 'filter'),
+      array('system', 'drupal.ajax'),
+      array('editor_ckeditor', 'ckeditor'),
+      array('editor', 'drupal.editor'),
+      array('editor', 'drupal.editor.dialog'),
+    ),
+  );
+
+  $libraries['ckeditor'] = array(
+    'title' => 'Loads the main CKEditor library.',
+    'version' => CKEDITOR_VERSION,
+    'js' => array(
+      // CKEditor is both a large library and needs to be able to identify its
+      // installation path, so we disable aggregation on it.
+      $path . '/lib/ckeditor/ckeditor.js' => array('preprocess' => FALSE, 'group' => JS_LIBRARY),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_library_alter().
+ */
+function editor_ckeditor_library_alter(&$libraries, $module) {
+  global $theme;
+
+  // A number of core themes have styling issues with the toolbar configurator.
+  // Add an appropriate 'override' stylesheet to the default administration
+  // library if one of these themes is enabled.
+  if ($module == 'editor_ckeditor' && isset($libraries['drupal.editor_ckeditor.admin'])) {
+    foreach (array('garland', 'seven', 'bartik') as $core_theme) {
+      // Only add the override CSS if the theme is available to use.
+      if ($theme == $core_theme) {
+        $libraries['drupal.editor_ckeditor.admin']['css'][drupal_get_path('module', 'editor_ckeditor') . "/css/editor_ckeditor.$core_theme.admin.css"] = array();
+      }
+    }
+  }
+}
+
+/**
+ * Retrieves the full list of installed CKEditor plugins.
+ *
+ * @return array
+ *   An associative array of CKEditor plugins keyed by the internal name of the
+ *   plugin. Each plugin may contain the following elements (all are optional
+ *   except as noted):
+ *   - location: Required for all external plugins. String path to the plugin
+ *     directory relative to the Drupal installation root.
+ *   - file: Required for all external plugins. String file name of the plugin
+ *     in the "location" directory.
+ *   - internal: Boolean value indicating if the plugin is part of the
+ *     compressed CKEditor library package and already loaded on all instances.
+ *   - css: An array of CSS files that should be added by CKEditor. These files
+ *     are used only when CKEditor is using an iframe wrapper around its
+ *     content.
+ *   - enabled callback: String containing a function name that can determine if
+ *     this plugin should be enabled based on the current editor configuration.
+ *   - buttons: An array of buttons that are provided by this plugin. Each
+ *     button is keyed by its CKEditor button name, and contains an array of
+ *     button properties, including:
+ *     - label: A human-readable, translated button name.
+ *     - image: An image for the button to be used in the toolbar.
+ *     - image_rtl: If the image needs to have a right-to-left version,
+ *       specifies an alternative file that will be used in RTL editors.
+ *     - image_alternative: If the button does not render as an image, specifies
+ *       an HTML string representing the contents of the button.
+ *     - attributes: An array of HTML attributes which are added to the button
+ *       when it is rendered in the administrative section for assembling the
+ *       toolbar.
+ *     - multiple: Boolean value indicating if the button may be added multiple
+ *       times to the toolbar.
+ *     - required_html: If the button requires certain HTML tags to be allowed,
+ *       specifies an array of tags.
+ *
+ * @see hook_editor_ckeditor_plugins()
+ * @see hook_editor_ckeditor_plugins_alter()
+ * @see hook_editor_ckeditor_PLUGIN_plugin_check()
+ */
+function editor_ckeditor_plugins() {
+  $plugins = module_invoke_all('editor_ckeditor_plugins');
+  drupal_alter('editor_ckeditor_plugins', $plugins);
+
+  return $plugins;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Manipulate the image insert form to describe CKEditor-integration.
+ */
+function editor_ckeditor_form_filter_format_editor_image_form_alter(&$form, $form_state) {
+  $format = $form_state['format'];
+
+  if ($format->editor === 'ckeditor') {
+    $form['caption']['#description'] = t('If checked, a caption area will appear in the editor.');
+  }
+}
+
+/**
+ * Enabled callback for hook_editor_ckeditor_plugins().
+ *
+ * Checks if the Caption plugin should be enabled based on the configuration of
+ * a text format and editor.
+ *
+ * @param object $format
+ *   The filter format object for which to check the settings of.
+ *
+ * @return bool
+ *   TRUE if the image plugin is enabled, FALSE otherwise.
+ */
+function editor_ckeditor_image_plugin_check($format) {
+  // Automatically enable caption support if the DrupalImage button is enabled.
+  foreach ($format->editor_settings['toolbar'] as $row) {
+    foreach ($row as $button_group) {
+      if (in_array('DrupalImage', $button_group['items'])) {
+        return TRUE;
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Editor JS settings callback; Add CKEditor settings to the page for a format.
+ *
+ * @param object $format
+ *   The filter format object for which CKEditor is adding its settings.
+ * @param $existing_settings
+ *   Settings that have already been added to the page by filters.
+ *
+ * @return array
+ *   An associative array of CKEditor settings. For a complete list of settings
+ *   see http://docs.ckeditor.com/#!/api/CKEDITOR.config-cfg-skin.
+ */
+function editor_ckeditor_get_settings($format, $existing_settings) {
+  global $language;
+
+  editor_format_ensure_additional_properties($format);
+
+  // Loop through all available plugins and check to see if it has been
+  // explicitly enabled. At the same time, associate each plugin with its
+  // buttons (if any) so we can check if the plugin should be enabled implicitly
+  // based on the toolbar.
+  $plugin_info = editor_ckeditor_plugins();
+  $external_plugins = array();
+  $external_css = array();
+  $all_buttons = array();
+
+  foreach ($plugin_info as $plugin_name => $plugin) {
+    // Check if this plugin should be enabled.
+    if (isset($plugin['enabled callback'])) {
+      if ($plugin['enabled callback'] === TRUE || $plugin['enabled callback']($format, $plugin_name) && !empty($plugin['path'])) {
+        $external_plugins[$plugin_name]['file'] = $plugin['file'];
+        $external_plugins[$plugin_name]['path'] = $plugin['path'];
+
+        if (isset($plugin['css'])) {
+          $external_css = array_merge($external_css, $plugin['css']);
+        }
+      }
+    }
+
+    // Associate each plugin with its button.
+    if (isset($plugin['buttons'])) {
+      if (empty($plugin['internal'])) {
+        foreach ($plugin['buttons'] as $button_name => &$button) {
+          $button['plugin'] = $plugin;
+          $button['plugin']['name'] = $plugin_name;
+
+          unset($button['plugin']['buttons']);
+        }
+      }
+
+      $all_buttons = array_merge($all_buttons, $plugin['buttons']);
+    }
+  }
+
+  // Change the toolbar separators into groups and record needed plugins based
+  // on use in the toolbar.
+  $toolbar = array();
+
+  foreach ($format->editor_settings['toolbar'] as $row) {
+    foreach ($row as $button_group) {
+      $checked_group = array();
+
+      // Check that the group configuration is valid.
+      $checked_group['name'] = empty($button_group['name']) ? '' : $button_group['name'];
+
+      if (empty($button_group['items'])) {
+        continue;
+      }
+
+      foreach ($button_group['items'] as $button_name) {
+        // Sanity check that the button exists in our installation.
+        if (isset($all_buttons[$button_name])) {
+          $checked_group['items'][] = $button_name;
+
+          // Keep track of the needed plugin for this button, if any.
+          if (isset($all_buttons[$button_name]['plugin']['path'])) {
+            $plugin_name = $all_buttons[$button_name]['plugin']['name'];
+            $external_plugin = $all_buttons[$button_name]['plugin'];
+            $external_plugins[$plugin_name]['file'] = $external_plugin['file'];
+            $external_plugins[$plugin_name]['path'] = $external_plugin['path'];
+
+            if (isset($external_plugin['css'])) {
+              $external_css = array_merge($external_css, $external_plugin['css']);
+            }
+          }
+        }
+      }
+
+      $toolbar[] = $checked_group;
+    }
+
+    $toolbar[] = '/';
+  }
+
+  // Remove the trailing slash (end row) from the toolbar.
+  if ($toolbar) {
+    array_pop($toolbar);
+  }
+
+  // Add the style list if configured.
+  $style_list = array();
+
+  if (!empty($format->editor_settings['plugins']['style']['style_list'])) {
+    $style_list = $format->editor_settings['plugins']['style']['style_list'];
+  }
+
+  $css = array(
+    drupal_get_path('module', 'editor_ckeditor') . '/css/ckeditor-iframe.css',
+    drupal_get_path('module', 'editor') . '/css/components/align.module.css',
+  );
+
+  // Collect a list of CSS files to be added to the editor instance.
+  $css = array_merge($css, $external_css, _editor_ckeditor_theme_css());
+
+  drupal_alter('editor_ckeditor_css', $css, $format);
+
+  // Convert all paths to be relative to root.
+  foreach ($css as $key => $css_path) {
+    $css[$key] = base_path() . $css_path;
+  }
+
+  // Initialize reasonable defaults that provide expected basic behavior.
+  $settings = array(
+    'toolbar' => $toolbar,
+    'extraPlugins' => implode(',', array_keys($external_plugins)),
+    'removePlugins' => 'image',
+    'removeButtons' => '',
+    // Empty custom config must be a string.
+    // See http://docs.ckeditor.com/#!/guide/dev_configuration.
+    'customConfig' => '',
+    // Empty styles must be an array.
+    // See http://docs.ckeditor.com/#!/guide/dev_styles.
+    'stylesSet' => $style_list,
+    'contentsCss' => array_values($css),
+    'pasteFromWordPromptCleanup' => TRUE,
+    'entities' => FALSE,
+    'indentClasses' => array('indent1', 'indent2', 'indent3'),
+    'justifyClasses' => array('text-align-left', 'text-align-center', 'text-align-right', 'text-align-justify'),
+    'coreStyles_underline' => array('element' => 'span', 'attributes' => array('class' => 'underline')),
+    //'format_tags' => implode(';', $format->editor_settings['format_list']),
+    'language' => isset($language->language) ? $language->language : '',
+    'resize_dir' => 'vertical',
+  );
+
+  // Add the allowedContent setting, which ensures CKEditor only allows tags
+  // and attributes that are allowed by the text format for this text editor.
+  list($settings['allowedContent'], $settings['disallowedContent']) = editor_ckeditor_get_acf_settings($format);
+
+  // These settings are used specifically by Drupal.
+  $settings['drupal'] = array(
+    'externalPlugins' => $external_plugins,
+    'format' => $format->format,
+  );
+
+  if (isset($external_plugins['drupallink'])) {
+    $settings['drupal']['linkDialogTitleAdd'] = t('Add Link');
+    $settings['drupal']['linkDialogTitleEdit'] = t('Edit Link');
+    $settings['drupal']['linkDialogUrl'] = url('editor-ckeditor/dialog/link');
+  }
+
+  if (isset($external_plugins['drupalimage'])) {
+    $settings['drupal']['imageDialogTitleAdd'] = t('Insert Image');
+    $settings['drupal']['imageDialogTitleEdit'] = t('Edit Image');
+    $settings['drupal']['imageDialogUrl'] = url('editor-ckeditor/dialog/image');
+  }
+
+  if (isset($external_plugins['drupalimagecaption'])) {
+    $settings['drupal']['captionFilterEnabled'] = !empty($format->filters['editor_caption']->status);
+    $settings['drupal']['alignFilterEnabled'] = !empty($format->filters['editor_align']->status);
+    $settings['drupal']['imageCaptionPlaceholderText'] = t('Enter caption text here.');
+    $settings['image2_captionedClass'] = 'caption caption-img';
+    $settings['image2_alignClasses'] = array('align-left', 'align-center', 'align-right');
+  }
+
+  drupal_alter('editor_ckeditor_settings', $settings, $format);
+
+  return $settings;
+}
+
+/**
+ * Builds the ACF part of the CKEditor JS settings.
+ *
+ * This ensures that CKEditor obeys the HTML restrictions defined by Drupal's
+ * filter system, by enabling CKEditor's Advanced Content Filter (ACF)
+ * functionality: http://ckeditor.com/blog/CKEditor-4.1-RC-Released.
+ *
+ * @param object $format
+ *   The text format object.
+ *
+ * @return array
+ *   An array with two values:
+ *   - the first value is the "allowedContent" setting: a well-formatted array
+ *     or TRUE. The latter indicates that anything is allowed.
+ *   - the second value is the "disallowedContent" setting: a well-formatted
+ *     array or FALSE. The latter indicates that nothing is disallowed.
+ */
+function editor_ckeditor_get_acf_settings($format) {
+  $html_restrictions = editor_format_allowed_html($format);
+
+  // When all HTML is allowed, also set allowedContent to true and
+  // disallowedContent to false.
+  if ($html_restrictions === TRUE) {
+    return array(TRUE, FALSE);
+  }
+
+  // Converts Drupal-stored attribute values to CKEditor attribute lists.
+  $get_attribute_values = function($attribute_values, $allowed_values) {
+    $values = array_keys(array_filter($attribute_values, function($value) use ($allowed_values) {
+      if ($allowed_values) {
+        return $value !== FALSE;
+      }
+      else {
+        return $value === FALSE;
+      }
+    }));
+
+    if (count($values)) {
+      return implode(',', $values);
+    }
+    else {
+      return NULL;
+    }
+  };
+
+  $allowed = array();
+  $disallowed = array();
+
+  if (isset($html_restrictions['forbidden'])) {
+    foreach ($html_restrictions['forbidden'] as $tag) {
+      $disallowed[$tag] = TRUE;
+    }
+  }
+
+  foreach ($html_restrictions['allowed'] as $tag => $attributes) {
+    // Tell CKEditor the tag is allowed, but no attributes.
+    if ($attributes === FALSE) {
+      $allowed[$tag] = array(
+        'attributes' => FALSE,
+        'styles' => FALSE,
+        'classes' => FALSE,
+      );
+    }
+    // Tell CKEditor the tag is allowed, as well as any attribute on it. The
+    // "style" and "class" attributes are handled separately by CKEditor:
+    // they are disallowed even if you specify it in the list of allowed
+    // attributes, unless you state specific values for them that are
+    // allowed. Or, in this case: any value for them is allowed.
+    elseif ($attributes === TRUE) {
+      $allowed[$tag] = array(
+        'attributes' => TRUE,
+        'styles' => TRUE,
+        'classes' => TRUE,
+      );
+
+      // We've just marked that any value for the "style" and "class"
+      // attributes is allowed. However, that may not be the case: the "*"
+      // tag may still apply restrictions.
+      // Since CKEditor's ACF follows the following principle:
+      // "Once validated, an element or its property cannot be invalidated by
+      // another rule."
+      // That means that the most permissive setting wins. Which means that
+      // it will still be allowed by CKEditor to e.g. define any style, no
+      // matter what the "*" tag's restrictions may be. If there's a setting
+      // for either the "style" or "class" attribute, it cannot possibly be
+      // more permissive than what was set above. Hence: inherit from the
+      // "*" tag where possible.
+      if (isset($html_restrictions['allowed']['*'])) {
+        $wildcard = $html_restrictions['allowed']['*'];
+
+        if (isset($wildcard['style'])) {
+          if (!is_array($wildcard['style'])) {
+            $allowed[$tag]['styles'] = $wildcard['style'];
+          }
+          else {
+            $allowed_styles = $get_attribute_values($wildcard['style'], TRUE);
+
+            if (isset($allowed_styles)) {
+              $allowed[$tag]['styles'] = $allowed_styles;
+            }
+            else {
+              unset($allowed[$tag]['styles']);
+            }
+          }
+        }
+
+        if (isset($wildcard['class'])) {
+          if (!is_array($wildcard['class'])) {
+            $allowed[$tag]['classes'] = $wildcard['class'];
+          }
+          else {
+            $allowed_classes = $get_attribute_values($wildcard['class'], TRUE);
+
+            if (isset($allowed_classes)) {
+              $allowed[$tag]['classes'] = $allowed_classes;
+            }
+            else {
+              unset($allowed[$tag]['classes']);
+            }
+          }
+        }
+      }
+    }
+    // Tell CKEditor the tag is allowed, along with some tags.
+    elseif (is_array($attributes)) {
+      // Configure allowed attributes, allowed "style" attribute values and
+      // allowed "class" attribute values.
+      // CKEditor only allows specific values for the "class" and "style"
+      // attributes; so ignore restrictions on other attributes, which
+      // Drupal filters may provide.
+      // NOTE: A Drupal contrib module can subclass this class, override the
+      // getConfig() method, and override the JavaScript at
+      // Drupal.editors.ckeditor to somehow make validation of values for
+      // attributes other than "class" and "style" work.
+      $allowed_attributes = array_filter($attributes, function($value) {
+        return $value !== FALSE;
+      });
+
+      if (count($allowed_attributes)) {
+        $allowed[$tag]['attributes'] = implode(',', array_keys($allowed_attributes));
+      }
+
+      if (isset($allowed_attributes['style']) && is_array($allowed_attributes['style'])) {
+        $allowed_styles = $get_attribute_values($allowed_attributes['style'], TRUE);
+
+        if (isset($allowed_styles)) {
+          $allowed[$tag]['styles'] = $allowed_styles;
+        }
+      }
+
+      if (isset($allowed_attributes['class']) && is_array($allowed_attributes['class'])) {
+        $allowed_classes = $get_attribute_values($allowed_attributes['class'], TRUE);
+
+        if (isset($allowed_classes)) {
+          $allowed[$tag]['classes'] = $allowed_classes;
+        }
+      }
+
+      // Handle disallowed attributes analogously. However, to handle *dis-
+      // allowed* attribute values, we must look at *allowed* attributes'
+      // disallowed attribute values! After all, a disallowed attribute
+      // implies that all of its possible attribute values are disallowed,
+      // thus we must look at the disallowed attribute values on allowed
+      // attributes.
+      $disallowed_attributes = array_filter($attributes, function($value) {
+        return $value === FALSE;
+      });
+
+      if (count($disallowed_attributes)) {
+        // No need to blacklist the 'class' or 'style' attributes; CKEditor
+        // handles them separately (if no specific class or style attribute
+        // values are allowed, then those attributes are disallowed).
+        if (isset($disallowed_attributes['class'])) {
+          unset($disallowed_attributes['class']);
+        }
+
+        if (isset($disallowed_attributes['style'])) {
+          unset($disallowed_attributes['style']);
+        }
+
+        $disallowed[$tag]['attributes'] = implode(',', array_keys($disallowed_attributes));
+      }
+
+      if (isset($allowed_attributes['style']) && is_array($allowed_attributes['style'])) {
+        $disallowed_styles = $get_attribute_values($allowed_attributes['style'], FALSE);
+
+        if (isset($disallowed_styles)) {
+          $disallowed[$tag]['styles'] = $disallowed_styles;
+        }
+      }
+
+      if (isset($allowed_attributes['class']) && is_array($allowed_attributes['class'])) {
+        $disallowed_classes = $get_attribute_values($allowed_attributes['class'], FALSE);
+
+        if (isset($disallowed_classes)) {
+          $disallowed[$tag]['classes'] = $disallowed_classes;
+        }
+      }
+    }
+  }
+
+  return array($allowed, $disallowed);
+}
+
+/**
+ * Retrieves the default theme's CKEditor stylesheets defined in the .info file.
+ *
+ * Themes may specify iframe-specific CSS files for use with CKEditor by
+ * including a "editor_ckeditor_stylesheets" key in the theme .info file.
+ *
+ * @code
+ * editor_ckeditor_stylesheets[] = css/ckeditor-iframe.css
+ * @endcode
+ *
+ * @param string $theme
+ *   The theme name from which the "editor_ckeditor_stylesheets" property should
+ *   be read in the .info files. This theme and all its parent themes will be
+ *   checked. Defaults to the current front-end theme.
+ *
+ * @return array
+ *   An array of all CSS to be added by the theme within the CKEditor.
+ */
+function _editor_ckeditor_theme_css($theme = NULL) {
+  $css = array();
+
+  if (!isset($theme)) {
+    $theme = variable_get('theme_default', 'bartik');
+  }
+
+  if ($theme_path = drupal_get_path('theme', $theme)) {
+    $info = system_get_info('theme', $theme);
+
+    if (isset($info['editor_ckeditor_stylesheets'])) {
+      $css = $info['editor_ckeditor_stylesheets'];
+
+      foreach ($css as $key => $path) {
+        $css[$key] = $theme_path . '/' . $path;
+      }
+    }
+
+    if (isset($info['base theme'])) {
+      $css = array_merge($css, _editor_ckeditor_theme_css($info['base theme']));
+    }
+  }
+
+  return $css;
+}

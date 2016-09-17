@@ -1,0 +1,10 @@
+/**
+ * @file visitor_actions_ui.dialog.theme-rtl.css
+ *
+ * RTL specific styles for dialogs.
+ */
+
+.visitor-actions-ui-dialog > .visitor-actions-ui-dialog-pointer {
+  left: auto;
+  right: 18px;
+}

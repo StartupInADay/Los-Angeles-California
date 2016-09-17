@@ -1,0 +1,32 @@
+/**
+ * @file
+ * SMACSS Modules: Base Typography
+ *
+ *
+ */
+
+/* @TODO Find out if Merriweather and Roboto should be linked to or downloaded into theme
+*
+* Notes: Merriweather & Roboto are being declared in styles but I can not
+* see it imported anywhere. Will add a links to google fonts until we decide if we
+* want to serve the font from google or download it in the theme. Or until I confirm where
+the fonts are being added.
+*/
+@import url(https://fonts.googleapis.com/css?family=Roboto:300,400,700);
+@import url(https://fonts.googleapis.com/css?family=Merriweather:400,700);
+
+$merriweather: "Merriweather", serif;
+$roboto: "Roboto", sans-serif;
+
+// Site Font-families
+$heading-font: $merriweather;
+$font-body: $roboto;
+$base-font-family: $roboto;
+
+body {
+  font-family: $roboto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: $dark_blue;
+  line-height: 1.3;
+}

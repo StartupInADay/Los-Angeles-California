@@ -1,0 +1,127 @@
+<?php
+class SPSERSIntegrationWebTest extends DrupalWebTestCase {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS ERS Integration Web Tests',
+      'description' => 'Test the ERS integration.',
+      'group' => 'SPSInteractiveIntegration',
+    );
+  }
+
+  public function setUp() {
+      parent::setUp("iib", "sps", "sps_test", "ctools", "ers", "sps_ers");
+  }
+
+  public function testERSBasicTableData() {
+    $this->clearSchedule();
+
+    $basic = array(
+      array('node', 2, 13, 1343157649, 1),
+      array('node', 2, 0, 1343167026, 1),
+      array('node', 3, 8, time() + 1000, 0),
+      array('node', 3, 0, time() + 1000, 0),
+      array('node', 5, 10, time() + 200, 0),
+      array('node', 5, 0, time() + 200, 0),
+      array('node', 5, 0, time() + 1000, 0),
+      array('node', 7, 12, time() + 3000, 0),
+      array('node', 7, 0, time() + 3000, 0),
+      array('node', 18, 19, time() + 100000000, 0),
+    );
+    $this->addValuesToSchedule($basic);
+    $test_manager = new Drupal\sps\Test\Manager();
+
+    $ers_override = new Drupal\sps_ers\ERSOverride(array(), $test_manager);
+
+    $ers_override->setData(time());
+    $overrides = $ers_override->getOverrides();
+    $this->assertTrue(empty($overrides), 'ERSOverrides should not return any overrides if none exist for the timeframe.');
+
+    $ers_override->setData(time()+5000);
+    $overrides = $ers_override->getOverrides();
+    $this->verbose('<pre>' . print_r($overrides, TRUE) . '</pre>');
+    $this->assertTrue(empty($overrides['node-2']), 'ERSOverride should not return completed transitions.');
+
+    $this->assertEqual($overrides['node-3']['revision_id'], 8,
+      'ERSOverride should properly find the revision a node will be transitioned to.');
+
+    $this->assertIdentical($overrides['node-5']['status'], 0,
+      'ERSOverride should return 0 for the status when a node is being unpublished');
+    $this->assertNull($overrides['node-5']['revision_id'],
+      'ERSOverride should return null for the revision when a node is being unpublished');
+
+    if (!empty($overrides['node-18'])) {
+      $this->fail('ERSOverrides should not return overrides scheduled in the future');
+    }
+    else {
+      $this->pass('ERSOverrides should not return overrides scheduled in the future');
+    }
+  }
+
+  // public function testERSForms() {
+  //   $user = $this->drupalCreateUser(array(
+  //     'administer ers',
+  //     'bypass node access',
+  //     'administer site configuration',
+  //     'administer nodes',
+  //     'view revisions'
+  //   ));
+  //   $this->drupalLogin($user);
+
+  //   variable_set('ers_entity_bundle_node' , array('article' => 'article','page' => 'page'));
+
+  //   //create an article
+  //   $values = array(
+  //     'title' => 'first rev',
+  //     'body[und][0][value]' => 'testing rev1',
+  //   );
+
+  //   $this->drupalPost('node/add/article', $values, t('Save'));
+
+  //   $this->drupalGet('node/1');
+  //   $this->assertText('testing rev1', 'Node should be successfully created', 'Checkpoint');
+  //   $this->drupalGet('node/1/revisions');
+  //   $this->drupalGet('node/1/revisions/1/publish');
+  //   $this->drupalPost('node/1/revisions/1/publish', array(), t('Schedule'));
+  //   $values = array(
+  //     'title' => 'second rev',
+  //     'body[und][0][value]' => 'testing rev2',
+  //     'revision' => TRUE,
+  //   );
+
+  //   $this->drupalPost('node/1/edit', $values, t('Save'));
+
+
+  //   $test_time = time() + 5000;
+  //   $this->drupalGet('node/1/revisions');
+  //   $values = array(
+  //     'ers_schedule_time[date]' => date('m/j/Y', $test_time),
+  //     'ers_schedule_time[time]' => '01:00',
+  //   );
+  //   //gets permission denied here
+  //   $this->drupalPost('node/1/revisions/2/publish', $values, t('Schedule'));
+  // }
+
+  /**
+   * Add values to the ers_schedule table.
+   *
+   * @param $values - an array of data with fields:
+   *  entity_type, entity_id, revision_id, publish_date, completed
+   */
+  protected function  addValuesToSchedule($values) {
+    $insert = db_insert('ers_schedule')
+      ->fields(array('entity_type', 'entity_id', 'revision_id', 'publish_date', 'completed'));
+
+    foreach($values as $item) {
+      $insert->values($item);
+    }
+
+    $insert->execute();
+  }
+
+  /**
+   * Clear all the data from ers_schedule table.
+   */
+  protected function clearSchedule() {
+    db_delete('ers_schedule')->execute();
+  }
+}

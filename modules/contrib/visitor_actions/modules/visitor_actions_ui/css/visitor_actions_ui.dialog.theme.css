@@ -1,0 +1,86 @@
+/**
+ * @file visitor_actions_ui.dialog.theme.css
+ *
+ * Themable styles for dialogs.
+ */
+
+.visitor-actions-ui-dialog {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  max-width: 450px;
+  min-height: 50px;
+  padding: 3px 3px 21px;
+  -webkit-transition: all 0.1s;
+  -moz-transition: all 0.1s;
+  -o-transition: all 0.1s;
+  -ms-transition: all 0.1s;
+  transition: all 0.1s;
+  z-index: 2000;
+}
+.visitor-actions-ui-dialog [id^="edit-title"] ~ * {
+  visibility: hidden;
+  height: 0;
+  position: fixed;
+  top: -100%;
+}
+.visitor-actions-ui-dialog legend {
+  background-color: #484848;
+  text-shadow: none;
+}
+.visitor-actions-ui-dialog fieldset {
+  background-color: #343434;
+  border-color: #b0b0b0;
+  border-style: solid;
+  border-width: 1px;
+}
+.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content {
+  background-color: #343434;
+  box-shadow: 0 0 2px 1px whitesmoke;
+  padding: 0.75em;
+  position: relative;
+  z-index: 1;
+}
+.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content a {
+  color: #75BEFF;
+}
+.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content form {
+  margin: 0;
+  padding: 0;
+}
+.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content .form-actions {
+  margin-bottom: 0;
+  margin-top: 0;
+}
+.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content fieldset {
+  margin-bottom: 12px;
+  margin-top: 0;
+  min-height: 40px;
+}
+
+/* Dialog pointer */
+.visitor-actions-ui-dialog > .visitor-actions-ui-dialog-pointer {
+  background-color: #343434;
+  bottom: 14px;
+  box-shadow: 2px 2px 2px -1px whitesmoke;
+  display: block;
+  height: 16px;
+  left: 18px; /* LTR */
+  position: absolute;
+  -moz-transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+  transform: rotate(45deg);
+  width: 16px;
+  z-index: 2;
+}
+[dir="rtl"] .visitor-actions-ui-dialog > .visitor-actions-ui-dialog-pointer {
+  left: auto;
+  right: 18px;
+}
+.visitor-actions-ui-dialog.visitor-actions-ui-dialog-pointer-top {
+  padding-bottom: 0;
+  padding: 21px 3px 3px 3px;
+}
+.visitor-actions-ui-dialog.visitor-actions-ui-dialog-pointer-top > .visitor-actions-ui-dialog-pointer {
+  bottom: auto;
+  box-shadow: -2px -2px 2px -1px whitesmoke;
+  top: 14px;
+}

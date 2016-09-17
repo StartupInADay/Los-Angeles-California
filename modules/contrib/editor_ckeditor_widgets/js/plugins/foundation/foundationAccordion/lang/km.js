@@ -1,0 +1,22 @@
+CKEDITOR.plugins.setLang('foundationAccordion', 'km', {//Khmer
+	plugin 			: 'មូលនិធិអុង',
+    title 			: 'ចំណងជើង',
+	content 		: 'មាតិកា',
+	htmlIsAllowed	: 'HTML ដែលត្រូវបានអនុញ្ញាត',
+	addNewItem		: 'បន្ថែមធាតុថ្មី',
+	minimum			: 'កម្មវិធីជំនួយត្រូវតែមានយ៉ាងហោចណាស់ 1 ធាតុ',
+	link			: 'តំណភ្ជាប់',
+	style			: 'រចនាប័ទ្ម',
+	type			: 'ប្រភេទ',
+	size			: 'ទំហំ',
+	blockLevel		: 'ប្លុកកម្រិត',
+	active			: 'ដែលសកម្ម',
+	enabled			: 'បានបើក',
+	text			: 'អត្ថបទ',
+	preview			: 'ការមើលជាមុន',
+	optional		: 'ជម្រើស',
+	badge			: 'ផ្លាកសញ្ញា',
+	caption			: 'ចំណងជើង',
+	image			: 'រូបភាព',
+	delete			: 'តើអ្នកប្រាកដជាចង់លុបធាតុនេះឬ?'
+});

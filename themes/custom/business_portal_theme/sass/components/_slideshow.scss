@@ -1,0 +1,23 @@
+/**
+ * @file
+ * SMACSS Modules
+ *
+ * Slideshow component.
+ *
+ */
+
+#rotating-items-wrapper {
+    position: relative;
+    width: 100%;
+    background: black;
+    height: 500px;
+    overflow: hidden;
+    margin-bottom: 60px;
+}
+
+.rotating-item {
+    display: none;
+    position: absolute;
+    top: 0;
+    width: 100%;
+}

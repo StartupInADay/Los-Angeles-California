@@ -1,0 +1,23 @@
+name = Panels Preview
+description = Provides a preview when adding and editing panels.
+core = 7.x
+package = Panels
+project = panels_preview
+dependencies[] = ctools
+dependencies[] = fape
+dependencies[] = features
+dependencies[] = page_manager
+dependencies[] = panels_ipe
+dependencies[] = views
+stylesheets[all][] = css/panels-preview.css
+scripts[] = js/panels-preview-autosubmit.js
+scripts[] = js/panels-preview-title.js
+scripts[] = js/panels-preview-toggle.js
+
+
+; Information added by Drupal.org packaging script on 2015-05-21
+version = "7.x-1.0-alpha2"
+core = "7.x"
+project = "panels_preview"
+datestamp = "1432225081"
+

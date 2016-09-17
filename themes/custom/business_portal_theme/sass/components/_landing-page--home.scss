@@ -1,0 +1,35 @@
+body.node-type-sbp-landing-page {
+
+  /********* Layout *************/
+
+  .panel__content_wrapper {
+    padding: 0 25px;
+    margin: 0 auto;
+    max-width: $max-site-width;
+    @include zen-grid-container();
+    @include window-size(desktop){
+      padding: 0;
+    }
+    
+    .panel__button_wrapper {
+      margin-bottom: 15px;
+      @include window-size(desktop){
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  .panel__content_col_1 {
+    padding-top: 2em;
+    @include window-size(desktop){
+      padding-top: 4em;
+    }
+    
+    .panel__header-line {
+      margin-bottom: 1em;
+      @include window-size(desktop){
+        margin-bottom: 2em;
+      }
+    }
+  }
+}

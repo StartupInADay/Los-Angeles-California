@@ -1,0 +1,11 @@
+name = Revision operation scheduler
+description = Schedule operations of node revisions for future dates.
+core = 7.x
+recommends[] = date_popup
+
+; Information added by Drupal.org packaging script on 2014-07-09
+version = "7.x-1.0-rc1"
+core = "7.x"
+project = "revision_scheduler"
+datestamp = "1404889431"
+

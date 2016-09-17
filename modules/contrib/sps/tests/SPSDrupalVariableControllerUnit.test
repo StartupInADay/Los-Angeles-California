@@ -1,0 +1,31 @@
+<?php
+
+class SPSDrupalVariableControllerWebTest extends SPSBaseWebTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS DrupalVariableController Unit Tests',
+      'description' => 'Test the public interface to the DrupalVariableController object',
+      'group' => 'SPSInteractive',
+    );
+  }
+
+  public function testDrupalVariableController() {
+    $prefix = "test_prefix";
+
+    $control = new \Drupal\sps\StorageController\DrupalVariableController($prefix);
+    $data = array(
+      "get" => array("name" => "get name", 'value' => 'get value'),
+      "set" => array("name" => "set name", 'value' => 'set value'),
+    );
+
+    $this->assertFalse($control->exists("not set"), "DrupalVariableController::exists is False when a name has been set", "SPS");
+
+    variable_set($prefix ."_". $data['get']['name'], $data['get']['value']);
+    $this->assertTrue($control->exists($data['get']['name']), "DrupalVariableController::exists is True when a name has been set", "SPS");
+    $this->assertEqual($control->get($data['get']['name']), $data['get']['value'], "DrupalVariableController::get should retrieve the value from drupal variables.", "SPS");
+
+    $control->set($data['set']['name'], $data['set']['value']);
+    $test_set_value = variable_get($prefix ."_". $data['set']['name']);
+    $this->assertEqual($test_set_value, $data['set']['value'], "DrupalVariableController::set should set the value in drupal variables.", "SPS");
+  }
+}

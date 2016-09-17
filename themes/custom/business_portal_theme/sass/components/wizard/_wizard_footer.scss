@@ -1,0 +1,17 @@
+/* LA-183: hiding the footer in wizard on mobile */
+
+body.wizard-page {
+
+  @media (min-width: 0px) and (max-width: 719px) {
+
+    #page {
+      padding-bottom: 10px;
+    }
+
+    .region--bottom {
+      display: none;
+    }
+
+  }
+
+}

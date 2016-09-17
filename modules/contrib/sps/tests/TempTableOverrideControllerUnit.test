@@ -1,0 +1,305 @@
+<?php
+class SPSTempTableOverrideControllerUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS TempTableOverrideController Unit Tests',
+      'description' => 'Test the public interface to SimpleCacheOverrrideController objects',
+      'group' => 'SPS',
+    );
+  }
+
+  public function testTableTempOverrideController_addOverrideJoin() {
+    $query = $this->join_start();
+    $expected = $this->join_start();
+    $expected->tables = array(
+      'b' => 
+      array (
+        'join type' => NULL,
+        'table' => 'node',
+        'alias' => 'b',
+        'condition' => NULL,
+        'arguments' => 
+        array (
+        ),
+      ),
+      'node_overrides' => array (
+        'join type' => 'LEFT OUTER',
+        'table' => 'temporary_1',
+        'alias' => 'node_overrides',
+        'condition' => 'b.nid = node_overrides.id',
+        'arguments' => array (),
+      ),
+      'r' => 
+      array (
+        'join type' => 'INNER',
+        'table' => 'node_revision',
+        'alias' => 'r',
+        'condition' => 'r.vid = b.vid',
+        'arguments' => 
+        array (
+        ),
+      ),
+    );
+
+    $manager = new \Drupal\sps\Test\Manager();
+    $controller = new \Drupal\sps\Plugins\OverrideController\TempTableOverrideController(array(), $manager);
+    sps_drupal()->set('db_query_temporary', function() { return 'temporary_1';});
+    $controller->addOverrideJoin($query, 'b', 'nid', 'node_overrides', 'node');
+
+    $this->assertEqual(
+      $query->tables,
+      $expected->tables,
+      "::addOverrideJoin should add the query tables right after the base table"
+    );
+
+  }
+
+  public function testTableTempOverrideController_tempTableCreate() {
+    $query = $this->join_start();
+    $manager = new \Drupal\sps\Test\Manager();
+    $controller = new \Drupal\sps\Plugins\OverrideController\TempTableOverrideController(array(), $manager);
+
+    $overrides = array(
+      array(
+        'id' => 5,
+        'revision_id' => 7,
+        'type' => 'node',
+      ),
+      array(
+        'id' => 1,
+        'type' => 'node',
+        'status' => 1,
+
+      ),
+    );
+   $controller->set($overrides);
+
+
+   function testTableTempOverrideController_tempTableCreate($query = NULL) {
+     static $q;
+     $q = $query ?: $q;
+     if($query) { 
+       return 'temporary1';
+     }
+     return $q;
+   }
+   sps_drupal()->set('db_query_temporary', 'testTableTempOverrideController_tempTableCreate' );
+
+   $controller->addOverrideJoin($query, 'b', 'nid', 'node_overrides', 'node');
+   $this->assertEqual(
+     testTableTempOverrideController_tempTableCreate(),
+     'SELECT 5 as id,7 as override_revision_id,NULL as override_status UNION SELECT 1 as id,NULL as override_revision_id,1 as override_status',
+     '::addOverrideJoin should create a temp table with all fields from getPropertyMap, id and revision_id'
+   );
+  }
+  public function testTableTempOverrideController_getPropertyMap() {
+    $manager = new \Drupal\sps\Test\Manager();
+    $controller = new \Drupal\sps\Plugins\OverrideController\TempTableOverrideController(array(), $manager);
+
+    $overrides = array(
+      array(
+        'id' => 5,
+        'revision_id' => 7,
+        'type' => 'node',
+      ),
+      array(
+        'id' => 1,
+        'type' => 'node',
+        'status' => 1,
+
+      ),
+    );
+   $controller->set($overrides);
+
+   $this->assertEqual(
+     $controller->getPropertyMap(),
+     array('status' => 'override_status', 'revision_id' => 'override_revision_id'),
+     '::getPropertyMap should return a look up for property name to field on the table'
+   );
+  }
+
+  public function testTableTempOverrideController_getPropertyMapNoRevisionId() {
+    $manager = new \Drupal\sps\Test\Manager();
+    $controller = new \Drupal\sps\Plugins\OverrideController\TempTableOverrideController(array(), $manager);
+
+    $overrides = array(
+      array(
+        'id' => 5,
+        'type' => 'node',
+      ),
+      array(
+        'id' => 1,
+        'type' => 'node',
+
+      ),
+    );
+   $controller->set($overrides);
+
+   $this->assertEqual(
+     $controller->getPropertyMap(),
+     array('revision_id' => 'override_revision_id'),
+     '::getPropertyMap should return a look up for property name to field on the table revsion_id should always show'
+   );
+  }
+
+  public function testSimpleCacheOverrideController_validateRow() {
+    $manager = new \Drupal\sps\Test\Manager();
+    $controller = new \Drupal\sps\Plugins\OverrideController\SimpleCacheOverrideController(array(), $manager);
+
+   $overrides = array(
+      array(
+        'revision_id' => 5,
+        'type' => 'node',
+      ),
+   );
+   $this->assertThrows(
+     function() use ($controller, $overrides) { $controller->set($overrides) ;},
+     '\Drupal\sps\Exception\InvalidOverrideRowException',
+     'Override row must have id field',
+     '::set throws exeption when an row missing the id field is passed'
+   );
+   $overrides = array(
+      array(
+        'revision_id' => 5,
+        'id' => 3,
+      ),
+   );
+   $this->assertThrows(
+     function() use ($controller, $overrides) { $controller->set($overrides) ;},
+     '\Drupal\sps\Exception\InvalidOverrideRowException',
+     'Override row must have type field',
+     '::set throws exeption when an row missing the type field is passed'
+   );
+
+  }
+
+  protected function join_start() {
+     return Drupal\sps\Test\SelectQuery::__set_state(array(
+       'fields' => 
+      array (
+        'sticky' => 
+        array (
+          'field' => 'sticky',
+          'table' => 'b',
+          'alias' => 'sticky',
+        ),
+        'title' => 
+        array (
+          'field' => 'title',
+          'table' => 'b',
+          'alias' => 'title',
+        ),
+        'status' => 
+        array (
+          'field' => 'status',
+          'table' => 'b',
+          'alias' => 'status',
+        ),
+        'uid' => 
+        array (
+          'field' => 'uid',
+          'table' => 'b',
+          'alias' => 'uid',
+        ),
+        'promote' => 
+        array (
+          'field' => 'promote',
+          'table' => 'b',
+          'alias' => 'promote',
+        ),
+      ),
+       'expressions' => 
+      array (
+        'expression' => 
+        array (
+          'expression' => 'b.title is NULL',
+          'alias' => 'expression',
+          'arguments' => 
+          array (
+          ),
+        ),
+      ),
+       'tables' => 
+      array (
+        'b' => 
+        array (
+          'join type' => NULL,
+          'table' => 'node',
+          'alias' => 'b',
+          'condition' => NULL,
+          'arguments' => 
+          array (
+          ),
+        ),
+        'r' => 
+        array (
+          'join type' => 'INNER',
+          'table' => 'node_revision',
+          'alias' => 'r',
+          'condition' => 'r.vid = b.vid',
+          'arguments' => 
+          array (
+          ),
+        ),
+      ),
+       'order' => 
+      array (
+        'b.sticky' => 'ASC',
+        'b.title' => 'ASC',
+      ),
+       'group' => 
+      array (
+      ),
+       'where' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+          0 => 
+          array (
+            'field' => 'b.status',
+            'value' => 1,
+            'operator' => '=',
+          ),
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'having' => 
+      Drupal\sps\Test\DatabaseCondition::__set_state(array(
+         'conditions' => 
+        array (
+          '#conjunction' => 'AND',
+        ),
+         'arguments' => 
+        array (
+        ),
+         'changed' => true,
+         'queryPlaceholderIdentifier' => NULL,
+      )),
+       'distinct' => false,
+       'range' => NULL,
+       'union' => 
+      array (
+      ),
+       'prepared' => false,
+       'forUpdate' => false,
+       'connectionTarget' => 'default',
+       'connectionKey' => 'default',
+       'queryOptions' => 
+      array (
+        'target' => 'default',
+        'return' => 1,
+      ),
+       'uniqueIdentifier' => '5004e873f40640.15709914',
+       'nextPlaceholder' => 0,
+       'comments' => 
+      array (
+      ),
+    )); 
+  }
+
+}

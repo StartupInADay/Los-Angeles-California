@@ -1,0 +1,23 @@
+<?php
+/**
+ * Implements hook_migrate_api().
+ */
+function import_migrate_api() {
+  $api = array(
+    'api' => 2,
+    'groups' => array(
+      'import' => array(
+        'title' => t('Import'),
+      ),
+    ),
+    'migrations' => array(
+      'ImportBaseComments' => array('class_name' => 'ImportBaseComments', 'group_name' => 'import'),
+      'ImportBaseNodes' => array('class_name' => 'ImportBaseNodes', 'group_name' => 'import'),
+      'ImportBaseTerms' => array('class_name' => 'ImportBaseTerms', 'group_name' => 'import'),
+      'ImportBaseUserPictures' => array('class_name' => 'ImportBaseUserPictures', 'group_name' => 'import'),
+      'ImportBaseUsers' => array('class_name' => 'ImportBaseUsers', 'group_name' => 'import'),
+    ),
+  );
+  return $api;
+}
+

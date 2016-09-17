@@ -1,0 +1,95 @@
+/**
+ * Media browser styles.
+ */
+.ui-dialog.media-wrapper {
+  padding: 0.6em;
+  z-index: 9999;
+}
+.ui-dialog.media-wrapper .ui-dialog-titlebar {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 0.3em;
+}
+.ui-dialog.media-wrapper .ui-dialog-title,
+.ui-dialog.media-wrapper #ui-dialog-title-mediaBrowser {
+  display: none;
+}
+.ui-dialog.media-wrapper iframe {
+  margin-top: 1em;
+  margin-bottom: 0;
+}
+.media-wrapper .ui-dialog-buttonpane {
+  display: none;
+}
+.media-wrapper .ui-dialog-titlebar button.ui-button {
+  height: 18px;
+  margin: 0;
+  padding-top: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+  padding-left: 0;
+  text-indent: -9999px;
+  float: right;
+}
+
+/**
+ * Media bulk-upload styles.
+ */
+.media-bulk-asset {
+  float:left;
+  width: 100%;
+  margin-bottom:20px;
+}
+
+.media-bulk-asset .media-bulk-upload-image-header {
+  float:left;
+  margin-right:15px;
+}
+
+.media-bulk-asset .file-form {
+  float:left;
+  max-width:65em;
+  background: #fff;
+  padding:10px 20px;
+  border:1px solid #aaa;
+}
+
+/**
+ * media_generic form styles
+ */
+.field-widget-media-generic table .media-widget {
+  display: inline-block;
+}
+
+/* Match the padding of the media-widget and give the drag icon some breathing room */
+.field-widget-media-generic table .tabledrag-handle {
+  padding-top: 9px;
+  padding-right: 20px;
+}
+
+/* Restrict column width */
+.field-widget-media-generic table td:first-child {
+  width: 300px;
+}
+
+/*generic styles to ensure basic slider will display*/
+.slide-image.ui-widget-content {
+  background: #ccc;
+  min-width: 15em;
+  margin-top: 20px;
+}
+
+.slide-image a {
+  background-color: #303;
+}
+
+/*set a default generic width of 200 (center of slider min and max)*/
+#media-browser-library-list li {
+  width: 200px;
+}
+
+.view-id-media_default .views-exposed-form .views-exposed-widget {
+  float: left;
+  padding-right: 10px;
+}

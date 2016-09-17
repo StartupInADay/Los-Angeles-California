@@ -1,0 +1,494 @@
+<?php
+use Drupal\sps\PluginFactory;
+use Drupal\sps\Exception\InvalidPluginException;
+use Drupal\sps\Exception\ClassLoadException;
+use Drupal\sps\Exception\DoesNotImplementException;
+
+class SPSPluginFactoryUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Plugin Factory Unit Tests',
+      'description' => 'Test the Plugin Factory and the Plugin Interface',
+      'group' => 'SPS',
+    );
+  }
+
+
+
+  public function sps_test_sps_plugin_types() {
+    return array(
+      'test_type_1' => array(
+        'interface' => "Drupal\\sps\\Test\\Plugin\\TestTypeInterface",
+        'defaults' => array(
+          'class' => "Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+          'instance_settings' => array(),
+        ),
+        'requires' => array(
+          'setting_1' => TRUE,
+          'setting_2' => array(
+            'settings 2.1' => TRUE,
+          ),
+          'setting 4' => TRUE,
+        ),
+      ),
+      'test_type_2' => array(
+        'interface' =>  "Drupal\\sps\\Test\\Plugin\\TestTypeInterface",
+        'defaults' => array(
+          'instance_settings' => array(
+            'instance_setting_1' =>  'abc',
+            'instance_setting_2' => 'def',
+          ),
+        ),
+      ),
+    );
+  }
+  public function sps_test_sps_test_type_1_plugins() {
+    return array(
+      'good_plugin' => array(
+        'class' => "Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+        'setting_1' => 'abc',
+        'setting_2' => array(
+          'settings 2.1' => 'abc',
+        ),
+        'setting 4' => 'abc',
+      ),
+      'default_class_plugin' => array(
+        'setting_1' => 'abc',
+        'setting_2' => array(
+          'settings 2.1' => 'abc',
+        ),
+        'setting 4' => 'abc',
+      ),
+    );
+  }
+  public function sps_test_sps_test_type_2_plugins() {
+    return array(
+      'normal_plugin' => array(
+        'class' =>"Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+        'instance_settings' => array(
+          'instance_setting_1' =>  '123',
+          'instance_setting_2' => '456',
+        ),
+      ),
+      'defaults_plugin' => array(
+        'class' =>"Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+      ),
+    );
+  }
+  public function sps_test_mrs_sps_plugin_types() {
+    return array(
+      'missing_required_settings' => array(
+        'interface' =>  "Drupal\\sps\\Test\\Plugin\\TestTypeInterface",
+        'defaults' => array(
+          'class' => "Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+          'instance_settings' => array(),
+        ),
+        'requires' => array(
+          'required field' => TRUE,
+          'parent' => array('other required field'=>TRUE),
+        ),
+      ),
+    );
+  }
+  public function sps_test_mrs_sps_missing_required_settings_plugins() {
+   return array(
+      'missing_required_settings' => array(
+        'class' => "Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+        'setting_1' => 'abc',
+        'parent'=>array('other required field'=> 'george'),
+      ),
+    );
+  }
+  public function sps_test_mrs_sps_missing_in_child_required_settings_plugins() {
+    return array(
+      'missing_required_settings_in_child' => array(
+        'class' => "Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+        'setting_1' => 'abc',
+        'required field'=> 'george',
+        'parent'=>array(),
+      ),
+    );
+  }
+  public function sps_test_incorrect_interface_plugins(){
+    return array(
+      'incorrect_interface' => array(
+        'class' => "Drupal\\sps\\Test\\Plugin\\BadPlugin",
+        'setting_1' => 'abc',
+        'required field'=> 'george',
+        'parent'=>array('other required field'=> 'george'),
+      ),
+    );
+  }
+
+  public function sps_test_by_meta_sps_plugin_types() {
+    return array(
+     'meta' => array(
+        'interface' =>  "Drupal\\sps\\Test\\Plugin\\TestTypeInterface",
+        'defaults' => array(
+          'class' => "Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+          'instance_settings' => array(),
+        ),
+        'requires' => array(),
+      ),
+    );
+  }
+  public function sps_test_by_meta_sps_meta_plugins() {
+    return array(
+      'meta1' => array(
+        'property1' => 'bob'
+      ),
+      'meta2' => array(
+        'property2' => array('property1' => 'bob')
+      ),
+    );
+  }
+
+  public function testLoadPluginFactory() {
+    try {
+      $manager = new \Drupal\sps\Test\Manager();
+      $factory = new PluginFactory(array(), $manager);
+      $this->pass('Plugin Factory Loaded');
+    } catch (Exception $e) {
+      $this->fail('Plugin Factory Loaded');
+    }
+  }
+  
+  public function testPluginTypeInfo() {
+
+    $default_plugin_type_info = array(
+      'test_type_1' => array(
+        'interface' => "Drupal\\sps\\Test\\Plugin\\TestTypeInterface",
+        'defaults' => array(
+          'class' => "Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+          'instance_settings' => array(),
+        ),
+        'requires' => array(
+          'setting_1'=>TRUE,
+          'setting_2' => array(
+            'settings 2.1' => TRUE,
+          ),
+          'setting 4' => TRUE,
+        ),
+        'module' => 'sps_test',
+        'name' => 'test_type_1',
+      ),
+      'test_type_2' => array(
+        'interface' =>  "Drupal\\sps\\Test\\Plugin\\TestTypeInterface",
+        'defaults' => array(
+          'instance_settings' => array(
+            'instance_setting_1' =>  'abc',
+            'instance_setting_2' => 'def',
+          ),
+        ),
+        'requires' => array(),
+        'module' => 'sps_test',
+        'name' => 'test_type_2',
+      ),
+    );
+    $manager = new \Drupal\sps\Test\Manager();
+    $manager->getDrupalController()->set('module_implements', function() {
+      return array('sps_test');
+    });
+    $manager->getDrupalController()->set('module_invoke', array($this, 'sps_test_sps_plugin_types'));
+
+    $factory = new PluginFactory(array(), $manager);
+    $all_plugin_type_info = $factory->getPluginTypeInfo();
+    $this->assertEqual(
+      $all_plugin_type_info,
+      $default_plugin_type_info,
+      'Plugin Type Info Loaded Correctly', 'SPS');
+    $test_1_plugin_type_info = $factory->getPluginTypeInfo('test_type_1');
+    $this->assertEqual($test_1_plugin_type_info,
+      $default_plugin_type_info['test_type_1'],
+      'Plugin Type Info Loaded correctly for test type 1', 'SPS');
+
+    $test_2_plugin_type_info = $factory->getPluginTypeInfo('test_type_2');
+    $this->assertEqual($test_2_plugin_type_info,
+      $default_plugin_type_info['test_type_2'],
+      'Plugin Type Info Loaded by correctly for test type 2', 'SPS');
+
+    foreach ($default_plugin_type_info['test_type_1'] as $property => $value) {
+      $this->assertEqual($value, $factory->getPluginTypeInfo('test_type_1', $property),
+        "Plugin Type test_type_1 Info Loaded by key for $property", "SPS");
+    }
+
+    foreach ($default_plugin_type_info['test_type_2'] as $property => $value) {
+      $this->assertEqual($value, $factory->getPluginTypeInfo('test_type_2', $property),
+        "Plugin Type test_type_2 Info Loaded by key for $property", "SPS");
+
+    }
+  }
+
+  public function testPluginInfo() {
+    $test_type_1_info = array(
+      'good_plugin' => array(
+        'class' => "Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+        'setting_1' => 'abc',
+        'setting_2' => array(
+          'settings 2.1' => 'abc',
+        ),
+        'setting 4' => 'abc',
+        'plugin_type' => 'test_type_1',
+        'module' => 'sps_test',
+        'name' => 'good_plugin',
+        'instance_settings' => array(),
+      ),
+      'default_class_plugin' => array(
+        'setting_1' => 'abc',
+        'setting_2' => array(
+          'settings 2.1' => 'abc',
+        ),
+        'setting 4' => 'abc',
+        'plugin_type' => 'test_type_1',
+        'module' => 'sps_test',
+        'name' => 'default_class_plugin',
+        'instance_settings' => array(),
+        'class' => "Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+      ),
+    );
+
+    $test_type_2_info = array(
+      'normal_plugin' => array(
+        'class' =>"Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+        'instance_settings' => array(
+          'instance_setting_1' =>  '123',
+          'instance_setting_2' => '456',
+        ),
+        'plugin_type' => 'test_type_2',
+        'module' => 'sps_test',
+        'name' => 'normal_plugin',
+      ),
+      'defaults_plugin' => array(
+        'class' =>"Drupal\\sps\\Test\\Plugin\\GoodPlugin",
+        'instance_settings' => array(
+          'instance_setting_1' =>  'abc',
+          'instance_setting_2' => 'def',
+        ),
+        'plugin_type' => 'test_type_2',
+        'module' => 'sps_test',
+        'name' => 'defaults_plugin',
+      ),
+    );
+
+    $manager = new \Drupal\sps\Test\Manager();
+    $test = $this;
+    $manager->getDrupalController()->set('module_implements', function()  {
+      return array('sps_test');
+    });
+    $manager->getDrupalController()->set('module_invoke', function($m, $h) use($test) {
+      switch($h) {
+        case 'sps_test_type_1_plugins':
+          return $test->sps_test_sps_test_type_1_plugins();
+        break;
+        case 'sps_test_type_2_plugins':
+          return $test->sps_test_sps_test_type_2_plugins();
+        break;
+        case 'sps_plugin_types':
+          return $test->sps_test_sps_plugin_types();
+      }
+      return array();
+    });
+    $factory = new PluginFactory(array(), $manager);
+    $plugin_type_info = $factory->getPluginInfo('test_type_1');
+    $this->assertEqual($plugin_type_info, $test_type_1_info,
+      'Plugin info for Test Type 1 loaded', 'SPS');
+
+    $plugin_type_info = $factory->getPluginInfo('test_type_2');
+    $this->assertEqual($plugin_type_info, $test_type_2_info,
+      'Plugin info for Test Type 2 loaded', 'SPS');
+  }
+  public function testPluginFactory_getPluginInfo_RequirementEx() {
+    $manager = new \Drupal\sps\Test\Manager();
+    $manager->getDrupalController()->set('module_implements', function()  {
+      return array('sps_test_mrs');
+    });
+    $test = $this;
+    $manager->getDrupalController()->set('module_invoke', function($m, $h) use($test) {
+      if ($h == 'sps_plugin_types') {
+        return $test->sps_test_mrs_sps_plugin_types();
+      }
+      else {
+        return $test->sps_test_mrs_sps_missing_required_settings_plugins();
+      }
+    });
+    $factory = new PluginFactory(array(), $manager);
+
+    $missing_required_settings = function() use ($factory){
+      $factory->getPluginInfo('missing_required_settings', 'missing_required_settings');
+    };
+    $this->assertThrows($missing_required_settings,
+      "Drupal\\sps\\Exception\\InvalidPluginException",
+      "Plugin missing_required_settings does not contain required element required field", 
+      'Missing Required Settings Plugin Failed to Load');  
+  }
+
+  public function testPluginFactory_getPluginInfo_RequirementExWithDepth() {
+    $manager = new \Drupal\sps\Test\Manager();
+
+    $manager->getDrupalController()->set('module_implements', function()  {
+      return array('sps_test_mrs');
+    });
+    $test = $this;
+    $manager->getDrupalController()->set('module_invoke', function($m, $h) use($test) {
+      switch($h) {
+        case 'sps_plugin_types':
+          return $test->sps_test_mrs_sps_plugin_types();
+      ;
+        case 'sps_missing_required_settings_plugins':
+          return $test->sps_test_mrs_sps_missing_in_child_required_settings_plugins();
+        break;
+      }
+      return array();
+    });
+    //check second level requirements
+    $factory = new PluginFactory(array(), $manager);
+
+    $missing_required_settings_in_child = function() use ($factory){
+      $factory->getPluginInfo('missing_required_settings', 'missing_required_settings_in_child');
+    };
+    $this->assertThrows($missing_required_settings_in_child,
+      "Drupal\\sps\\Exception\\InvalidPluginException",
+      "Plugin missing_required_settings_in_child does not contain required element parent=>other required field", 
+      'Missing Required Settings in Depth Plugin Failed to Load');  
+  }
+
+  public function testPluginFactory_getPluginInfo_InvalidClass() {
+    $manager = new \Drupal\sps\Test\Manager();
+    $manager->getDrupalController()->set('module_implements', function()  {
+      return array('sps_test_mrs');
+    });
+    $test = $this;
+    $manager->getDrupalController()->set('module_invoke', function($m, $h) use($test) {
+      switch($h) {
+        case 'sps_plugin_types':
+          return $test->sps_test_mrs_sps_plugin_types();
+        break;
+        case 'sps_missing_required_settings_plugins':
+          return $test->sps_test_incorrect_interface_plugins();
+        break;
+      }
+    });
+    $factory = new PluginFactory(array(), $manager);
+
+    $incorrect_interface = function() use ($factory) {
+      $factory->getPluginInfo('missing_required_settings', 'incorrect_interface');
+    };
+
+
+    $this->assertThrows($incorrect_interface,
+      "Drupal\\sps\\Exception\\DoesNotImplementException",
+      "Plugin incorrect_interface is not using the correct interface Drupal\\sps\\Test\\Plugin\\TestTypeInterface",
+      'Missing Required Settings Plugin Failed to Load');
+  }
+
+  //@TODO need test for plugin that does not impelment Drupal\\sps\\Plugins\\PluginInterface
+
+  public function testGetPlugin() {
+    $manager = new \Drupal\sps\Test\Manager();
+
+    $manager = new \Drupal\sps\Test\Manager();
+    $manager->getDrupalController()->set('module_implements', function()  {
+      return array('sps_test');
+    });
+    $test = $this;
+    $manager->getDrupalController()->set('module_invoke', function($m, $h) use($test) {
+      switch($h) {
+        case 'sps_plugin_types':
+          return $test->sps_test_sps_plugin_types();
+        break;
+        case 'sps_test_type_1_plugins':
+          return $test->sps_test_sps_test_type_1_plugins();
+        break;
+        case 'sps_test_type_2_plugins':
+          return $test->sps_test_sps_test_type_2_plugins();
+        break;
+      }
+    });
+    $factory = new PluginFactory(array(), $manager);
+
+    $info = $factory->getPluginInfo('test_type_1', 'good_plugin');
+    $correct_interface = $factory->getPlugin('test_type_1', 'good_plugin', $manager);
+    $this->assertEqual(
+      $correct_interface->settings,
+      $info['instance_settings'],
+      "::GetPlugin use instance_settings to instantiate the object(param 1)", "SPS"
+    );
+    $this->assertEqual(
+      $correct_interface->manager,
+      $manager,
+      '::GetPlugin use $manager to instantiate the object(param 2)', "SPS"
+    );
+
+    //@TODO What is this testing?
+    // $this->assertCheckInterface("Drupal\\sps\\Test\\Plugin\\TestTypeInterface",
+    //  $correct_interface, 'The correct interface is being used in the Plugin Class');
+
+    //@TODO What is this testing?
+    //$this->assertCheckInterface("Drupal\\sps\\Plugins\\PluginInterface",
+    //  $correct_interface, 'The correct interface is being used in the Plugin Class');
+
+  /*
+   * @TODO the getSettings Method has been removed from the Plugin 
+   * Interfacefor the moment
+    $custom_instance_settings = $factory->getPlugin('test_type_2', 'normal_plugin', $manager);
+    $this->assertEqual($custom_instance_settings->getSetting('instance_setting_1'), '123',
+      'Plugin Instance setting is correct', "SPS");
+    $this->assertEqual($custom_instance_settings->getSetting('instance_setting_2'), '456',
+      'Plugin Instance setting is correct', "SPS");
+
+    $default_instance_settings = $factory->getPlugin('test_type_2', 'defaults_plugin', $manager);
+    $this->assertEqual($default_instance_settings->getSetting('instance_setting_1'), 'abc',
+      'Plugin Instance setting is correct', "SPS");
+    $this->assertEqual($default_instance_settings->getSetting('instance_setting_2'), 'def',
+      'Plugin Instance setting is correct', "SPS");
+    */
+
+    $this->assertIsInstance($info['class'],
+      $correct_interface, "::getPlugin uses the class param from plugin info instantiate plugin object");
+
+    /*@TODO what is this testing?  getting the default class
+     * is already tested in profile info get
+    $default_class_plugin = $factory->getPlugin('test_type_1', 'default_class_plugin', $manager);
+    $this->assertIsInstance("Drupal\\sps\\Test\\Plugin\\GoodPlugin", $default_class_plugin, 'Default Plugin Class used');
+    */
+  }
+  public function testPlugin_getPluginByMeta() {
+    $manager = new \Drupal\sps\Test\Manager();
+    $manager->getDrupalController()->set('module_implements', function()  {
+      return array('sps_test_by_meta');
+    });
+    $test = $this;
+    $manager->getDrupalController()->set('module_invoke', function($m, $h) use($test) {
+      switch($h) {
+        case 'sps_plugin_types':
+          return $test->sps_test_by_meta_sps_plugin_types();
+        break;
+        case 'sps_meta_plugins':
+          return $test->sps_test_by_meta_sps_meta_plugins();
+        break;
+      }
+    });
+    $factory = new PluginFactory(array(), $manager);
+
+    $result = $factory->getPluginByMeta("meta", 'property1', 'bob');
+    $this->assertEqual(
+      $result,
+      array('meta1' => $factory->getPluginInfo('meta', 'meta1')),
+      "::getPluginByMeta returns plugins that have a property (param 2) that match the value (param 1)", "SPS"
+    );
+
+    $result = $factory->getPluginByMeta("meta", array('property2', 'property1'), 'bob');
+
+    $this->assertEqual(
+      $result,
+      array('meta2' => $factory->getPluginInfo('meta', 'meta2')),
+      "::getPluginByMeta returns plugins that have a property tree (param 2) that match the value (param 1)", "SPS"
+    );
+  }
+
+  //@TODO add test for hook_sps_plugin_info_PLUGINTYPE_PLUGINNAME_alter
+  //@TODO add test for hook_sps_plugin_type_info_PLUGINTYPE_alter
+  //@TODO add test for hook_sps_validate_plguin_type_info
+  //@TODO add test for hook_sps_validate_plguin_info
+}
+ 

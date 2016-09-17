@@ -1,0 +1,52 @@
+<?php
+
+abstract class SPSBaseWebTest extends DrupalWebTestCase {
+  public function setUp($extra = FALSE) {
+    if ($extra) {
+      parent::setUp("iib", "sps", "sps_test", "ctools", $extra);
+    }
+    else {
+      parent::setUp("iib", "sps", "sps_test", "ctools");
+    }
+  }
+
+  protected function assertCheckInterface($interface, $object, $message) {
+    $ref_class = new ReflectionClass($object);
+    if (in_array($interface, $ref_class->getInterfaceNames())) {
+      $this->pass($message, 'SPS');
+    }
+    else {
+      $this->fail($message, 'SPS');
+    }
+  }
+
+  /**
+   * SPSBaseUnitTest::assertThrows
+   *
+   * Test if a block of code throws an exeption
+   *
+   * @PARAM closure: a closure to run
+   * @PARAM type: a string with the name of an exception class
+   * @PARAM error_message: a string with the message of the error
+   * @PARAM message: the message of the test
+   */
+  protected function assertThrows($closure, $type, $error_message = NULL, $message) {
+    try {
+      $closure();
+    }
+    catch (Exception $e) {
+      if (!($e instanceof $type)) {
+        throw $e;
+      }
+      if (isset($error_message)) {
+        if ($e->getMessage() != $error_message) {
+          $this->fail($message, "SPS");
+        }
+      }
+      $this->pass($message, "SPS");
+      return ;
+    }
+    $this->fail($message, "SPS");
+  }
+
+}

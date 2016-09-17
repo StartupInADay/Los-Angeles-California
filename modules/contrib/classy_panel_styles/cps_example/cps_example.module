@@ -1,0 +1,14 @@
+<?php
+/**
+ * @file
+ * Module file for the Classy Panel Styles Example module.
+ */
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function cps_example_ctools_plugin_api($owner, $api) {
+  if ($owner == 'classy_panel_styles' && $api == 'classy_panel_styles') {
+    return array('version' => 1);
+  }
+}

@@ -1,0 +1,14 @@
+name = IIB Test
+description = Used for IIB tests, does not need to be manually enabled.
+core = 7.x
+package = Site Preview System
+
+dependencies[] = iib
+
+
+; Information added by drush on 2016-02-18
+version = "7.x-1.0-beta3+4-dev"
+core = "7.x"
+project = "iib"
+datestamp = "1455828869"
+

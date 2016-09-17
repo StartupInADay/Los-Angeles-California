@@ -1,0 +1,83 @@
+<?php
+
+/**
+ * @file
+ * Provides CKEditor plugins for embedding commons widgets.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function editor_ckeditor_widgets_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#editor_ckeditor_widgets':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Editor CKEditor Widgets integrates with CKEditor to provide common embeddable widgets, such as maps, tabs and accordions. Users embed widgets via WYSIWYG through one or more buttons.') . '</p>';
+      $output .= '<h3>' . t('Configuration') . '</h3>';
+      $output .= '<ol>';
+      $output .= '<li>' . t('To enable a widget, move its button into the Active toolbar for the desired text formats from the <a href="@formats">text formats configuration page</a>.', array('@formats' => url('admin/config/content/formats'))) . '</li>';
+      $output .= '</ol>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function editor_ckeditor_widgets_libraries_info() {
+  $libraries['ckeditor-leaflet'] = array(
+    'name' => 'CKEditor Leaflet',
+    'vendor url' => 'http://leafletjs.com',
+    'download url' => 'http://ckeditor.com/addon/leaflet',
+    'version arguments' => array(
+      'file' => 'CHANGELOG.md',
+      // ####Version 1.3.1 Released (December 27, 2014)
+      'pattern' => '/####Version (\d+\.\d+\.\d+)/',
+      'lines' => 4,
+    ),
+    'files' => array(
+      'js' => array(
+        'plugin.js',
+      ),
+    ),
+  );
+
+  $libraries['placeholder'] = array(
+    'name' => 'Placeholder',
+    'vendor url' => 'https://cksource.com',
+    'download url' => 'http://ckeditor.com/addon/placeholder',
+    'version' => CKEDITOR_VERSION,
+    'files' => array(
+      'js' => array(
+        'plugin.js',
+      ),
+    ),
+  );
+
+  $libraries['abbr'] = array(
+    'name' => 'Abbreviation',
+    'vendor url' => 'https://cksource.com',
+    'download url' => 'https://github.com/ckeditor/ckeditor-docs-samples',
+    'version' => CKEDITOR_VERSION,
+    'files' => array(
+      'js' => array(
+        'plugin.js',
+      ),
+    ),
+  );
+
+  $libraries['timestamp'] = array(
+    'name' => 'Timestamp',
+    'vendor url' => 'https://cksource.com',
+    'download url' => 'https://github.com/ckeditor/ckeditor-docs-samples',
+    'version' => CKEDITOR_VERSION,
+    'files' => array(
+      'js' => array(
+        'plugin.js',
+      ),
+    ),
+  );
+
+  return $libraries;
+}

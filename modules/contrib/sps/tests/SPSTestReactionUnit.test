@@ -1,0 +1,25 @@
+<?php
+class SPSTestReactionUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Test Reaction Unit Tests',
+      'description' => 'Test the public interface to the Test Reaction object',
+      'group' => 'SPS',
+    );
+  }
+
+  public function testTestReaction() {
+    $manager =  new \Drupal\sps\Test\Manager();
+    $settings = array(
+      'callback' => function($data) { return $data + 1;},
+    );
+    $reaction = new \Drupal\sps\Test\Reaction($settings, $manager);
+    $override_controller = new \Drupal\sps\Test\SimpleCacheOverrideController(array(), $manager);
+    $this->assertEqual(
+      $reaction->react(4, $override_controller),
+      5,
+      "Test Reaction::react should modify the data based on the callback passed in in settings", 'SPS'
+    );
+  }
+
+}

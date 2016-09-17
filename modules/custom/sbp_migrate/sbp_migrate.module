@@ -1,0 +1,118 @@
+<?php
+
+/**
+ * Implements hook_modules_enabled().
+ *
+ * When any module is enabled, process any corresponding migrations.
+ */
+function sbp_migrate_modules_enabled($modules) {
+  migrate_static_registration();
+  sbp_migrate_enable_migrate_support();
+  sbp_migrate_process_imports($modules);
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * Move our hook_modules_enabled() implementation to after that of Features so
+ * that fields are created in time to migrate into them.
+ */
+function sbp_migrate_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'modules_enabled') {
+    $group = $implementations['sbp_migrate'];
+    unset($implementations['sbp_migrate']);
+    $implementations['sbp_migrate'] = $group;
+  }
+}
+
+/**
+ * Implements hook_migrate_api().
+ */
+function sbp_migrate_migrate_api() {
+  $api = array(
+    'api' => 2,
+    'migrations' => array(),
+    'groups' => array(
+      'sbp' => array(
+        'title' => t('Business Portal'),
+      ),
+    ),
+    'field handlers' => array(
+      'SBPMigrateTaxonomyTermReferenceFieldHandler',
+    ),
+  );
+
+  $map = sbp_migrate_map();
+
+  foreach ($map as $class_name => $module_name) {
+    $api['migrations'][$class_name] = array(
+      'class_name' => $class_name,
+      'group_name' => 'sbp',
+    );
+  }
+  return $api;
+}
+
+/**
+ * Return an array of migrate classes and corresponding modules, limited to
+ * currently enabled modules.
+ */
+function sbp_migrate_map() {
+  $map = array(
+    'SBPMigrationNodeLandingPage' => 'sbp_landing_page',
+    'SBPMigrationStarterKit' => 'sbp_starter_kit',
+    'SBPMigrationTermIndustryTags' => 'taxonomy',
+    'SBPMigrationTermBusinessNeeds' => 'sbp_taxonomy',
+    'SBPMigrationTermBusinessOwnership' => 'sbp_taxonomy',
+    'SBPMigrationTermResourceType' => 'sbp_taxonomy',
+    'SBPMigrationTermTermsDefinitions' => 'sbp_taxonomy',
+    'SBPMigrationTermTermsDefinitionsGrouping' => 'sbp_taxonomy',
+  );
+  // Allow other modules to alter the migrations to, for example, use
+  // a custom class.
+  drupal_alter('sbp_migrate_map', $map);
+  // Only add a class if its corresponding module is enabled.
+  return array_filter($map, 'module_exists');
+}
+
+/**
+ * Enable required custom migrate support modules.
+ */
+function sbp_migrate_enable_migrate_support($modules = array()) {
+  if (!empty($modules)) {
+    $map = array_intersect($map, $modules);
+  }
+  $map = array_filter($map, 'module_exists');
+  if (!empty($map)) {
+    module_enable(array_keys($map));
+  }
+}
+
+/**
+ * Process all registered migrations or those of a specified set of modules.
+ */
+function sbp_migrate_process_imports($modules = array()) {
+  // Ensure that migration classes are registered.
+  migrate_get_module_apis(TRUE);
+  $map = sbp_migrate_map();
+  if (!empty($modules)) {
+    $map = array_intersect($map, $modules);
+  }
+  // Handle a single level of dependency by pushing any migrations with
+  // dependencies to a subsequent round.
+  $subsequent = array();
+  foreach (array_keys($map) as $class_name) {
+    $migration = Migration::getInstance($class_name);
+    $dependencies = $migration->getDependencies();
+    if (empty($dependencies)) {
+      $migration->processImport();
+    }
+    else {
+      $migration->processImport();
+      $subsequent[] = $migration;
+    }
+  }
+  foreach ($subsequent as $migration) {
+    $migration->processImport();
+  }
+}

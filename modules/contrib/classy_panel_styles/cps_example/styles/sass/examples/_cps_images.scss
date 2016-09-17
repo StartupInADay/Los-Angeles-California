@@ -1,0 +1,63 @@
+@import "cps_init";
+
+// IMAGE STYLES
+$text-wrap-min: 90px;
+$img-margin: 15px;
+$scrollbar: 20px;
+
+$img-xs: 90px;
+$img-sm: 125px;
+$img-md: 320px;
+$img-lg: 485px;
+$img-xl: 650px;
+$min-breakpoint: 0px;
+$max-breakpoint: 5000px;
+
+//////////////////////////////////////////
+@mixin img-types {
+  //.field-image,
+  //.pane-node-field-main-photo,
+  //.field--type-image,
+  img {
+    @content;
+  }
+}
+
+@include panel-pane-with-ipe {
+  //////////////////////////
+  // IMAGES
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  .img-right {
+    .views-field {
+      float: left;
+      width: 50%;
+    }
+    .field-image.views-field {
+      float: right;
+    }
+  }
+  .img-left {
+    .views-field {
+      float: right;
+      width: 50%;
+    }
+    .field-image.views-field {
+      float: left;
+    }
+  }
+  .image-float-right {
+    @include img-types {
+      float: right;
+      margin: 0 0 $img-margin $img-margin;
+    }
+  }
+  .image-float-left {
+    @include img-types {
+      float: left;
+      margin: 0 $img-margin $img-margin 0;
+    }
+  }
+}

@@ -1,0 +1,143 @@
+/**
+ * @file
+ *
+ * General panels theming.
+ *
+ */
+
+.panel-2col-stacked {
+  background: $light-grey;
+  @include clearfix;
+
+  .panel-col-last {
+    background: $white;
+    .inside {
+      margin: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: 25px;
+      @include window_size(desktop) {
+        padding: 25px 0 25px 30px;
+        max-width: $max-content-width;
+      }
+    }
+  }
+
+  // Panels first sidebar padding
+  .panel-col-first {
+    h2 {
+      font-family: $font-body;
+    }
+    .inside {
+      padding: 25px;
+      &:empty {
+        padding: 0;
+      }
+      margin: 0;
+      @include window_size(desktop){
+        padding: 1.5em 25px 2em 0;
+        margin: 0;
+        max-width: 225px;
+        float: right;
+        width: 225px;
+      }
+    }
+  }
+
+  .panel-col-top {
+    h2.pane-title { display: none;}
+    .inside { margin-bottom: 0;}
+  }
+
+  .field-collection-container { margin-bottom: 0;}
+
+  /***************************
+  *        Layout
+  ***************************/
+
+  $zen-grid-width: 100%;
+  $zen-column-count:  10!global;
+
+  .center-wrapper {
+    @include zen-grid-container();
+    width: 100%;
+    padding-left: 0;
+  }
+  .panel-col-first ,
+  .panel-col-last{
+    float: none;
+    margin: 0;
+    width: 100%;
+  }
+  
+  
+  
+
+  @include window_size(desktop){
+    .panel-col-first {
+      float: left;
+      width: -webkit-calc(50% - 230px);
+      width:   expression(50% - 230px);
+      width:    -moz-calc(50% - 230px);
+      width:      -o-calc(50% - 230px);
+      width:         calc(50% - 230px);
+      
+      /*@include zen-grid-item (3, 1);*/
+      .inside {
+       // padding: 0 1em 2em 0;
+      }
+    }
+
+    .panel-col-last {
+      float: left;
+      width: -webkit-calc(50% + 230px);
+      width:   expression(50% + 230px);
+      width:    -moz-calc(50% + 230px);
+      width:      -o-calc(50% + 230px);
+      width:         calc(50% + 230px);
+      /*@include zen-grid-item (7, 4);*/
+    }
+  }
+}
+
+.node-type-online-resource.section-content {
+   .panel-col-last {
+        .inside {
+          padding-top: 26px;
+        }
+    }
+}
+
+// LA-163 Adding bottom panel to 2-col panel layouts in resource and content pages.
+.section-resources,
+.section-content {
+  .panel-2col-stacked .panel-col-first,
+  .panel-2col-stacked .panel-col-last {
+    @include window_size(desktop) {
+      padding-bottom: 100px;
+    }
+  }
+}
+
+@media (max-width: 720px) {
+    .panel-2col-stacked {
+        .panel-col-last {
+            .inside {
+                padding-bottom:30px !important;
+            }
+        }
+    }
+}
+
+
+/*************************************************
+  @TODO Refactor code
+* Flexible panel */
+.panels-flexible-region-2-center {
+  width: 100%;
+  > .inside > .panel-pane:not(.pane-node-field-image) {
+
+  }
+
+}
+

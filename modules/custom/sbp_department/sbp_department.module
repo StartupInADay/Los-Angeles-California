@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the SBP Department feature.
+ */
+
+include_once 'sbp_department.features.inc';

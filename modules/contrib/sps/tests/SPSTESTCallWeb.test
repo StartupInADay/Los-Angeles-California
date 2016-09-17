@@ -1,0 +1,19 @@
+<?php
+
+class SPSTESTCallWebTest extends SPSBaseWebTest {
+  static function getInfo() {
+    return array(
+      'name' => 'sps_test_call Web Tests',
+      'description' => 'Test the sps_test_call and sps_test_call_set functions',
+      'group' => 'SPSInteractive',
+    );
+  }
+  public function testCToolsObjectCache_exists() {
+    sps_test_call_set("test", 'return "This is a Test";');
+    $this->drupalGet("sps_test_call/test");
+
+    $this->assertText("This is a Test");
+  }
+
+}
+

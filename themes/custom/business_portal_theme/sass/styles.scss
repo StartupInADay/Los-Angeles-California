@@ -1,0 +1,80 @@
+/**
+ * @file
+ * Styles are organized using the SMACSS technique. @see http://smacss.com/book/
+ *
+ * When you turn on CSS aggregation at admin/config/development/performance, all
+ * of these @include files will be combined into a single file.
+ */
+
+/* Import Sass mixins, variables, Compass modules, etc. */
+@import "init";
+
+/* HTML element (SMACSS base) rules */
+@import "base/typography";
+@import "base/mixins";
+@import "base/print";
+@import "base/normalize";
+@import "base/transitions";
+
+/* Layout rules */
+@import "layouts/responsive";
+@import "layouts/panels";
+
+/* Component (SMACSS module) rules */
+@import "components/misc";
+@import "components/content_styleguide";
+@import "components/header";
+@import "components/menu__main";
+@import "components/menu__main--mobile";
+@import "components/content";
+@import "components/footer";
+@import "components/footer--sponsors";
+@import "components/field";
+@import "components/slideshow";
+@import "components/button";
+@import "components/hero/hero";
+@import "components/hero/hero__half-width";
+@import "components/search";
+@import "components/landing_page--views";
+@import "components/bottom-region";
+
+/* Wizard */
+@import "components/wizard/wizard";
+@import "components/wizard/wizard_header";
+@import "components/wizard/wizard_start";
+@import "components/wizard/wizard_progress_bar";
+@import "components/wizard/wizard_bottom_nav";
+@import "components/wizard/wizard_tip";
+@import "components/wizard/wizard_address";
+@import "components/wizard/wizard_checklist";
+@import "components/wizard/wizard_footer";
+
+/* Nodes */
+@import "components/node__teaser";
+@import "components/landing-page--starter_kit";
+@import "components/starter-kit/bp_starter_kit";
+@import "components/detail_pages";
+@import "components/landing-page--home";
+@import "components/landing-page--service-center";
+@import "components/departments";
+@import "components/faq";
+
+/* Panels */
+@import "components/four_column_cta";
+@import "components/three_column_cta";
+@import "components/section_content";
+@import "components/left_sidebar";
+@import "components/general_content_widget";
+@import "components/pull_quote";
+@import "components/featured_resources";
+@import "components/la_calendar";
+
+/* Timeline*/
+@import "components/timeline/slick";
+@import "components/timeline/timeline";
+
+@import "base/print";
+
+/* SMACSS theme rules */
+/* @import "theme-A"; */
+/* @import "theme-B"; */

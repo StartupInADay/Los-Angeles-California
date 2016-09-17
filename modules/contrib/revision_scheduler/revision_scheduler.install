@@ -1,0 +1,113 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the revision_scheduler module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function revision_scheduler_schema() {
+  $schema['revision_scheduler'] = array(
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'The primary identifier for the scheduled operation.',
+      ),
+      'entity_type' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The entity type this scheduled operation is attached to.',
+      ),
+      'entity_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The entity ID this scheduled operation is attached to',
+      ),
+      'revision_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The entity revision ID this scheduled operation is attached to',
+      ),
+      'operation' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The machine name of the scheduled operation.',
+      ),
+      'time_scheduled' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The UNIX timestamp of when the scheduled revision operation should execute.',
+      ),
+      'time_queued' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Time when this scheduled revision operation was queued for processsing, 0 if not queued.',
+      ),
+      'time_executed' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The UNIX timestamp of when the scheduled revision operation was executed.',
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The {users}.uid of the account who scheduled this operation.',
+      ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'entity_ids' => array('entity_type', 'entity_id', 'revision_id'),
+      'timestamp' => array('time_scheduled', 'time_queued', 'time_executed'),
+    ),
+    'foreign keys' => array(
+      'users_uid' => array(
+        'table' => 'users',
+        'column' => array('uid' => 'uid'),
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function revision_scheduler_uninstall() {
+  variable_del('revision_scheduler_cron_time');
+}
+
+/**
+ * Add the {revision_scheduler}.uid column.
+ */
+function revision_scheduler_update_7100() {
+  if (!db_field_exists('revision_scheduler', 'uid')) {
+    $schema['fields']['uid'] = array(
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0,
+      'description' => 'The {users}.uid of the account who scheduled this operation.',
+    );
+    db_add_field('revision_scheduler', 'uid', $schema['fields']['uid']);
+  }
+}

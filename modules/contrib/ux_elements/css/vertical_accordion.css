@@ -1,0 +1,104 @@
+
+/* @group Pane header */
+
+.vertical-accordion .pane-header {
+  background: repeat scroll 0 0 #dfdfdf;
+  background:
+    -moz-linear-gradient(
+      -90deg,
+      #fcfcfc 0pt,
+      #e3e3e1 100%)
+      repeat scroll 0 0 #d8d8d8;
+  background:
+    -webkit-gradient(
+      linear,
+      left top,
+      left bottom,
+      color-stop(0.0, rgba(252, 252, 252, 1.0)),
+      color-stop(1.0, rgba(227, 227, 225, 1.0))
+    );
+  display: block;
+  filter: progid:DXImageTransform.Microsoft.gradient(
+    GradientType='0',
+    startColorstr=#fcfcfc, 
+    endColorstr=#e3e3e1);
+  font-size: 0.9231em;
+  line-height: 1;
+  margin-top: 0;
+  padding: 6px 3px 5px 11px;
+  text-transform: none;
+}
+
+.vertical-accordion .pane-header:hover {
+  background: repeat scroll 0 0 #d9d9d9;
+  background:
+    -moz-linear-gradient(
+      -90deg,
+      #f6f6f6 0pt,
+      #d6d6d4 100%)
+      repeat scroll 0 0 #d8d8d8;
+  background:
+    -webkit-gradient(
+      linear,
+      left top,
+      left bottom,
+      color-stop(0.0, rgba(246, 246, 246, 1.0)),
+      color-stop(1.0, rgba(214, 214, 212, 1.0))
+    );
+  filter: progid:DXImageTransform.Microsoft.gradient(
+    GradientType='0',
+    startColorstr=#f6f6f6, 
+    endColorstr=#d6d6d4);
+  text-decoration: none;
+}
+
+.vertical-accordion .pane-header ~ .pane-header {
+  border-top-width: 0;
+}
+
+.vertical-accordion .pane-header .ui-icon {
+  color: inherit;
+  display: none;
+  background: none;
+  /* CSS triangle */
+  border-bottom: none;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid;
+  height: 0;
+  left: 11px;
+  margin-top: 0;
+  top: 45%;
+  width: 0;
+}
+
+.vertical-accordion .pane-header.ui-state-active {
+  font-weight: normal;
+  padding-left: 24px;
+}
+
+.vertical-accordion .pane-header.ui-state-active .ui-icon {
+  display: block;
+}
+
+/* @end */
+
+/* @group Pane content */
+
+.vertical-accordion .ui-accordion-content {
+  margin: 0;
+  padding: 0 11px;
+  top: auto;
+}
+
+.vertical-accordion .ui-accordion-content > :first-child {
+  margin-top: 10px;
+  padding-top: 0;
+}
+
+.vertical-accordion .ui-accordion-content > :last-child {
+  margin-bottom: 10px;
+  padding-bottom: 0;
+}
+
+/* @end */

@@ -1,0 +1,156 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function taxonomy_entity_index_schema() {
+  $schema['taxonomy_entity_index'] = array(
+    'description' => 'Maintains denormalized information about entity/term relationships.',
+    'fields' => array(
+      'entity_type' => array(
+        'description' => 'The entity type this term is attached to.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'bundle' => array(
+        'description' => 'The entity bundle this term is attached to.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'entity_id' => array(
+        'description' => 'The entity ID this term is attached to.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'revision_id' => array(
+        'description' => 'The entity revision ID this term is attached to.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'field_name' => array(
+        'description' => 'The field name the term is attached to.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'delta' => array(
+        'description' => 'The delta order of the term in the field.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'tid' => array(
+        'description' => 'The term ID.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('entity_type', 'entity_id', 'revision_id', 'field_name', 'delta'),
+    'indexes' => array(
+      'field_instance' => array('field_name', 'entity_type', 'bundle'),
+      'tid' => array('tid'),
+    ),
+    'foreign keys' => array(
+      'term' => array(
+        'table' => 'taxonomy_term_data',
+        'columns' => array('tid' => 'tid'),
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Add the delta column to the {taxonomy_entity_index} table.
+ */
+function taxonomy_entity_index_update_7000() {
+  db_add_field('taxonomy_entity_index', 'delta', array(
+    'description' => 'The delta order of the term.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+}
+
+/**
+ * Shorten the entity_type field to 32 characters and add the field_name field.
+ */
+function taxonomy_entity_index_update_7001() {
+  // We will need to drop the primary key since we are changing one of its
+  // field lengths.
+  db_drop_primary_key('taxonomy_entity_index');
+
+  // Shorten the entity_type field to 32 chars.
+  db_change_field('taxonomy_entity_index', 'entity_type', 'entity_type', array(
+    'type' => 'varchar',
+    'length' => 32,
+    'not null' => TRUE,
+  ));
+
+  // Add the field_name field.
+  db_add_field('taxonomy_entity_index', 'field_name', array(
+    'description' => 'The field name the term is attached to.',
+    'type' => 'varchar',
+    'length' => 32,
+    'not null' => TRUE,
+    'default' => '',
+  ));
+
+  // Re-add the primary key.
+  db_add_primary_key('taxonomy_entity_index', array('entity_type', 'entity_id', 'revision_id', 'field_name', 'delta'));
+}
+
+/**
+ * Add the bundle field and an index on field name, entity type, and bundle.
+ */
+function taxonomy_entity_index_update_7002() {
+  // Add the bundle field.
+  db_add_field('taxonomy_entity_index', 'bundle', array(
+    'description' => 'The entity bundle this term is attached to.',
+    'type' => 'varchar',
+    'length' => 128,
+    'not null' => TRUE,
+    'default' => '',
+  ));
+
+  // Add the field_instance index.
+  db_add_index('taxonomy_entity_index', 'field_instance', array('field_name', 'entity_type', 'bundle'));
+}
+
+/**
+ * Add an index on tid.
+ */
+function taxonomy_entity_index_update_7003() {
+  db_add_index('taxonomy_entity_index', 'tid', array('tid'));
+}
+
+/**
+ * Change not null and add default value to revision_id field.
+ */
+function taxonomy_entity_index_update_7004() {
+  // Drop the primary key since we are changing one of its fields.
+  db_drop_primary_key('taxonomy_entity_index');
+
+  // Modify the schema of the revision_id field.
+  db_change_field('taxonomy_entity_index', 'revision_id', 'revision_id', array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+
+  // Re-add the primary key.
+  db_add_primary_key('taxonomy_entity_index', array('entity_type', 'entity_id', 'revision_id', 'field_name', 'delta'));
+}

@@ -1,0 +1,124 @@
+
+/* NAVIGATION MENU */
+.panel-2col-stacked {
+  .pane-menu-block-1 h2 {
+    display: none;
+  }
+  .menu-block-wrapper,
+  .pane-facetapi {
+    margin: 0;
+    padding: 0;
+
+    .menu a.active-trail {
+      color: $navy;
+      font-weight: 700;
+    }
+
+    }
+  ul.menu,
+  ul.facetapi-facetapi-links,
+  ul#terms-definitions-grouping {
+    padding: 0;
+
+    ul.menu {
+      padding-top: 30px;
+    }
+    .menu__item {
+      list-style: none;
+      font-size: 1.143em;
+      margin: 0 0 10px 0;
+      a {
+        color: $dark-blue;
+      }
+    }
+
+  }
+  .views-widget-filter-search_api_views_fulltext {
+    margin: 10px 0;
+  }
+
+  form#views-exposed-form-sbp-resource-incentives-panel-pane-1,
+  .pane-sbp-terms-definitions {
+    border-top: 1px solid $light-blue;
+    width: 100%;
+    margin-top: 2em;
+    padding-top: 0.8em;
+    @include window_size(tab-narrow-up) {
+      width: 100%;
+    }
+
+
+    a.facetapi__toggle {
+      @extend .panel__button;
+      border: 0px;
+      outline: none;
+      &:focus {
+        background: darken($yellow, 10%);
+      }
+    }
+  }
+
+}
+
+
+ /* SEARCH BAR */
+  .panel-2col-stacked
+  .form-item-search-api-views-fulltext input[type=text]{
+    padding: 0 10px 0 10px;
+    height: 32px;
+    outline: 0;
+    max-width:200px;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    border-radius: 4px;
+    border:none;
+  }
+
+  .views-widget-filter-search_api_views_fulltext label[for="edit-search-api-views-fulltext"],
+  #views-exposed-form-sbp-resource-incentives-panel-pane-1 .views-submit-button {
+    position:absolute;
+    left:-10000px;
+    top:auto;
+    width:1px;
+    height:1px;
+    overflow:hidden;
+  }
+
+  /* FILTERS */
+  .pane-facetapi h2.pane-title,
+  .pane-sbp-terms-definitions h2.pane-title
+  {
+    list-style: none;
+    color:$dark_blue;
+    font-size: 1em;
+    font-weight: 700;
+    margin:10px 0 5px 0;
+    text-transform: uppercase;
+    @include window_size(desktop) {
+      margin:20px 0 10px 0px;
+      padding: 0;
+    }
+  }
+  
+  .pane-sbp-terms-definitions h2.pane-title {
+    margin-bottom:14px;
+  }
+
+  ul.facetapi-facet-field-business-need li,
+  ul.facetapi-facet-field-business-ownership li,
+  ul.facetapi-facet-field-industry-tag li,
+  ul.facetapi-facet-field-resource-type li,
+  .pane-sbp-terms-definitions ul li {
+    list-style: none;
+    font-size: 0.929em;
+    margin:0 0 10px 0;
+    a { color:$dark_blue;}
+  }
+
+.pane-sbp-terms-definitions ul li {
+  font-size: 1.143em;
+}
+
+.pane-sbp-terms-definitions ul li {
+    .selected {font-weight: 700;}
+}

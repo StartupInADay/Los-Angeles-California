@@ -1,0 +1,41 @@
+<?php
+/**
+ * @file
+ * Code for the Terms & Definitions feature.
+ */
+
+include_once 'sbp_terms_definitions.features.inc';
+
+/**
+* Implements hook_block_info().
+*/
+function sbp_terms_definitions_block_info() {
+  $blocks = array();
+  $blocks['terms_definitions_grouping'] = array(
+    'info' => t('Terms & Definitions Grouping Filter'),
+  );
+  return $blocks;
+}
+/**
+* Implements hook_block_view().
+*/
+function sbp_terms_definitions_block_view($delta = '') {
+  $block = array();
+  switch ($delta) {
+    case 'terms_definitions_grouping':
+      $block['subject'] = 'Filter Terms';
+      $block['content'] = _terms_definitions_grouping_block();
+      break;
+  }
+  return $block;
+}
+function _terms_definitions_grouping_block() {
+  $output = '<ul id="terms-definitions-grouping">';
+  $vocabulary = taxonomy_vocabulary_machine_name_load('terms_definitions_grouping');
+  $groupings = taxonomy_get_tree($vocabulary->vid);
+  foreach($groupings as $group){
+    $output .= '<li id="terms-definitions-group-' . $group->tid . '">';
+    $output .= l($group->name, current_path(),array('query' => array( 'field_term_definitions_grouping_tid' => $group->tid)));
+  }
+  return $output;
+}

@@ -1,0 +1,115 @@
+<?php
+
+/**
+ * Implements hook_library().
+ */
+function quickedit_tab_library() {
+  $path = drupal_get_path('module', 'quickedit_tab');
+  $options = array(
+    'scope' => 'footer',
+    'defer' => TRUE,
+  );
+  $libraries['quickedit-tab'] = array(
+    'title' => 'Quick inline editing',
+    'version' => VERSION,
+    'css' => array(
+      $path . '/css/quickedit-tab.css',
+    ),
+    'js' => array(
+      $path . '/js/quickedit-tab.js' => $options,
+    ),
+    'dependencies' => array(
+      array('quickedit', 'quickedit'),
+      array('system', 'jquery'),
+      array('navbar', 'underscore'),
+      array('navbar', 'backbone'),
+      array('contextual', 'contextual-links'),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Implements hook_library_alter().
+ *
+ * Replaces Drupal's built in contextual link library with ours.
+ */
+function quickedit_tab_library_alter(&$libraries, $module) {
+  $path = drupal_get_path('module', 'quickedit_tab');
+  $options = array(
+    'scope' => 'footer',
+    'defer' => TRUE,
+  );
+  if ($module == 'contextual' && isset($libraries['contextual-links'])) {
+    $libraries['contextual-links']['js'] = array(
+      $path . '/js/contextual.js' => $options,
+    );
+  }
+}
+
+/**
+ * Implements hook_navbar().
+ */
+function quickedit_tab_navbar() {
+  // In-place editing permissions check.
+  if (!user_access('access in-place editing')) {
+    return;
+  }
+
+  // In-place editing is only supported on the front-end.
+  if (path_is_admin(current_path())) {
+    return;
+  }
+
+  // In-place editing should not register for non-admin node add/edit paths.
+  if (variable_get('node_admin_path') == 0 && $path = current_path()) {
+    if (fnmatch('node/*/edit', $path) || fnmatch('node/add/*', $path)) {
+      return;
+    }
+  }
+
+  // In-place editing is only supported for Workbench Moderation drafts.
+  if (module_exists('workbench_moderation')) {
+    $menu_object = menu_get_object();
+    if (isset($menu_object->nid) && isset($menu_object->workbench_moderation) && $path = current_path()) {
+      if (!fnmatch('node/*/draft', $path)) {
+        return;
+      }
+    }
+  }
+
+  $items['quickedit_tab_navbar'] = array(
+    '#type' => 'navbar_item',
+    'tab' => array(
+      'trigger' => array(
+        '#title' => t('Quick Edit'),
+        '#type' => 'link',
+        '#href' => '',
+        '#options' => array('attributes' => array('id' => 'quickedit-trigger-link')),
+        '#attached' => array('library' => array(array('quickedit_tab', 'quickedit-tab'))),
+        '#theme' => 'html_tag',
+        '#tag' => 'button',
+        '#value' => t('Quick Edit'),
+        '#attributes' => array(
+          'class' => array('navbar-icon', 'navbar-icon-quickedit'),
+          'id' => 'quickedit-trigger-link'
+        ),
+      ),
+    ),
+    '#wrapper_attributes' => array(
+      'id' => 'quickedit-navbar-tab',
+      'class' => array('navbar-tab-quickedit', 'element-invisible'),
+    ),
+    '#weight' => -999,
+    '#access' => user_access('access in-place editing'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_js_alter().
+ */
+function quickedit_tab_js_alter(&$javascript) {
+  unset($javascript['modules/contextual/contextual.js']);
+}
+

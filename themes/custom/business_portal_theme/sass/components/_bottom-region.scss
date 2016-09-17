@@ -1,0 +1,70 @@
+/**
+ *@file
+ *
+ * Styles for the bottom region containing the footer menu.
+*/
+
+.region--bottom {
+  background: $dark_blue;
+  color: $white;
+  padding: 26px 25px 19px;
+  @include clearfix;
+  .region--bottom--wrapper {
+    @include wrapper(100%);
+  }
+  
+  a {
+    color: $light-blue;
+    font-weight: bold;
+  }
+  
+  .region-bottom {
+    // footer menu links
+    ul {
+      margin: 0; padding: 0;
+      list-style: none;
+      li {
+        margin: 0 0 10px 0;
+        list-style: none;
+        a {
+          margin: 0;
+        }
+      }
+    }
+  }
+  
+  .footer__copyright {
+    margin: 30px 0 5px;
+  }
+  
+  @include window_size(tab-wide-up) {
+    
+  }
+  @include window_size(desktop) {
+    .region-bottom, .footer__copyright, .footer__credits {
+      width: auto;
+    }
+    .region-bottom, .footer__copyright {
+      float: left;
+    }
+    .footer__credits {
+      float: right;
+    }
+    
+    .region-bottom {
+      // footer menu links
+      ul {
+        li {
+          display: inline-block;
+          margin: 0 20px 0 0;
+          &:last-child {
+            margin: 0;
+          }
+        }
+      }
+    }
+    .footer__copyright {
+      margin: 0 0 0 50px;
+    }
+  }
+}

@@ -1,0 +1,188 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the Search API autocomplete module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function search_api_autocomplete_schema() {
+  $schema['search_api_autocomplete_search'] = array(
+    'description' => 'Stores autocomplete settings for searches on Search API indexes.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for a search.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'machine_name' => array(
+        'description' => 'A string identifier for a search.',
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'A human-readable name for the search.',
+        'type' => 'varchar',
+        'length' => 50,
+      ),
+      'index_id' => array(
+        'description' => 'The {search_api_index}.machine_name this search belongs to.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+      ),
+      'suggester_id' => array(
+        'description' => 'The plugin ID of the suggester this search should use.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'description' => 'The type of search, usually a module name.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+      ),
+      'enabled' => array(
+        'description' => 'A flag indicating whether autocompletion for this search is enabled.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'options' => array(
+        'description' => 'The options used to configure autocompletion for this search.',
+        'type' => 'text',
+        'serialize' => TRUE,
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => 'The exportable status of the entity.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0x01,
+        'size' => 'tiny',
+      ),
+      'module' => array(
+        'description' => 'The name of the providing module if the entity has been defined in code.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'machine_name' => array('machine_name'),
+    ),
+    'indexes' => array(
+      'enabled' => array('enabled'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function search_api_autocomplete_uninstall() {
+  variable_del('search_api_autocomplete_delay');
+  variable_del('search_api_autocomplete_scripts');
+}
+
+/**
+ * Update permissions to the new system with search-specific permissions.
+ */
+function search_api_autocomplete_update_7101() {
+  $roles = db_select('role_permission', 'r')
+    ->fields('r', array('rid'))
+    ->condition('permission', 'use search_api_autocomplete')
+    ->execute()
+    ->fetchCol();
+  $searches = db_select('search_api_autocomplete_search', 's')
+    ->fields('s', array('machine_name'))
+    ->execute()
+    ->fetchCol();
+  try {
+    $tx = db_transaction();
+
+    db_delete('role_permission')
+      ->condition('permission', 'use search_api_autocomplete')
+      ->execute();
+    if ($roles && $searches) {
+      $insert = db_insert('role_permission')
+        ->fields(array('rid', 'permission', 'module'));
+      foreach ($roles as $rid) {
+        foreach ($searches as $id) {
+          $insert->values(array(
+            'rid' => $rid,
+            'permission' => 'use search_api_autocomplete for ' . $id,
+            'module' => 'search_api_autocomplete',
+          ));
+        }
+      }
+      $insert->execute();
+    }
+  }
+  catch (PDOException $e) {
+    $tx->rollback();
+    throw new DrupalUpdateException(t('A database error occurred during update: @msg', array('@msg' => $e->getMessage())));
+  }
+}
+
+/**
+ * Convert settings for search pages to use machine names instead of IDs.
+ */
+function search_api_autocomplete_update_7102() {
+  if (!db_table_exists('search_api_page')) {
+    return;
+  }
+
+  $tx = db_transaction();
+
+  try {
+    $pages = db_query('SELECT * FROM {search_api_page}')->fetchAllAssoc('id');
+    $searches = db_query('SELECT * FROM {search_api_autocomplete_search} WHERE type = :type', array(':type' => 'search_api_page'));
+    foreach ($searches as $search) {
+      $page_id = (int) substr($search->machine_name, 16);
+      if (isset($pages[$page_id])) {
+        $machine_name = 'search_api_page_' . $pages[$page_id]->machine_name;
+        $options = unserialize($search->options);
+        $options['custom']['page_id'] = $pages[$page_id]->machine_name;
+        db_update('search_api_autocomplete_search')
+          ->fields(array(
+            'machine_name' => $machine_name,
+            'options' => serialize($options),
+          ))
+          ->condition('id', $search->id)
+          ->execute();
+      }
+    }
+  }
+  catch (PDOException $e) {
+    $tx->rollback();
+    throw new DrupalUpdateException(t('A database error occurred during update: @msg', array('@msg' => $e->getMessage())));
+  }
+}
+
+/**
+ * Add the {search_api_autocomplete_search}.suggester_id column.
+ */
+function search_api_autocomplete_update_7103() {
+  // Set "server" as the suggester for all existing searches, then remove the
+  // default again from the schema.
+  $spec = array(
+    'description' => 'The plugin ID of the suggester this search should use.',
+    'type' => 'varchar',
+    'length' => 50,
+    'not null' => TRUE,
+    'default' => 'server',
+  );
+  db_add_field('search_api_autocomplete_search', 'suggester_id', $spec);
+  unset($spec['default']);
+  db_change_field('search_api_autocomplete_search', 'suggester_id', 'suggester_id', $spec);
+}

@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * Implements hook_hook_info().
+ */
+function personalize_uuid_entity_info_alter(&$info) {
+   foreach (personalize_uuid_entities() as $entity_type => $entity_info) {
+    $info[$entity_type]['uuid'] = TRUE;
+    $info[$entity_type]['entity keys']['uuid'] = $entity_info['uuid'];
+   }
+}
+
+/**
+ * Helper function that returns entity info for all personalize entities for
+ * adding UUID support.
+ */
+function personalize_uuid_entities() {
+  return array(
+    'personalize_agent' => array(
+      'base table' => 'personalize_agent',
+      'uuid' => 'uuid',
+    ),
+    'personalize_option_set' => array(
+      'base table' => 'personalize_option_sets',
+      'uuid' => 'uuid',
+    ),
+    'personalize_campaign_goal' => array(
+      'base table' => 'personalize_campaign_goals',
+      'uuid' => 'uuid',
+    ),
+  );
+}

@@ -1,0 +1,13 @@
+/**
+ * @file
+ * visitor_actions_ui.launcher.theme.css
+ */
+
+#messages .visitor-actions-ui {
+  background-color: lightyellow;
+  border-color: yellowgreen;
+}
+[href*="admin/structure/visitor_actions"] + .menu {
+  margin: 0;
+  padding: 0;
+}

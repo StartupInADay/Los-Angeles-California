@@ -1,0 +1,12 @@
+name = Quick Edit test
+description = 'Support module for the Quick Edit module tests.'
+package = Spark
+core = 7.x
+hidden = TRUE
+
+; Information added by Drupal.org packaging script on 2015-10-21
+version = "7.x-1.4"
+core = "7.x"
+project = "quickedit"
+datestamp = "1445408341"
+

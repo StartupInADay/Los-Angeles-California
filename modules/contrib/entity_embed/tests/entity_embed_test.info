@@ -1,0 +1,15 @@
+name = Entity Embed Test
+description = Support module for Entity Embed tests.
+package = Testing
+core = 7.x
+
+dependencies[] = entity_embed
+
+hidden = TRUE
+
+
+; Information added by drush on 2016-02-18
+version = ""
+project = "entity_embed"
+datestamp = "1455828873"
+

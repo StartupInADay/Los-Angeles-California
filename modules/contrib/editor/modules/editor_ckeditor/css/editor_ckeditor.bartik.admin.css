@@ -1,0 +1,11 @@
+/**
+ * The .bartik.admin.css file is intended to contain styles that override
+ * declarations in the Bartik theme.
+ */
+.region-content .ckeditor-toolbar-configuration ul {
+  margin: 0;
+  padding: 0;
+}
+.page-admin #content .ckeditor-toolbar-configuration img {
+  margin: 0;
+}

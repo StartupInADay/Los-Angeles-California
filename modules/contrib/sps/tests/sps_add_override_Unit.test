@@ -1,0 +1,25 @@
+<?php
+class sps_add_override_UnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'sos_add_override Unit Tests',
+      'description' => 'Test the public function sps_add_override',
+      'group' => 'SPS',
+    );
+  }
+  function test_sps_add_override() {
+    $manager = new \Drupal\sps\Test\Manager();
+    $message = array( '#markup' => 'This is the message');
+    $entity_id = 5;
+    $entity_type = 'node';
+    $overrides = array("property1" => TRUE, "property2" => 6);
+    sps_add_override($message, $entity_id, $entity_type, $overrides, $manager);
+
+    $state = $manager->getSiteState();
+    $this->assertEqual(
+      $manager->getSiteState()->getCondition()->getOverride()->getOverrides(),
+      array(array("id" => $entity_id, "type" => $entity_type)+$overrides),
+      "sps_add_override, should create a new site state with the proper override in place"
+    );
+  }
+}

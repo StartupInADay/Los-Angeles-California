@@ -1,0 +1,13 @@
+name = "Dialog module tests"
+description = "Support module for dialog related testing."
+package = Testing
+version = VERSION
+core = 7.x
+hidden = TRUE
+
+; Information added by Drupal.org packaging script on 2016-01-04
+version = "7.x-2.0-alpha8"
+core = "7.x"
+project = "dialog"
+datestamp = "1451879739"
+

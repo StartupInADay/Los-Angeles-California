@@ -1,0 +1,113 @@
+<?php
+
+/**
+ * @file
+ * Provides dialog integration for comment.module.
+ */
+
+/**
+ * Implement hook_node_view().
+ */
+function dialog_comment_node_view($node, $view_mode, $langcode) {
+  // Attach the library for handling the dialog in the response.
+  $node->content['#attached']['library'][] = array('system', 'drupal.ajax');
+}
+
+/**
+ * Implement hook_comment_view().
+ */
+function dialog_comment_comment_view($comment, $view_mode, $langcode) {
+  // Attach the library for handling the dialog in the response.
+  $comment->content['#attached']['library'][] = array('system', 'drupal.ajax');
+
+  // Modify the comment links.
+  $links = isset($comment->content['links']['comment']['#links']) ? $comment->content['links']['comment']['#links'] : array();
+  if (isset($links['comment-delete'])) {
+    // Use a dialog for deleting comments.
+    $links['comment-delete']['attributes']['class'][] = 'use-ajax';
+    $links['comment-delete']['attributes']['data-dialog'] = 'true';
+    $links['comment-delete']['attributes']['data-dialog-options'] = '{"width":"50%"}';
+  }
+
+  // Set the links back in their place.
+  if (isset($comment->content['links']['comment']['#links'])) {
+    $comment->content['links']['comment']['#links'] = $links;
+  }
+}
+
+/**
+ * Implement hook_form_FORM_ID_alter().
+ */
+function dialog_comment_form_comment_confirm_delete_alter(&$form, &$form_state, $form_id) {
+  // Create a plain-text version of the page title since jQuery UI Dialog does
+  // not support HTML in dialog titles.
+  $comment = $form['#comment'];
+
+  $question = t('Are you sure you want to delete the comment @title?', array('@title' => $comment->subject));
+  drupal_set_title($question, PASS_THROUGH);
+
+  // Make the 'Delete' button the primary action.
+  $form['actions']['submit']['#attributes']['class'][] = 'button--primary';
+
+  // Remove the 'Cancel' link.
+  $form['actions']['cancel']['#access'] = FALSE;
+}
+
+/**
+ * Implement hook_theme_registry_alter().
+ */
+function dialog_comment_theme_registry_alter(&$theme_registry) {
+  // Replace the 'comment_post_forbidden' theme function with one that displays
+  // authentication forms using dialogs.
+  if (!empty($theme_registry['comment_post_forbidden'])) {
+    $theme_registry['comment_post_forbidden']['theme path'] = drupal_get_path('module', 'dialog_comment');
+    $theme_registry['comment_post_forbidden']['function'] = 'dialog_comment_comment_post_forbidden';
+  }
+}
+
+/**
+ * Returns HTML for a "you can't post comments" notice.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - node: The comment node.
+ *
+ * @ingroup themeable
+ */
+function dialog_comment_comment_post_forbidden($variables) {
+  $node = $variables['node'];
+  global $user;
+
+  // Since this is expensive to compute, we cache it so that a page with many
+  // comments only has to query the database once for all the links.
+  $authenticated_post_comments = &drupal_static(__FUNCTION__, NULL);
+
+  if (!$user->uid) {
+    if (!isset($authenticated_post_comments)) {
+      // We only output a link if we are certain that users will get permission
+      // to post comments by logging in.
+      $comment_roles = user_roles(TRUE, 'post comments');
+      $authenticated_post_comments = isset($comment_roles[DRUPAL_AUTHENTICATED_RID]);
+    }
+
+    if ($authenticated_post_comments) {
+      // We cannot use drupal_get_destination() because these links
+      // sometimes appear on /node and taxonomy listing pages.
+      if (variable_get('comment_form_location_' . $node->type, COMMENT_FORM_BELOW) == COMMENT_FORM_SEPARATE_PAGE) {
+        $destination = array('destination' => "comment/reply/$node->nid#comment-form");
+      }
+      else {
+        $destination = array('destination' => "node/$node->nid#comment-form");
+      }
+
+      if (variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL)) {
+        // Users can register themselves.
+        return t('<a href="@login" class="use-ajax" data-dialog="true" data-dialog-options=\'{"width":"50%"}\'>Log in</a> or <a href="@register" class="use-ajax" data-dialog="true" data-dialog-options=\'{"width":"50%"}\'>register</a> to post comments', array('@login' => url('user/login', array('query' => $destination)), '@register' => url('user/register', array('query' => $destination))));
+      }
+      else {
+        // Only admins can add new users, no public registration.
+        return t('<a href="@login" class="use-ajax" data-dialog="true" data-dialog-options=\'{"width":"50%"}\'>Log in</a> to post comments', array('@login' => url('user/login', array('query' => $destination))));
+      }
+    }
+  }
+}

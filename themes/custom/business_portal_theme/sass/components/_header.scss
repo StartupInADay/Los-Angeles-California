@@ -1,0 +1,274 @@
+/**
+ * @file
+ * SMACSS Modules
+ *
+ * header component.
+ *
+ */
+
+#header {
+  color: $white;
+  padding: 0;
+  background: rgba(0,0,0,.25);
+  a {
+    color: $white;
+  }
+  height: 47px;
+  @include window_size(desktop){
+    height: 55px;
+    width: 100%;
+  }
+  position:fixed;
+  top:47px;
+  z-index:5;
+  width: auto;
+  width: -webkit-calc(100% - 38px);
+  width:   expression(100% - 38px);
+  width:    -moz-calc(100% - 38px);
+  width:      -o-calc(100% - 38px);
+  width:         calc(100% - 38px);
+}
+
+.header--wrapper {
+  @include wrapper(100%);
+  max-width: 960px;
+  padding: 0 15px 0 25px;
+  box-sizing: border-box;
+  @include window_size(desktop) {
+    @include wrapper(100%);
+    padding: 0;
+  }
+}
+
+/* Wrapping link for logo. */
+.header__logo {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 0;
+  float: left;
+  width: 171px;
+  height: 32px;
+  margin: 0;
+  @include window_size(desktop){
+    width: 213px;
+    height: 39px;
+    margin: 2px 0 0 0;
+  }
+}
+
+// Logo.
+.front #header a.header__logo.icon-egg {
+  color: $egg_blue;
+}
+
+/* Logo image. */
+.header__logo-image {
+  vertical-align: middle;
+}
+
+/* Wrapper for website name and slogan. */
+.header__name-and-slogan {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 0 0 0 20px;
+  display: none;
+}
+
+/* The name of the website. */
+.header__site-name {
+  margin: 0; //  @include adjust-font-size-to( $h1-font-size * 1.22);
+  font-size: 12px;
+}
+
+/* The link around the name of the website. */
+.header__site-link {
+  &:link,
+  &:visited {
+    color: #000;
+    text-decoration: none;
+  }
+  &:focus,
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* The slogan (or tagline) of a website. */
+.header__site-slogan {
+  margin: 0;
+}
+
+/* The secondary menu (login, etc.) */
+.header__secondary-menu {
+  float: right;
+}
+
+/* Wrapper for any blocks placed in the header region. */
+.header__region {
+  /* Clear the logo. */
+  //  clear: both;
+  position: relative;
+}
+
+.block__title {
+  display: none;
+}
+
+/* Special styles to line header elements up in the resources section */
+@media (min-width: 960px) {
+/*  body.section-resources,
+  body.section-content {
+    #header {
+      .header--wrapper {
+        width: auto;
+        margin: 0;
+        max-width: none;
+      }
+      
+      .logo--wrapper {
+        float: left;
+        width: -webkit-calc(50% - 230px);
+        width:   expression(50% - 230px);
+        width:    -moz-calc(50% - 230px);
+        width:      -o-calc(50% - 230px);
+        width:         calc(50% - 230px);
+        padding: 8px 43px 7px 0;
+        
+        box-sizing: border-box;
+        text-align: right;
+      }
+      .header__logo {
+        float: right;
+        .header__logo-image {
+          height: 38px;
+          width: auto;
+        }
+      }
+      .header__region {
+        width: 70%;
+        margin-left: 30%;
+        max-width: 710px;
+        float: left;
+        width: -webkit-calc(50% + 230px);
+        width:   expression(50% + 230px);
+        width:    -moz-calc(50% + 230px);
+        width:      -o-calc(50% + 230px);
+        width:         calc(50% + 230px);
+        
+        
+      }
+      .menu {
+        margin-left: 28px;
+      }
+    }
+  }*/
+}
+
+
+#block-sbp-search-sbp-search-icon, 
+#block-sbp-translation-sbp-translation-icon {
+  display: inline-block;
+  position: absolute;
+  top: 8px;
+  cursor: pointer;
+}
+#block-sbp-translation-sbp-translation-icon {
+  right: 0;
+  width: 31px;
+  height: 28px;
+  &.active {
+    background: url(../images/icon-google-translate-blue.png);
+    background-size: 31px 28px;
+    img {
+      visibility: hidden;
+    }
+  }
+}
+#block-sbp-search-sbp-search-icon {
+  right: 50px;
+  width: 25px;
+  height: 25px;
+  &.active {
+    background: url(../images/icon-search-blue.png);
+    background-size: 25px 25px;
+    img {
+      visibility: hidden;
+    }
+  }
+}
+
+#block-sbp-translation-sbp-translation-form,
+#block-sbp-search-sbp-search-form {
+  display: none;
+  position: absolute;
+  margin: 0; padding: 0;
+  top: 49px; right: 0;
+  background: #fff;
+  padding: 0;
+  border-bottom: 1px solid #b2b2b2;
+}
+#block-sbp-search-sbp-search-form {
+  width: 100%;
+  max-width: 720px;
+  .sbp-search-intro-text {
+    display: block;
+    position: absolute;
+    top: 0; left: 0;
+    bottom: 0; right: 0;
+    padding: 14px 24px 13px;
+    box-sizing: border-box;
+    font-size: 16px;
+    line-height: 28px;
+    color: #9b9b9b;
+  }
+  .form-item-search {
+    margin: 0;
+  }
+  #edit-search {
+    background: transparent;
+    margin: 0; 
+    padding: 14px 24px 13px;
+    line-height: 28px;
+    border: none;
+    width: 100%;
+    outline: none;
+  }
+}
+
+#block-sbp-translation-sbp-translation-form {
+  width: 562px;
+  max-width: 562px;
+  padding: 14px 24px 13px;
+}
+
+@media (min-width: 0px) and (max-width: 960px) {
+  #block-sbp-search-sbp-search-icon, 
+  #block-sbp-translation-sbp-translation-icon {
+    top: 5px;
+  }
+  #block-sbp-search-sbp-search-icon {
+    right: 45px;
+  }
+
+  #block-sbp-translation-sbp-translation-form,
+  #block-sbp-search-sbp-search-form {
+    position: fixed;
+    top: 94px; left: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  #block-sbp-translation-sbp-translation-form {
+    padding: 14px 24px 13px;
+  }
+}
+
+@media (min-width: 0px) and (max-width: 960px) {
+  #header.dark-blue-bg {
+    background-color: #2e79a3;
+  }
+  #header.dark-blue-background,
+  .meanmenu-reveal.dark-blue-background {
+    background-color: #2e79a3 !important;
+  }
+}

@@ -1,0 +1,69 @@
+<?php
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function form_builder_uninstall() {
+  $result = db_query("SELECT name FROM {variable} WHERE name LIKE 'form_builder_%'");
+  foreach ($result as $row) {
+    variable_del($row->name);
+  }
+}
+
+/**
+ * Implementation of hook_requirements().
+ */
+function form_builder_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+  if ($phase == 'runtime') {
+    $form_builder_types = module_invoke_all('form_builder_form_types');
+    if (empty($form_builder_types)) {
+      $requirements['form_builder_types']['title'] = $t('Form builder');
+      $requirements['form_builder_types']['severity'] = REQUIREMENT_ERROR;
+      $requirements['form_builder_types']['value'] = $t('No dependent modules found.');
+      $requirements['form_builder_types']['description'] = t('Form builder module is installed but no modules implement support for it. You may want to disable Form builder module until it is needed.');
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Change the {form_builder_cache} table to use a 'longblob' data column.
+ */
+function form_builder_update_7000() {
+  $spec = array(
+    'type' => 'blob',
+    'not null' => FALSE,
+    'size' => 'big',
+  );
+  db_change_field('form_builder_cache', 'data', 'data', $spec);
+}
+
+/**
+ * Change the {form_builder_cache} table to use a longer form_id column.
+ */
+function form_builder_update_7001() {
+  $spec = array(
+    'type' => 'varchar',
+    'length' => '128',
+    'not null' => FALSE,
+  );
+  db_change_field('form_builder_cache', 'form_id', 'form_id', $spec);
+}
+
+/**
+ * Migrate to ctools_object_cache.
+ */
+function form_builder_update_7002() {
+  module_enable(array('ctools'));
+  $sql = <<<SQL
+INSERT INTO {ctools_object_cache}
+  (sid, name, obj, updated, data)
+SELECT sid, 'form_builder_cache', CONCAT(type, ':', form_id), updated, data
+  FROM {form_builder_cache}
+SQL;
+  db_query($sql);
+  db_drop_table('form_builder_cache');
+}

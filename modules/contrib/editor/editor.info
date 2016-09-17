@@ -1,0 +1,22 @@
+name = Editor
+description = Allows rich text fields to be edited using WYSIWYG client-side editors.
+package = User interface
+core = 7.x
+
+dependencies[] = dialog
+dependencies[] = filter
+
+test_dependencies[] = media
+test_dependencies[] = quickedit
+test_dependencies[] = uuid
+
+files[] = editor.test
+
+configure = admin/config/content/formats
+
+; Information added by Drupal.org packaging script on 2016-01-04
+version = "7.x-1.0-alpha6"
+core = "7.x"
+project = "editor"
+datestamp = "1451879342"
+

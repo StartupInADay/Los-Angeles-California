@@ -1,0 +1,81 @@
+body.node-type-sbp-landing-page {
+  .pane-bundle-three-column-cta {
+    &:first-child {
+      padding-top: 0;
+    }
+    &:last-child {
+      padding-bottom: 50px;
+    }
+    @include window_size(tab-wide-up) {
+      padding-top: 50px;
+    }
+  }
+  
+  .three-col-wrapper {
+    padding-top: 0; 
+    padding-bottom: 0;
+    .panel__section {
+      .panel__icon {
+        display: none;
+        float: none !important;
+        max-width: 220px !important;
+        margin-bottom: 20px;
+        img {
+          width: 100% !important;
+          height: auto !important;
+        }
+      }
+      
+      .panel__header,
+      .panel__icon_header {
+        margin:0 0 10px;
+        font-size:1.714em;
+        width: 80%;
+      }
+
+      .panel__header-line, .panel__header-line_thin {
+        display: none;
+      }
+      
+      .panel__paragraph {
+        width: 80%;
+        font-size: 1.071em;
+        line-height: 1.33;
+        color: rgba(0, 0, 0, 0.6);
+        margin-bottom: 20px;
+      }
+      
+      .panel__button {
+        font-size: 18px;
+        color:$light-blue;
+        font-weight: 700;
+        padding: 0;
+        background-color: transparent;
+        background-image: url("../images/subsections/calendar-next.svg");
+        background-repeat: no-repeat;
+        background-size: 11px 18px;
+        background-position: right center;
+        text-decoration: none !important;
+        line-height: 24px;
+        display: inline-block;
+        margin: 0;
+        padding-right: 17px;
+        width: auto;
+      }
+      
+      @include window_size(tab-wide-up){
+        .panel__icon {
+          display: block;
+        }
+        .panel__header,
+        .panel__icon_header {
+          max-width: 240px;
+        }
+        .panel__paragraph {
+          font-size: 1.285em;
+          max-width: 240px;
+        }
+      }
+    }
+  }
+}

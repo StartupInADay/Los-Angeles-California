@@ -1,0 +1,9 @@
+/* Indicates that a field is personalized */
+.personalize-fields-personalized.field-type-image .fieldset-legend:after,
+.personalize-fields-personalized.field-type-text .personalize-fields-expanded > .form-item > label:after {
+  content: 'Personalized';
+  color: #2fa6e5;
+  margin-left: .7em; /* LTR */
+  font-weight: bold;
+  text-transform: capitalize;
+}

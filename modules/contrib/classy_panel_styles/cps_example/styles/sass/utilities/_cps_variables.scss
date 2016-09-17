@@ -1,0 +1,24 @@
+///////////////////////////////
+// BREAKPOINTS derived from Brevis Compass Extension
+
+///////////////////////////////
+// CPS SPACING
+// Padding
+$spacing: 15px;
+$spacing-double: $spacing * 2;
+$spacing-triple: $spacing * 3;
+// Margins
+$sg-spacing: 20px;
+
+
+///////////////////////////////
+// COLORS  - palette derived from Brevis, should be replaced!
+$colors: (
+  one:         $brand-color,
+  two:         $complement-color,
+  three:       $secondary-color,
+  four:        $tertiary-color,
+  five:        $quaternary-color,
+  "white":     #fff,
+  "black":     #000,
+);

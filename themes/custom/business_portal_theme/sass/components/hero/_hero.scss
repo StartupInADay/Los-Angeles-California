@@ -1,0 +1,101 @@
+/*****************************
+*     General Styles
+******************************/
+
+.pane__hero {
+}
+
+.hero__image--bg {
+  background-size: cover;
+  background-position: 60%;
+}
+
+
+.hero__image--bg,
+.hero__image--overlay {
+  @include window_size(desktop){
+    min-height: 400px;
+  }
+
+}
+
+
+
+.hero__headline,
+.hero__headline--half,
+.hero__headline--half--mobile {
+  font-family: $heading-font;
+  font-weight: bold;
+  color:#fff;
+}
+
+hr.hero__line,
+hr.hero__line--half {
+  @include hr-thick;
+  margin: 2em 0 0;
+}
+
+.hero__business__name {
+  color: #fff;
+  font-size: 1em;
+  margin-bottom: 0;
+  font-weight: bold;
+}
+
+.hero__business__description {
+  color: #fff;
+  font-size: 1em;
+  font-weight: 400;
+  /*max-width: 550px;*/
+}
+
+.hero__bottom_align--bn{
+  @include window_size(desktop){
+    margin-bottom: 2em;
+  }
+}
+
+
+.hero__layout--full {
+  .hero__image--overlay {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+}
+
+/*****************************
+*     Full Width
+******************************/
+
+.hero__layout--full {
+  .hero__content-wrapper {
+/*    @include wrapper(90%);*/
+    padding: 0 25px;
+    max-width: $max-site-width;
+    margin: auto;
+    @include window_size(desktop) {
+      /*@include wrapper(80%);*/
+      padding: 0;
+    }
+  }
+  .hero__headline {
+    font-size: 2em;
+    padding: 250px 0 0;
+    @include window_size(desktop) {
+      font-size: 4em;
+      padding: 240px 0 0;
+    }
+  }
+  .hero__bottom_align--bn {
+    margin: 3em 0 0;
+    padding-bottom: 2em;
+    @include window_size(desktop) {
+      margin: 5em 0 0;
+      padding-bottom: 1.5em;
+    }
+  }
+}
+
+
+
+
+

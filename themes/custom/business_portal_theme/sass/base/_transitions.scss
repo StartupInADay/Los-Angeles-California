@@ -1,0 +1,27 @@
+
+.page {
+  //position: fixed;
+  //top: 105px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 100%;
+  transition-duration: 0.00000001s;
+  transform: none;
+  -moz-transform: none;
+  -webkit-transform: none;
+  //transform: translate3D(100%,0,0); /* X value must be same as Nav width */
+  //-moz-transform: translate3D(100%,0,0); /* X value must be same as Nav width */
+  //-webkit-transform: translate3D(100%,0,0); /* X value must be same as Nav width */
+}
+
+.page.is-visible {
+  transform: translate3D(0,0,0); /* X value must be same as Nav width */
+  -moz-transform: translate3D(0,0,0); /* X value must be same as Nav width */
+  -webkit-transform: translate3D(0,0,0); /* X value must be same as Nav width */
+}
+
+/* .home-change { */
+/*   color: white; */
+/*   background: #F2CF66; */
+/* } */

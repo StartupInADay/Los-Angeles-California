@@ -1,0 +1,21 @@
+<?php
+abstract class IIBBaseUnitTest extends DrupalUnitTestCase {
+  public function setUp() {
+    parent::setUp();
+    $this->enableModule('iib_test');
+    drupal_load('module', 'iib');
+    drupal_load('module', 'iib_test');
+  }
+
+  /**
+   * Fake enables a module for the purpose of a unit test
+   *
+   * @param $name
+   *  The module's machine name (i.e. ctools not Chaos Tools)
+   */
+  protected function enableModule($name) {
+    $modules = module_list();
+    $modules[$name] = $name;
+    module_list(TRUE, FALSE, FALSE, $modules);
+  }
+}

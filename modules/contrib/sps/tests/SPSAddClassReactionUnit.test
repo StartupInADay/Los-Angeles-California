@@ -1,0 +1,29 @@
+<?php
+class SPSAddClassReactionUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS AddClass Reaction Unit Tests',
+      'description' => 'Test the public interface to the AddClass Reaction object',
+      'group' => 'SPS',
+    );
+  }
+
+  public function testTestReaction() {
+    $manager =  new \Drupal\sps\Test\Manager();
+    $reaction = new \Drupal\sps\Plugins\Reaction\AddClassReaction(array(), $manager);
+    $override_controller = new \Drupal\sps\Test\SimpleCacheOverrideController(array(), $manager);
+    $override_controller->set(array(array('id' => 1, 'type' => 'node')));
+
+    $this->assertEqual(
+      $reaction->react(array('id'=> 1, 'type' => 'node'), $override_controller),
+      'sps-overridden',
+      "::react if an override is found should retrun css class name"
+    );
+    $this->assertEqual(
+      $reaction->react(array('id'=> 12, 'type' => 'node'), $override_controller),
+      NULL,
+      "::react if an override is not found should retrun NULL"
+    );
+  }
+
+}

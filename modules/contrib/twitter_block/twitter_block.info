@@ -1,0 +1,9 @@
+name = Twitter Block
+description = "Provides configurable blocks for a Twitter feed."
+core = 7.x
+
+files[] = tests/twitter_block.test
+
+configure = admin/structure/block
+
+dependencies[] = block

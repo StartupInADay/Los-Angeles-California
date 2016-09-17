@@ -1,0 +1,19 @@
+<?php
+
+class SPSGetDefaultFunctionsWebTest extends SPSBaseWebTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS sps_get_default... functions Web Tests',
+      'description' => 'Test the sps function that get default version of objects',
+      'group' => 'SPSInteractive',
+    );
+  }
+
+  public function test_sps_get_default_config_controller() {
+    $prefix = SPS_CONFIG_PREFIX;
+    $control = sps_get_default_config_controller();
+    $controla = new \Drupal\sps\StorageController\DrupalVariableController($prefix);
+    $this->assertEqual($control, $controla, "test me");
+  }
+
+}

@@ -1,0 +1,120 @@
+<?php
+/**
+ * @file
+ * Code for the Business Portal Search feature.
+ */
+
+include_once 'sbp_search.features.inc';
+
+/**
+ * Implements hook_block_info().
+ */
+function sbp_search_block_info() {
+  $blocks = array();
+  $blocks['sbp_search_icon'] = array(
+    'info' => t('SBP Header Search Icon'),
+  );
+  $blocks['sbp_search_form'] = array(
+    'info' => t('SBP Header Search Form'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function sbp_search_block_configure($delta = '') {
+  $form = array();
+  switch ($delta) {
+    case 'sbp_search_form':
+      $form['sbp_search_intro_text'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Introductory search text'),
+        '#default_value' => variable_get('sbp_search_intro_text', ''),
+      );
+      break;
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function sbp_search_block_save($delta = '', $edit = array()) {
+  switch ($delta) {
+    case 'sbp_search_form':
+      variable_set('sbp_search_intro_text', $edit['sbp_search_intro_text']);
+      break;
+  }
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function sbp_search_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'sbp_search_icon':
+      $image = theme_image(array(
+        'path' => drupal_get_path('module', 'sbp_search') . '/images/icon-search.png',
+        'alt' => 'Search',
+        'attributes' => array('class'=>'sbp-search-icon'),
+      ));
+      $block['content'] = array(
+        'icon' => array(
+          '#type' => 'markup',
+          '#markup' => $image,
+        ),
+      );
+      break;
+    case 'sbp_search_form':
+      $block['content'] = drupal_get_form('sbp_search_box_form');
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Search form used in the search block.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function sbp_search_box_form($form, &$form_state) {
+  $form['message'] = array(
+    '#type' => 'markup',
+    '#markup' => '<span class="sbp-search-intro-text">'.variable_get('sbp_search_intro_text', '').'</span>',
+  );
+  $form['search'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'GO',
+    '#attributes' => array('class' => array('element-invisible')),
+  );
+  return $form;
+}
+
+/**
+ * Validation hook for search form.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function sbp_search_box_form_validate($form, &$form_state) {
+  return TRUE;
+}
+
+/**
+ * Submit hook for search form.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function sbp_search_box_form_submit($form, &$form_state) {
+  $options = array('query' => array('search' => urlencode($form_state['values']['search'])));
+  drupal_goto('/search/portal', $options);
+}

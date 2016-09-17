@@ -1,0 +1,158 @@
+* {
+  box-sizing: border-box;
+}
+
+.panels-ipe-dragbar-admin-title {
+  display: none;
+}
+
+#classy-panel-styles-pane-form .form-item,
+#panels-edit-style-settings-form .form-item {
+  margin-bottom: 2px;
+  width: 100%;
+  clear: both;
+}
+#classy-panel-styles-pane-form .form-item label,
+#panels-edit-style-settings-form .form-item label {
+  width: 20%;
+  float: left;
+  clear: both;
+  font-size: 15px;
+  text-align: right;
+  color: #007fbf;
+  padding: 0;
+  margin: 3px 2% 10px 0;
+  font-weight: bold;
+  line-height: 1.1;
+}
+#classy-panel-styles-pane-form input.form-autocomplete,
+#classy-panel-styles-pane-form input.form-text, #classy-panel-styles-pane-form input.form-file,
+#classy-panel-styles-pane-form textarea.form-textarea,
+#classy-panel-styles-pane-form select.form-select,
+#panels-edit-style-settings-form input.form-autocomplete,
+#panels-edit-style-settings-form input.form-text,
+#panels-edit-style-settings-form input.form-file,
+#panels-edit-style-settings-form textarea.form-textarea,
+#panels-edit-style-settings-form select.form-select {
+  padding: 5px 7px;
+  border: 1px solid #dddddd;
+  background: white;
+  color: #333333;
+  font-size: 14px;
+  margin: 0;
+  max-width: 75%;
+  clear: right;
+}
+#classy-panel-styles-pane-form .grippie,
+#panels-edit-style-settings-form .grippie {
+  max-width: 75%;
+  float: left;
+  margin-left: 22%;
+  width: 100%;
+  margin-bottom: 10px;
+}
+#classy-panel-styles-pane-form .description,
+#panels-edit-style-settings-form .description {
+  width: auto;
+  float: left;
+  clear: both;
+  text-align: left;
+  padding: 0;
+  margin: 1px 2% 10px 22%;
+  font-weight: bold;
+  line-height: 1.1;
+  width: 78%;
+}
+
+#panels-dnd-main .panel-region {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+#panels-dnd-main .panel-pane {
+  margin: 0;
+}
+
+.panels-ipe-display-container .panel-display div.panel-region .pane-add-link,
+body div.panel-region .pane-add-link {
+  margin: 0;
+}
+.panels-ipe-display-container .panel-display div.panel-region .pane-add-link a.ctools-dropdown-image-link,
+body div.panel-region .pane-add-link a.ctools-dropdown-image-link {
+  background: url("../images/gear.png");
+  background-size: contain;
+  width: 25px;
+  height: 25px;
+}
+.panels-ipe-display-container .panel-display .ctools-dropdown .ctools-dropdown-container ul,
+body .ctools-dropdown .ctools-dropdown-container ul {
+  line-height: 1.3;
+}
+.panels-ipe-display-container .panel-display .panel-region:after,
+.panels-ipe-display-container .panel-display .container-inner:after,
+.panels-ipe-display-container .panel-display .column-content-region:after,
+body .panel-region:after,
+body .container-inner:after,
+body .column-content-region:after {
+  content: ".";
+  font-size: 0;
+  clear: both;
+}
+.panels-ipe-display-container .panel-display .panel-display,
+body .panel-display {
+  padding-right: 1%;
+  overflow: hidden;
+  *zoom: 1;
+  overflow: visible;
+}
+.panels-ipe-display-container .panel-display .container-inner.grid-12,
+body .container-inner.grid-12 {
+  float: left;
+  width: 100%;
+}
+.panels-ipe-display-container .panel-display div.panel-region,
+body div.panel-region {
+  padding: 2px;
+  margin: 0;
+  border: white 2px dashed;
+  overflow: hidden;
+  *zoom: 1;
+  overflow: visible;
+  background: rgba(248, 248, 248, 0.4);
+  float: left;
+  width: 100%;
+  line-height: 0;
+}
+.panels-ipe-display-container .panel-display div.panel-region h2.label,
+body div.panel-region h2.label {
+  line-height: 1.5;
+  font-size: 1.3em;
+  color: black;
+}
+.panels-ipe-display-container .panel-display div.panel-region .panel-pane,
+body div.panel-region .panel-pane {
+  line-height: 1.2;
+}
+.panels-ipe-display-container .panel-display .panel-panel .panel-pane,
+body .panel-panel .panel-pane {
+  width: 100%;
+  display: inline-block;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+.panels-ipe-display-container .panel-display .panel-panel .panel-pane .pane-content,
+body .panel-panel .panel-pane .pane-content {
+  position: relative;
+}
+.panels-ipe-display-container .panel-display .panel-panel .panel-pane .pane-title:after,
+body .panel-panel .panel-pane .pane-title:after {
+  display: inline;
+}
+
+#page .panels-ipe-editing .panels-ipe-portlet-content {
+  margin: 0;
+}

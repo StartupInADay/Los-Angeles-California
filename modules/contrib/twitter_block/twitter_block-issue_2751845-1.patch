@@ -1,0 +1,58 @@
+diff --git a/twitter_block.install b/twitter_block.install
+index 9c96918..1983dd4 100644
+--- a/twitter_block.install
++++ b/twitter_block.install
+@@ -28,7 +28,7 @@ function twitter_block_schema() {
+       'widget_id' => array(
+         'type' => 'varchar',
+         'length' => 128,
+-        'not null' => TRUE,
++        'not null' => FALSE,
+         'default' => '',
+         'description' => 'Widget ID.',
+       ),
+diff --git a/twitter_block.module b/twitter_block.module
+index c7e349e..246cdc2 100644
+--- a/twitter_block.module
++++ b/twitter_block.module
+@@ -222,7 +222,7 @@ function twitter_block_custom_block_form($edit = array()) {
+     '#type' => 'textfield',
+     '#title' => t('Widget ID'),
+     '#default_value' => $edit['widget_id'],
+-    '#required' => TRUE,
++    '#required' => FALSE,
+     '#description' => t('Each Twitter Block block requires a unique widget ID which determines, among other things, the source (user timeline, favourites, list or search) of the tweets to display. You can view a list of your existing embedded timeline widgets (and their widget IDs) or create new embedded timeline widgets by visiting the <a href="@widgets_section">widgets section of your settings page</a> (make sure that you\'re logged in). You can determine a widget\'s ID by editing it and inspecting the URL (which should be in the form of twitter.com/settings/widgets/WIDGET_ID/edit) or by looking at the widget\'s embed code (look for data-widget-id="WIDGET_ID").', array('@widgets_section' => 'https://twitter.com/settings/widgets')),
+   );
+   $form['username'] = array(
+@@ -424,12 +424,16 @@ function twitter_block_block_view($delta) {
+     '#options' => array(
+       'attributes' => array(
+         'class' => array('twitter-timeline'),
+-        'data-widget-id' => $config['widget_id'],
+       ),
+       'html' => FALSE,
+     ),
+   );
+ 
++  if (!empty($config['widget_id'])) {
++    $block['content']['#options']['attributes']['data-widget-id'] = $config['widget_id'];
++  }
++
++
+   // Use a locally cached copy of widgets.js by default.
+   if (variable_get('twitter_block_cache', 0) && $url = twitter_block_cache()) {
+     $block['content']['#attached']['js'] = array(
+@@ -457,11 +461,11 @@ function twitter_block_block_view($delta) {
+   }
+ 
+   if (!empty($data['width'])) {
+-    $block['content']['#options']['attributes']['width'] = $data['width'];
++    $block['content']['#options']['attributes']['data-width'] = $data['width'];
+   }
+ 
+   if (!empty($data['height'])) {
+-    $block['content']['#options']['attributes']['height'] = $data['height'];
++    $block['content']['#options']['attributes']['data-height'] = $data['height'];
+   }
+ 
+   if (!empty($data['chrome'])) {

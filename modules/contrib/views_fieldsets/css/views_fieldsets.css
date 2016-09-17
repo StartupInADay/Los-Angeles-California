@@ -1,0 +1,25 @@
+
+/**
+ * @file
+ * CSS for indenting/highlighting fields in Views UI.
+ */
+
+.views-ui-display-tab-bucket > .views-display-setting.views-fieldset {
+  font-weight: bold;
+}
+.views-ui-display-tab-bucket > .views-display-setting.views-fieldset-depth-1 {
+  margin-left: 20px;
+  border-left: solid 1px black;
+}
+.views-ui-display-tab-bucket > .views-display-setting.views-fieldset-depth-2 {
+  margin-left: 40px;
+  border-left: solid 1px black;
+}
+.views-ui-display-tab-bucket > .views-display-setting.views-fieldset-depth-3 {
+  margin-left: 60px;
+  border-left: solid 1px black;
+}
+.views-ui-display-tab-bucket > .views-display-setting.views-fieldset-depth-4 {
+  margin-left: 80px;
+  border-left: solid 1px black;
+}

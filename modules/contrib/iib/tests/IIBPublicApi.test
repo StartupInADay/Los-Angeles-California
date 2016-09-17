@@ -1,0 +1,108 @@
+<?php
+class IIBPublicApiTest extends IIBBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'IIB Public Api Unit Tests',
+      'description' => 'Test that basic Api Functions work in IIB.',
+      'group' => 'IIB',
+    );
+  }
+
+  public function testBasicApi() {
+    $test = array(
+      'test' => array(
+        '#markup' => 'test'
+      )
+    );
+
+    iib_set_item($test);
+
+    $data = iib_get_page_data();
+    $this->assertEqual($data, $test, 'IIB should return an array only containing items it was passed.');
+  }
+
+  public function testMultipleItems() {
+    drupal_static_reset();
+    $test = array(
+      'test' => array(
+        '#markup' => 'test'
+      )
+    );
+    iib_set_item($test);
+    iib_set_item(array(
+      'another' => array(
+        '#markup' => 'another'
+      )
+    ));
+
+    $data = iib_get_page_data();
+    $this->assertEqual($data['test'], $test['test'], 'IIB should properly handle multiple items being passed to it.');
+    $data = iib_get_page_data();
+
+    $this->assertTrue(empty($data), 'IIB Should empty the item store once they have been displayed');
+  }
+
+  public function testHooks() {
+    drupal_static_reset();
+
+    if (!function_exists('sps_test_iib_page_item')) {
+      $items['sps_test_left'] = array(
+        '#weight' => -10,
+        '#prefix' => '<div>',
+        '#markup' => t('Hi this is the left side.'),
+        '#suffix' => '</div>',
+      );
+
+      function iib_test_iib_page_item() {
+        $items['sps_test_left'] = array(
+          '#weight' => -10,
+          '#prefix' => '<div>',
+          '#markup' => t('Hi this is the left side.'),
+          '#suffix' => '</div>',
+        );
+        return $items;
+      }
+
+      $data = iib_get_page_data();
+      $this->assertEqual($data['sps_test_left'], $items['sps_test_left'], 'IIB Should properly call hooks to get page data.');
+    }
+
+    if (!function_exists('sps_test_iib_entity_item')) {
+      $items['sps_test_entity'] = array(
+        '#weight' => -10,
+        '#prefix' => '<div>',
+        '#markup' => t('Hi this is the entity side.'),
+        '#suffix' => '</div>',
+      );
+
+      function iib_test_iib_entity_item() {
+        $items['sps_test_entity'] = array(
+          '#weight' => -10,
+          '#prefix' => '<div>',
+          '#markup' => t('Hi this is the entity side.'),
+          '#suffix' => '</div>',
+        );
+        return $items;
+      }
+
+      $node = new stdClass();
+      $node->nid = 1;
+      $node->status = 1;
+      $node->title = 'Here is the title';
+
+      $data = iib_get_entity_data($node, 'node', 'full');
+      $this->assertEqual($data['sps_test_entity'], $items['sps_test_entity'],
+        'IIB Should properly call hooks to get entity data.');
+
+      //Alters are statically cached and so we need to clear that out.
+      drupal_static_reset();
+      function iib_test_iib_entity_item_alter(&$items, $entity, $extra) {
+        $items['sps_test_entity']['#weight'] = 1;
+      }
+
+      $data = iib_get_entity_data($node, 'node', 'full');
+      $this->assertEqual($data['sps_test_entity']['#weight'], 1,
+        'IIB Should properly call alter hooks to get entity data.');
+    }
+  }
+}

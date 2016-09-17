@@ -1,0 +1,214 @@
+
+a#menu__hamburger {
+  text-indent: -10000px;
+  display: inline-block;
+}
+
+@media (min-width: 0px) and (max-width: 960px) {
+  nav.mean-nav {
+    height: auto;
+    background-color: #41ade8;
+    overflow: visible;
+    margin: 0;
+    position: fixed;
+    top: 47px;
+    width: 100%;
+    > .menu {
+      height: auto;
+      margin: 0 auto;
+      padding: 0;
+      padding-top: 47px;
+      display: block;
+      float: none;
+      > .menu__item {
+        background: transparent;
+        list-style-image: none;
+        list-style-type: none;
+        border-bottom: 1px solid #2e79a3;
+        padding-left: 26px;
+        position: relative;
+        // Add dropdown icon to menu items with nested links
+        &.is-expanded {
+          background: none;
+        }
+        &.last {
+          border-bottom-width: 0;
+        }
+        a.menu__link {
+          margin: 0;
+          line-height: 1.25;
+          display: block;
+          padding: 16px 0;
+          font-size: 16px;
+          /*margin-left: 26px;*/
+        }
+      }
+
+      // Styling nested links
+      .menu {
+        display: none;
+        padding-left: 0 !important;
+        .menu__item {
+          list-style: none;
+          a.menu__link {
+            color: $dark_blue;
+            padding: 0 0 15px;
+            font-weight: 400;
+            font-size: 14px;
+          }
+        }
+      }
+    }
+  }
+
+  /* ========================================================
+            MeanMenu 2.0.7 Jquery Mobile Menu styles
+  ===========================================================*/
+
+  /* hide the link until viewport size is reached */
+  a.meanmenu-reveal {
+    display: none;
+  }
+
+  .mean-container {
+    .mean-bar {
+      float: left;
+      width: 100%;
+      position: fixed;
+      padding: 4px 0;
+      height: 47px;
+      z-index: 4;
+    }
+
+    // Toggle Menu
+    a.meanmenu-reveal {
+      width: 38px; height: 47px;
+      /*padding: 13px 20px 12px 0;*/
+      position: absolute;
+      background-color: rgba(0,0,0,.25);
+      background-image: url(../images/icon_hamburger.png);
+      background-repeat: no-repeat;
+      background-position: right 19px center;
+      background-size: 18px 15px;
+      top: 0; right: 0;
+      cursor: pointer;
+      outline: none;
+      z-index: 5;
+      text-indent: -9999em;
+      color: transparent;
+      line-height: 0; font-size: 0;
+      display: block;
+      &.meanclose {
+        background-color: #2e79a3;
+        background-image: url(../images/icon_close.png);
+        background-size: 18px 18px;
+      }
+    }
+
+    // CSS Hamburger icon
+    a.meanmenu-reveal span {
+      display: none;
+      background: #fff;
+      height: 3px;
+      margin-top: 3px;
+    }
+
+    // Navigation block
+    .mean-nav {
+      float: left;
+      width: 100%;
+      margin-top: 47px;
+
+      ul {
+        padding: 0 25px;
+        margin: 0;
+        width: 100%;
+        list-style-type: none;
+        li {
+          position: relative;
+          float: left;
+          width: 100%;
+
+          a {
+            display: block;
+            float: left;
+            padding: 1em 0;
+            margin: 0;
+            text-align: left;
+            text-decoration: none;
+            color: #fff;
+
+            &.mean-expand {
+              width: 16px;
+              height: 16px;
+              padding: 0; margin: 0;
+              position: absolute;
+              left: 0; top: 16px;
+              z-index: 2;
+              font-weight: 700;
+              border: none !important;
+              background: url(../images/icon-arrow-right-small.svg) no-repeat center center;
+              background-size: 8px 16px;
+              text-indent: 9999px;
+              outline: none;
+            }
+
+            &.mean-expand.mean-clicked {
+              background-image: url(../images/icon-arrow-bottom-small.svg);
+              background-size: 16px 8px;
+            }
+          }
+          ul .mean-expand {
+            display: none !important;
+          }
+        }
+      }
+
+      .block {
+        margin-bottom: 0;
+      }
+    }
+  } //End mean-container
+
+
+  .mean-container .mean-nav ul li li a {
+    text-shadow: none !important;
+    visibility: visible;
+    color: #163d53;
+  }
+
+  .mean-container .mean-nav ul li.mean-last a {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+
+// Hide third-level menus
+  .mean-container .mean-nav ul ul ul {
+    display: none;
+  }
+
+  .mean-container .mean-push {
+    float: left;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    clear: both;
+  }
+
+  .mean-nav .wrapper {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Fix for box sizing on Foundation Framework etc. */
+  .mean-container .mean-bar, .mean-container .mean-bar * {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+  }
+
+  .mean-remove {
+    display: none !important;
+  }
+}

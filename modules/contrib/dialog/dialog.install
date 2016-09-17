@@ -1,0 +1,36 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the dialog module.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function dialog_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    // Check if the site is running >= jQuery 1.7.
+    if (($library = drupal_get_library('system', 'jquery')) && version_compare($library['version'], 1.7, '>=')) {
+      $requirements['dialog_jquery'] = array(
+        'title' => t('Dialog jQuery version'),
+        'value' => t('jQuery @version', array('@version' => $library['version'])),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $destination = drupal_get_destination();
+
+      $requirements['dialog_jquery'] = array(
+        'title' => t('Dialog jQuery version'),
+        'value' => t('jQuery @version', array('@version' => $library['version'])),
+        'description' => t('Dialog requires jQuery 1.7 or greater. Configure <a href="@jquery_update">jQuery Update</a>.', array('@jquery_update' => url('admin/config/development/jquery_update', array('query' => $destination)))),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+
+  return $requirements;
+}

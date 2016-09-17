@@ -1,0 +1,756 @@
+<?php
+
+/**
+ * @file
+ * Test integration for the entity_embed module.
+ */
+
+class EntityEmbedTestBase extends DrupalWebTestCase {
+  protected $profile = 'testing';
+
+  /**
+   * The test user.
+   */
+  protected $webUser;
+
+  /**
+   * A test node to be used for embedding.
+   */
+  protected $node;
+
+  function setUp() {
+    $modules = func_get_args();
+    if (isset($modules[0]) && is_array($modules[0])) {
+      $modules = $modules[0];
+    }
+    $modules[] = 'entity_embed';
+    $modules[] = 'node';
+    parent::setUp($modules);
+
+    // Create a page content type.
+    $this->drupalCreateContentType(array('type' => 'page', 'name' => 'Basic page'));
+
+    // Create Filtered HTML text format and enable entity_embed filter.
+    $format = new stdClass();
+    $format->format = 'custom_format';
+    $format->name = 'Custom format';
+    $format->filters = array(
+      'entity_embed' => array(
+        'status' => 1,
+      ),
+    );
+    $format->editor = 'ckeditor';
+    $format->editor_settings = array(
+      'toolbar' => array(
+        0 => array(
+          0 => array(
+            'name' => 'Entity Embed',
+            'items' => array(
+              0 => 'node',
+            ),
+          ),
+        ),
+      ),
+    );
+    filter_format_save($format);
+
+    // Reset permissions so that permissions for the filter are available.
+    $this->checkPermissions(array(), TRUE);
+
+    // Create a user with required permissions.
+    $this->webUser = $this->drupalCreateUser(array(
+      'access content',
+      'create page content',
+      'use text format custom_format',
+    ));
+    $this->drupalLogin($this->webUser);
+
+    // Create a sample node to be embedded.
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Embed Test Node';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => 'This node is to be used for embedding in other nodes.', 'format' => 'custom_format')));
+    $this->node = $this->drupalCreateNode($settings);
+  }
+
+  /**
+   * Retrieves a sample file of the specified type.
+   */
+  function getTestFile($type_name, $size = NULL) {
+    // Get a file to upload.
+    $file = current($this->drupalGetTestFiles($type_name, $size));
+
+    // Add a filesize property to files as would be read by file_load().
+    $file->filesize = filesize($file->uri);
+
+    return $file;
+  }
+
+  public function assertAvailableDisplayPlugins($entity_type, array $expected_plugins, $message = '') {
+    $plugin_options = entity_embed_get_entity_field_formatters($entity_type);
+    // @todo Remove the sorting so we can actually test return order.
+    ksort($plugin_options);
+    sort($expected_plugins);
+    $this->assertEqual(array_keys($plugin_options), $expected_plugins, $message);
+  }
+}
+
+/**
+ * Tests the entity_embed dialog controller and route.
+ */
+class EntityEmbedDialogTest extends EntityEmbedTestBase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Entity Embed dialog test',
+      'description' => 'Tests the Entity Embed dialog.',
+      'group' => 'Entity Embed',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp();
+  }
+
+  /**
+   * Tests the entity embed dialog.
+   */
+  public function testEntityEmbedDialog() {
+    // Ensure that the route is not accessible without specifying all the
+    // parameters.
+    $this->getEmbedDialog();
+    $this->assertResponse(404, 'Embed dialog is not accessible without specifying filter format and embed button.');
+    $this->getEmbedDialog('custom_format');
+    $this->assertResponse(404, 'Embed dialog is not accessible without specifying embed button.');
+
+    // Ensure that the route is not accessible with an invalid embed button.
+    $this->getEmbedDialog('custom_format', 'invalid_button');
+    $this->assertResponse(404, 'Embed dialog is not accessible without specifying filter format and embed button.');
+
+    // Ensure that the route is not accessible with text format without the
+    // button configured.
+    $this->getEmbedDialog('plain_text', 'node');
+    $this->assertResponse(403, 'Embed dialog is not accessible with a filter that does not have an editor configuration.');
+
+    // Add an empty configuration for the plain_text editor configuration.
+    $plain_text_format = filter_format_load('plain_text');
+    $plain_text_format->editor = 'ckeditor';
+    $plain_text_format->editor_settings = array();
+    filter_format_save($plain_text_format);
+    $this->getEmbedDialog('plain_text', 'node');
+    $this->assertResponse(403, 'Embed dialog is not accessible with a filter that does not have the embed button assigned to it.');
+
+    // Ensure that the route is accessible with a valid embed button.
+    // 'Node' embed button is provided by default by the module and hence the
+    // request must be successful.
+    $this->getEmbedDialog('custom_format', 'node');
+    $this->assertResponse(200, 'Embed dialog is accessible with correct filter format and embed button.');
+
+    // Ensure form structure of the 'select' step and submit form.
+    $this->assertFieldByName('attributes[data-entity-id]', '', 'Entity ID/UUID field is present.');
+
+    // $edit = ['attributes[data-entity-id]' => $this->node->id()];
+    // $this->drupalPostAjaxForm(NULL, $edit, 'op');
+    // Ensure form structure of the 'embed' step and submit form.
+    // $this->assertFieldByName('attributes[data-entity-embed-display]', 'Entity Embed Display plugin field is present.');
+  }
+
+  /**
+   * Retrieves an embed dialog based on given parameters.
+   *
+   * @param string $filter_format_id
+   *   ID of the filter format.
+   * @param string $embed_button_id
+   *   ID of the embed button.
+   *
+   * @return string
+   *   The retrieved HTML string.
+   */
+  public function getEmbedDialog($filter_format_id = NULL, $embed_button_id = NULL) {
+    $url = 'entity-embed/dialog/entity-embed';
+    if (!empty($filter_format_id)) {
+      $url .= '/' . $filter_format_id;
+      if (!empty($embed_button_id)) {
+        $url .= '/' . $embed_button_id;
+      }
+    }
+    return $this->drupalGet($url);
+  }
+}
+
+/**
+ * Tests the entity_embed filter.
+ */
+class EntityEmbedFilterTest extends EntityEmbedTestBase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Entity Embed filter test',
+      'description' => 'Tests the Entity Embed filter.',
+      'group' => 'Entity Embed',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp('uuid');
+  }
+
+  /**
+   * Tests the entity_embed filter.
+   *
+   * Ensures that entities are getting rendered when correct data attributes
+   * are passed. Also tests situations when embed fails.
+   */
+  function testFilter() {
+    // Tests entity embed using entity ID and view mode.
+    $content = '<drupal-entity data-entity-type="node" data-entity-id="' . $this->node->nid . '" data-view-mode="teaser">This placeholder should not be rendered.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test entity embed with entity-id and view-mode';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertNoRaw('<drupal-entity data-entity-type="node" data-entity');
+    $this->assertText($this->node->body[LANGUAGE_NONE][0]['value'], 'Embedded node exists in page');
+    $this->assertNoText(strip_tags($content), 'Placeholder does not appear in the output when embed is successful.');
+
+    // Tests entity embed using entity UUID and view mode.
+    $content = '<drupal-entity data-entity-type="node" data-entity-uuid="' . $this->node->uuid . '" data-view-mode="teaser">This placeholder should not be rendered.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test entity embed with entity-uuid and view-mode';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertNoRaw('<drupal-entity data-entity-type="node" data-entity');
+    $this->assertText($this->node->body[LANGUAGE_NONE][0]['value'], 'Embedded node exists in page');
+    $this->assertNoText(strip_tags($content), 'Placeholder does not appear in the output when embed is successful.');
+
+    // Ensure that placeholder is not replaced when embed is unsuccessful.
+    $content = '<drupal-entity data-entity-type="node" data-entity-id="InvalidID" data-view-mode="teaser">This placeholder should be rendered since specified entity does not exist.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test that placeholder is retained when specified entity does not exist';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertNoRaw('<drupal-entity data-entity-type="node" data-entity');
+    $this->assertNoText(strip_tags($content), 'Placeholder does not appear in the output when embed is unsuccessful.');
+
+    // Ensure that UUID is preferred over ID when both attributes are present.
+    $sample_node = $this->drupalCreateNode();
+    $content = '<drupal-entity data-entity-type="node" data-entity-id="' . $sample_node->nid . '" data-entity-uuid="' . $this->node->uuid . '" data-view-mode="teaser">This placeholder should not be rendered.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test that entity-uuid is preferred over entity-id when both attributes are present';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertNoRaw('<drupal-entity data-entity-type="node" data-entity');
+    $this->assertText($this->node->body[LANGUAGE_NONE][0]['value'], 'Entity specified with UUID exists in the page.');
+    $this->assertNoText($sample_node->body[LANGUAGE_NONE][0]['value'], 'Entity specified with ID does not exists in the page.');
+    $this->assertNoText(strip_tags($content), 'Placeholder not appears in the output when embed is successful.');
+
+    // Test deprecated 'default' Entity Embed Display plugin.
+    $content = '<drupal-entity data-entity-type="node" data-entity-uuid="' . $this->node->uuid . '" data-entity-embed-display="default" data-entity-embed-settings=\'{"view_mode":"teaser"}\'>This placeholder should not be rendered.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test entity embed with entity-embed-display and data-entity-embed-settings';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertText($this->node->body[LANGUAGE_NONE][0]['value'], 'Embedded node exists in page');
+    $this->assertNoText(strip_tags($content), 'Placeholder does not appear in the output when embed is successful.');
+
+    // Ensure that Entity Embed Display plugin is preferred over view mode when
+    // both attributes are present.
+    $content = '<drupal-entity data-entity-type="node" data-entity-uuid="' . $this->node->uuid . '" data-entity-embed-display="default" data-entity-embed-settings=\'{"view_mode":"teaser"}\' data-view-mode="some-invalid-view-mode">This placeholder should not be rendered.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test entity embed with entity-embed-display and data-entity-embed-settings';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertText($this->node->body[LANGUAGE_NONE][0]['value'], 'Embedded node exists in page with the view mode specified by entity-embed-settings.');
+    $this->assertNoText(strip_tags($content), 'Placeholder does not appear in the output when embed is successful.');
+
+    // Test that tag of container element is not replaced when it's not
+    // <drupal-entity>.
+    $content = '<not-drupal-entity data-entity-type="node" data-entity-id="' . $this->node->nid . '" data-view-mode="teaser">this placeholder should not be rendered.</not-drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'test entity embed with entity-id and view-mode';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalget('node/' . $node->nid);
+    $this->assertNoText($this->node->body[LANGUAGE_NONE][0]['value'], 'embedded node exists in page');
+    $this->assertRaw('</not-drupal-entity>');
+    $content = '<div data-entity-type="node" data-entity-id="' . $this->node->nid . '" data-view-mode="teaser">this placeholder should not be rendered.</div>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'test entity embed with entity-id and view-mode';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalget('node/' . $node->nid);
+    $this->assertNoText($this->node->body[LANGUAGE_NONE][0]['value'], 'embedded node exists in page');
+    $this->assertRaw('<div data-entity-type="node" data-entity-id');
+  }
+}
+
+/**
+ * Tests the administrative UI.
+ */
+class EmbedButtonAdminTest extends EntityEmbedTestBase {
+  /**
+   * A user with permission to administer embed buttons.
+   */
+  protected $adminUser;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Entity Embed button administration test',
+      'description' => 'Tests the administrative UI for managing buttons.',
+      'group' => 'Entity Embed',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp();
+
+    // Create a user with admin permissions.
+    $this->adminUser = $this->drupalCreateUser(array(
+      'access content',
+      'create page content',
+      'use text format custom_format',
+      'administer embed buttons',
+    ));
+  }
+
+  /**
+   * Tests the embed_button administration functionality.
+   */
+  function testEmbedButtonAdmin() {
+    $this->drupalGet('admin/config/content/embed-button');
+    $this->assertResponse(403, 'User without admin permissions are not able to visit the configuration page.');
+
+    // Swtich to admin user.
+    $this->drupalLogin($this->adminUser);
+
+    $this->drupalGet('admin/config/content/embed-button');
+    $this->assertResponse(200, 'User without admin permissions is able to visit the configuration page.');
+    $this->assertText('Node', 'Node embed_button entity exists by default.');
+    $this->assertText('node', 'Node embed_button entity exists by default.');
+
+    // Add embed button.
+    $this->clickLink('Add');
+    $button_id = drupal_strtolower($this->randomName());
+    $name = $this->randomName();
+    $edit = array(
+      'admin_title' => $name,
+      'name' => $button_id,
+      'entity_type' => 'node',
+    );
+    $this->drupalPost(NULL, $edit, t('Choose'));
+    $this->drupalPost(NULL, $edit, t('Save'));
+    // Ensure that the newly created button exists.
+    $this->drupalGet('admin/config/content/embed-button/list/' . $button_id);
+    $this->assertResponse(200, 'Added embed button exists.');
+    // Ensure that the newly created button is listed.
+    $this->drupalGet('admin/config/content/embed-button');
+    $this->assertText($name, 'Test embed_button appears on the list page');
+
+    // Edit embed button.
+    $this->drupalGet('admin/config/content/embed-button/list/' . $button_id . '/edit');
+    $new_name = drupal_strtolower($this->randomName());
+    $edit = array(
+      'admin_title' => $new_name,
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    // Ensure that name and label has been changed.
+    $this->drupalGet('admin/config/content/embed-button');
+    $this->assertText($new_name, 'New label appears on the list page');
+    $this->assertNoText($name, 'Old label does not appears on the list page');
+    // Delete embed button.
+    $this->drupalGet('admin/config/content/embed-button/list/' . $button_id . '/delete');
+    $this->drupalPost(NULL, array(), t('Delete'));
+    // Ensure that the deleted embed button no longer exists.
+    $this->drupalGet('admin/config/content/embed-button/list/' . $button_id);
+    $this->assertResponse(404, 'Deleted embed button no longer exists.');
+    // Ensure that the deleted button is no longer listed.
+    $this->drupalGet('admin/config/content/embed-button');
+    $this->assertNoText($name, 'Test embed_button does not appears on the list page');
+  }
+}
+
+/**
+ * Tests the hooks provided by entity_embed.
+ */
+class EntityEmbedHooksTest extends EntityEmbedTestBase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Entity Embed hooks test',
+      'description' => 'Tests the hooks provided by Entity Embed.',
+      'group' => 'Entity Embed',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp('entity_embed_test', 'uuid');
+  }
+
+  /**
+   * Tests the hooks provided by entity_embed module.
+   *
+   * This method tests all the hooks provided by entity_embed.
+   */
+  function testEntityEmbedHooks() {
+    // Enable entity_embed_test.module's hook_entity_embed_alter()
+    // implementation and ensure it is working as designed.
+    variable_set('entity_embed_test_entity_embed_alter', TRUE);
+    $content = '<drupal-entity data-entity-type="node" data-entity-uuid="' . $this->node->uuid . '" data-entity-embed-display="default" data-entity-embed-settings=\'{"view_mode":"teaser"}\'>This placeholder should not be rendered.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test hook_entity_embed_alter()';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertText($this->node->body[LANGUAGE_NONE][0]['value'], 'Embedded node exists in page');
+    $this->assertNoText(strip_tags($content), 'Placeholder does not appear in the output when embed is successful.');
+    // Ensure that embedded node's title has been replaced.
+    $this->assertText('Title set by hook_entity_embed_alter', 'Title of the embedded node is replaced by hook_entity_embed_alter()');
+    $this->assertNoText($this->node->title, 'Original title of the embedded node is not visible.');
+    variable_set('entity_embed_test_entity_embed_alter', FALSE);
+
+    // Enable entity_embed_test.module's hook_entity_embed_context_alter()
+    // implementation and ensure it is working as designed.
+    variable_set('entity_embed_test_entity_embed_context_alter', TRUE);
+    $content = '<drupal-entity data-entity-type="node" data-entity-uuid="' . $this->node->uuid . '" data-entity-embed-display="default" data-entity-embed-settings=\'{"view_mode":"teaser"}\'>This placeholder should not be rendered.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test hook_entity_embed_context_alter()';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertNoText(strip_tags($content), 'Placeholder does not appear in the output when embed is successful.');
+    // To ensure that 'label' plugin is used, verify that the body of the
+    // embedded node is not visible and the title links to the embedded node.
+    $this->assertNoText($this->node->body[LANGUAGE_NONE][0]['value'], 'Body of the embedded node does not exist in page.');
+//    $this->assertText('Title set by hook_entity_embed_context_alter', 'Title of the embedded node is replaced by hook_entity_embed_context_alter()');
+//    $this->assertNoText($this->node->title, 'Original title of the embedded node is not visible.');
+    $this->assertLinkByHref('node/' . $this->node->nid, 0, 'Link to the embedded node exists.');
+    variable_set('entity_embed_test_entity_embed_context_alter', FALSE);
+  }
+}
+
+/**
+ * Tests embed button icon file usage.
+ */
+class IconFileUsageTest extends EntityEmbedTestBase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Entity Embed button icon file usage test',
+      'description' => 'Tests the embed button and file usage integration.',
+      'group' => 'Entity Embed',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp('entity_embed_test');
+  }
+
+  /**
+   * Tests the embed_button and file usage integration.
+   */
+  public function testEmbedButtonIcon() {
+    $file1 = file_save_data(file_get_contents('misc/druplicon.png'));
+    $file1->status = 0;
+    file_save($file1);
+
+    $file2 = file_save_data(file_get_contents('misc/druplicon.png'));
+    $file1->status = 0;
+    file_save($file2);
+
+    $button = entity_embed_embed_button_new();
+
+    $button->admin_title = 'Testing embed button instance';
+    $button->name = 'test_button';
+    $button->entity_type = 'node';
+    $button->entity_type_bundles = array('page');
+    $button->button_icon_fid = $file1->fid;
+    $button->display_plugins = array('default');
+
+    // Verify that saving a new button makes the icon file permanent.
+    entity_embed_embed_button_save($button);
+    $this->assertTrue(file_load($file1->fid)->status == FILE_STATUS_PERMANENT);
+
+    // Verify that updating an existing button makes the icon file permanent.
+    $button->button_icon_fid = $file2->fid;
+    entity_embed_embed_button_save($button);
+
+    // Verify that replacing an existing button makes the new icon file
+    // permanent and the old icon file temporary.
+    $this->assertTrue(file_load($file1->fid)->status == 0);
+    $this->assertTrue(file_load($file2->fid)->status == FILE_STATUS_PERMANENT);
+
+    // Verify that deleting a button makes the icon file temporary.
+    entity_embed_embed_button_delete($button);
+    $this->assertTrue(file_load($file2->fid)->status == 0);
+  }
+}
+
+/**
+ * Tests the entity reference field formatter provided by entity_embed.
+ */
+class EntityReferenceFieldFormatterTest extends EntityEmbedTestBase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Entity Embed entity reference field formatter test',
+      'description' => 'Tests the entity reference field formatter provided by entity_embed.',
+      'group' => 'Entity Embed',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp();
+  }
+
+  /**
+   * Tests image field formatter Entity Embed Display plugin.
+   */
+  public function testImageFieldFormatter() {
+    // Ensure that entity reference field formatters are available as plugins.
+    $this->assertAvailableDisplayPlugins('file', array(
+      'entityreference_label',
+      'entityreference_entity_id',
+      'entityreference_entity_view',
+    ));
+
+    // Ensure that correct form attributes are returned for
+    // 'entityreference:entityreference_entity_id' plugin.
+    $form = array();
+    $form_state = form_state_defaults();
+    $conf_form = entity_embed_field_info_formatter_settings('node', $this->node, 'entityreference_entity_id', array(), $form, $form_state);
+    $this->assertIdentical(array_keys($conf_form), array());
+
+    // Ensure that correct form attributes are returned for
+    // 'entityreference:entity_reference:entityreference_entity_view' plugin.
+    $form = array();
+    $form_state = form_state_defaults();
+    $conf_form = entity_embed_field_info_formatter_settings('node', $this->node, 'entityreference_entity_view', array(), $form, $form_state);
+    $this->assertIdentical(array_keys($conf_form), array('view_mode', 'links'));
+    $this->assertIdentical($conf_form['view_mode']['#type'], 'select');
+    $this->assertIdentical((string) $conf_form['view_mode']['#title'], 'View mode');
+    $this->assertIdentical($conf_form['links']['#type'], 'checkbox');
+    $this->assertIdentical((string) $conf_form['links']['#title'], 'Show links');
+
+    // Ensure that correct form attributes are returned for
+    // 'entityreference:entity_reference:entityreference_label' plugin.
+    $form = array();
+    $form_state = form_state_defaults();
+    $conf_form = entity_embed_field_info_formatter_settings('node', $this->node, 'entityreference_label', array(), $form, $form_state);
+    $this->assertIdentical(array_keys($conf_form), array('link'));
+    $this->assertIdentical($conf_form['link']['#type'], 'checkbox');
+    $this->assertIdentical((string) $conf_form['link']['#title'], 'Link label to the referenced entity');
+  }
+
+  /**
+   * Tests filter using entity reference Entity Embed Display plugins.
+   */
+  public function testFilterEntityReferencePlugins() {
+    // Test 'Label' Entity Embed Display plugin.
+    $content = '<drupal-entity data-entity-type="node" data-entity-id="' . $this->node->nid . '" data-entity-embed-display="entityreference:entityreference_label" data-entity-embed-settings=\'{"link":1}\'>This placeholder should not be rendered.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test entity_reference:entity_reference_label Entity Embed Display plugin';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertText($this->node->title, 'Title of the embedded node exists in page.');
+    $this->assertNoText($this->node->body[LANGUAGE_NONE][0]['value'], 'Body of embedded node does not exists in page.');
+    $this->assertNoText(strip_tags($content), 'Placeholder does not appears in the output when embed is successful.');
+    $this->assertLinkByHref('node/' . $this->node->nid, 0, 'Link to the embedded node exists.');
+
+    // Test 'Entity ID' Entity Embed Display plugin.
+    $content = '<drupal-entity data-entity-type="node" data-entity-id="' . $this->node->nid . '" data-entity-embed-display="entityreference:entityreference_entity_id">This placeholder should not be rendered.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test entity_reference:entity_reference_entity_id Entity Embed Display plugin';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertText($this->node->nid, 'ID of the embedded node exists in page.');
+    $this->assertNoText($this->node->title, 'Title of the embedded node does not exists in page.');
+    $this->assertNoText($this->node->body[LANGUAGE_NONE][0]['value'], 'Body of embedded node does not exists in page.');
+    $this->assertNoText(strip_tags($content), 'Placeholder does not appears in the output when embed is successful.');
+    $this->assertNoLinkByHref('node/' . $this->node->nid, 'Link to the embedded node does not exists.');
+
+    // Test 'Rendered entity' Entity Embed Display plugin.
+    $content = '<drupal-entity data-entity-type="node" data-entity-id="' . $this->node->nid . '" data-entity-embed-display="entityreference:entityreference_entity_view" data-entity-embed-settings=\'{"view_mode":"teaser"}\'>This placeholder should not be rendered.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test entity_reference:entity_reference_label Entity Embed Display plugin';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertText($this->node->body[LANGUAGE_NONE][0]['value'], 'Body of embedded node does not exists in page.');
+    $this->assertNoText(strip_tags($content), 'Placeholder does not appears in the output when embed is successful.');
+  }
+}
+
+/**
+ * Tests the file field formatter provided by entity_embed.
+ */
+class FileFieldFormatterTest extends EntityEmbedTestBase {
+
+  /**
+   * Created file entity.
+   *
+   * @var object
+   */
+  protected $file;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Entity Embed file field formatter test',
+      'description' => 'Tests the file field formatter provided by entity_embed.',
+      'group' => 'Entity Embed',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp('file');
+    $file = $this->getTestFile('text');
+    file_save($file);
+    $this->file = $file;
+  }
+
+  /**
+   * Tests file field formatter Entity Embed Display plugin.
+   */
+  public function testFileFieldFormatter() {
+    // Ensure that file field formatters are available as plugins.
+    $this->assertAvailableDisplayPlugins('file', array(
+      'entityreference_label',
+      'entityreference_entity_id',
+      'entityreference_entity_view',
+      'file_default',
+      'file_table',
+      'file_url_plain',
+    ));
+
+    // Ensure that correct form attributes are returned for the file_default plugin.
+    $form = array();
+    $form_state = form_state_defaults();
+    $conf_form = entity_embed_field_info_formatter_settings('file', $this->file, 'file_default', array(), $form, $form_state);
+    // Ensure that correct form attributes are returned for the file_default plugin.
+    $this->assertIdentical(array_keys($conf_form), array());
+
+    // Test entity embed using 'Image' Entity Embed Display plugin.
+    $content = '<drupal-entity data-entity-type="file" data-entity-id="' . $this->file->fid . '" data-entity-embed-display="file:file_default">This placeholder should not be rendered.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test entity embed with image:image';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertNoText(strip_tags($content), 'Placeholder does not appears in the output when embed is successful.');
+    $this->assertLinkByHref(file_create_url($this->file->uri), 0, 'Link to the embedded file exists.');
+  }
+}
+
+/**
+ * Tests the image field formatter provided by entity_embed.
+ */
+class ImageFieldFormatterTest extends EntityEmbedTestBase {
+
+  /**
+   * Created file entity.
+   *
+   * @var object
+   */
+  protected $image;
+
+  /**
+   * Created file entity.
+   *
+   * @var object
+   */
+  protected $file;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Entity Embed image field formatter test',
+      'description' => 'Tests the image field formatter provided by entity_embed.',
+      'group' => 'Entity Embed',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp('file', 'image');
+    $image = $this->getTestFile('image');
+    $file = $this->getTestFile('text');
+    file_save($image);
+    file_save($file);
+    $this->image = $image;
+    $this->file = $file;
+  }
+
+  /**
+   * Tests image field formatter Entity Embed Display plugin.
+   */
+  public function testImageFieldFormatter() {
+    // Ensure that image field formatters are available as plugins.
+    $this->assertAvailableDisplayPlugins('file', array(
+      'entityreference_label',
+      'entityreference_entity_id',
+      'entityreference_entity_view',
+      'file_default',
+      'file_table',
+      'file_url_plain',
+      'image',
+    ));
+
+    // Ensure that correct form attributes are returned for the image plugin.
+    $form = array();
+    $form_state = form_state_defaults();
+    $conf_form = entity_embed_field_info_formatter_settings('file', $this->image, 'image', array(), $form, $form_state);
+    // Ensure that correct form attributes are returned for the image plugin.
+    $this->assertIdentical(array_keys($conf_form), array(
+      'image_style',
+      'image_link',
+    ));
+    $this->assertIdentical($conf_form['image_style']['#type'], 'select');
+    $this->assertIdentical((string) $conf_form['image_style']['#title'], 'Image style');
+    $this->assertIdentical($conf_form['image_link']['#type'], 'select');
+    $this->assertIdentical((string) $conf_form['image_link']['#title'], 'Link image to');
+
+    // Test entity embed using 'Image' Entity Embed Display plugin.
+    $embed_settings = array(
+      'image_style' => 'thumbnail',
+      'image_link' => 'file',
+      );
+    $content = '<drupal-entity data-entity-type="file" data-entity-id="' . $this->image->fid . '" data-entity-embed-display="image:image" data-entity-embed-settings=\'' . drupal_json_encode($embed_settings) . '\'>This placeholder should not be rendered.</drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test entity embed with image:image';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertNoText(strip_tags($content), 'Placeholder does not appears in the output when embed is successful.');
+    $this->assertLinkByHref(file_create_url($this->image->uri), 0, 'Link to the embedded image exists.');
+
+    // Embed all three field types in one, to ensure they all render correctly.
+    $content = '<drupal-entity data-entity-type="node" data-entity-id="' . $this->node->nid . '" data-entity-embed-display="entity_reference:entity_reference_label"></drupal-entity>';
+    $content .= '<drupal-entity data-entity-type="file" data-entity-id="' . $this->file->fid . '" data-entity-embed-display="file:file_default"></drupal-entity>';
+    $content .= '<drupal-entity data-entity-type="file" data-entity-id="' . $this->image->fid . '" data-entity-embed-display="image:image"></drupal-entity>';
+    $settings = array();
+    $settings['type'] = 'page';
+    $settings['title'] = 'Test node entity embedded first then a file entity';
+    $settings['body'] = array(LANGUAGE_NONE => array(array('value' => $content, 'format' => 'custom_format')));
+    $node = $this->drupalCreateNode($settings);
+    $this->drupalGet('node/' . $node->nid);
+  }
+}

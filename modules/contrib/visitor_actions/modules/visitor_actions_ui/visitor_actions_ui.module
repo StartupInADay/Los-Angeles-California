@@ -1,0 +1,832 @@
+<?php
+
+/**
+ * @file visitor_actions_ui.module
+ * The User Interface for the Visitor Actions module.
+ */
+
+/**
+ * =======================================================================
+ *  G E N E R A L   D R U P A L   H O O K S
+ * =======================================================================
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function visitor_actions_ui_menu() {
+  $items = array();
+  $items['admin/structure/visitor_actions/add-in-context'] = array(
+    'title' => 'Add action in context',
+    'page callback' => 'visitor_actions_ui_start',
+    'access arguments' => array('administer visitor actions'),
+    'type' => MENU_LOCAL_ACTION,
+  );
+  $items['visitor_actions_ui/edit-mode-off'] = array(
+    'page callback' => 'visitor_actions_ui_edit_mode_disable',
+    'access arguments' => array('administer visitor actions'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['visitor_actions_ui/edit-mode-toggle'] = array(
+    'page callback' => 'visitor_actions_ui_edit_mode_toggle_callback',
+    'access arguments' => array('administer visitor actions'),
+    'delivery callback' => 'ajax_deliver',
+    'theme callback' => 'ajax_base_page_theme',
+    'type' => MENU_CALLBACK,
+  );
+  $items['visitor_actions_ui/edit-mode-toggle/assets'] = array(
+    'page callback' => 'visitor_actions_ui_edit_mode_toggle_assets_callback',
+    'access arguments' => array('administer visitor actions'),
+    'delivery callback' => 'ajax_deliver',
+    'theme callback' => 'ajax_base_page_theme',
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function visitor_actions_ui_theme() {
+  return array(
+    'visitor_actions_ui_edit_mode_action_in_context_links' => array(
+      'render element' => 'elements',
+    ),
+  );
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function visitor_actions_ui_page_build(&$page) {
+  // Attach the editor app toggle code on all non-admin pages.
+  // A special case is made for the block demo page which is not properly
+  // marked as an admin page by path_is_admin().
+  if (!path_is_admin(current_path()) && preg_match('/^admin\/structure\/block\/demo\//', current_path()) == 0) {
+
+    // If the user is defining an action in context, provide a DSM with actions
+    // to add the action or cancel out of this 'mode'.
+    if (visitor_actions_ui_nav_message_is_set()) {
+      drupal_set_message(visitor_actions_ui_edit_mode_action_in_context(), 'visitor-actions-ui');
+    }
+    $ignore = visitor_actions_ui_get_selector_ignore();
+
+    $page['page_top']['visitor_actions_ui'] = array(
+      '#access' => user_access('administer visitor actions'),
+      '#attached' => array(
+        'library' => array(
+          array('visitor_actions_ui', 'action.editor.launcher'),
+        ),
+        // Provide a setting for the state of the edit mode.
+        'js' => array(
+          array(
+            'type' => 'setting',
+            'data' => array(
+              'visitor_actions' => array(
+                // @todo make this per-theme configurable.
+                'content_wrapper' => variable_get('visitor_actions_controls_selector', '#page-wrapper'),
+                'ignoreClasses' => $ignore['classes'],
+                'ignoreIds' => $ignore['ids'],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Attach the editor app code if edit mode is enabled in the session.
+    if (visitor_actions_ui_edit_mode_is_enabled()) {
+      $page['page_top']['visitor_actions_ui']['#attached']['library'][] = array('visitor_actions_ui', 'action.editor');
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function visitor_actions_ui_form_visitor_actions_form_alter(&$form, &$form_state, $form_id) {
+  if (!empty($form_state['isAjax'])) {
+    $form['#action'] = url('system/ajax');
+    // Move the identifier field into the advanced fieldset.
+    $form['identifier']['#weight'] = -10;
+    $form['advanced']['identifier'] = $form['identifier'];
+    unset($form['identifier']);
+    // Ajaxify the submit buttons.
+    $form['actions']['submit_form']['#ajax'] = array(
+      'callback' => 'visitor_actions_ui_add_form_ajax_callback',
+      'wrapper' => 'visitor-actions-form',
+    );
+    // Add a cancel button for AJAX-loaded forms.
+    $form['actions']['cancel_form'] = array(
+      '#type' => 'submit',
+      '#value' => t('Cancel'),
+      '#ajax' => array(
+        'callback' => 'visitor_actions_ui_add_form_ajax_callback',
+        'wrapper' => 'visitor-actions-form',
+      ),
+      // Turn off validation.
+      '#limit_validation_errors' => array(),
+      '#submit' => array(),
+    );
+  }
+}
+
+/**
+ * Implements hook_ajax_render_alter().
+ */
+function visitor_actions_ui_ajax_render_alter(&$commands) {
+  $commands[] = visitor_actions_ui_prefill_form();
+}
+
+/**
+ * Commands client to prefill the add action form with known data points.
+ */
+function visitor_actions_ui_prefill_form() {
+  return array(
+    'command' => 'visitor_actions_ui_prefill_form',
+  );
+}
+
+/**
+ * Implements hook_library().
+ */
+function visitor_actions_ui_library() {
+  $path = drupal_get_path('module', 'visitor_actions_ui');
+  $options = array(
+    'scope' => 'footer',
+    'defer' => TRUE,
+  );
+
+  $libraries['action.editor.launcher'] = array(
+    'title' => 'Adds behavior to toggle the in-place action editor active state.',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/visitor_actions_ui.launcher.js' => $options,
+    ),
+    'css' => array(
+      $path . '/css/visitor_actions_ui.launcher.theme.css',
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+      array('system', 'drupal.ajax'),
+    ),
+  );
+
+  $libraries['action.editor'] = array(
+    'title' => 'Personalization in-place action editor',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/visitor_actions_ui.editor.js' => $options,
+    ),
+    'css' => array(
+      $path . '/css/visitor_actions_ui.theme.css',
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+      array('visitor_actions_ui', 'ui.element_dialog'),
+      array('visitor_actions_ui', 'utilities.element_selector'),
+      array('visitor_actions_ui', 'underscore'),
+      array('visitor_actions_ui', 'backbone'),
+    ),
+  );
+
+  $libraries['ui.element_dialog'] = array(
+    'title' => 'A dialog solution that is anchored to a DOM element',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/visitor_actions_ui.dialog.js' => $options,
+    ),
+    'css' => array(
+      $path . '/css/visitor_actions_ui.dialog.css',
+      $path . '/css/visitor_actions_ui.dialog.theme.css',
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+      array('system', 'jquery.form'),
+      array('system', 'drupal.form'),
+      array('system', 'drupal.ajax'),
+      array('visitor_actions_ui', 'ui.position.patched'),
+      array('visitor_actions_ui', 'utilities.backbone_parent'),
+      array('visitor_actions_ui', 'underscore'),
+      array('visitor_actions_ui', 'backbone'),
+    ),
+  );
+
+  $libraries['ui.position.patched'] = array(
+    'title' => 'Monkey-patched jQeuery UI position',
+    'version' => VERSION,
+    'js' => array(
+      // Monkey-patch in jQuery UI 1.10 Position at $.fn.position_visitor_actions_ui.
+      $path . '/js/jquery/ducktape.position.js' => array('group' => JS_LIBRARY),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'ui.position'),
+    ),
+  );
+
+  $libraries['utilities.element_selector'] = array(
+    'title' => 'Utility to generate the selector for an element',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/visitor_actions_ui.selector.js' => array('group' => JS_LIBRARY),
+      $path . '/js/jquery/selectorator.js' => array('group' => JS_LIBRARY),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+    ),
+  );
+
+  $libraries['utilities.backbone_parent'] = array(
+    'title' => 'Utility to add simplified inheritance to Backbone objects.',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/visitor_actions_ui.backbone_parent.js' => array('group' => JS_LIBRARY),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('visitor_actions_ui', 'backbone'),
+      array('visitor_actions_ui', 'underscore'),
+    ),
+  );
+
+  // Underscore
+  $libraries['underscore'] = _visitor_actions_ui_convert_libraries_to_library(libraries_detect('underscore'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -20,
+  ));
+
+  // Backbone
+  $libraries['backbone'] = _visitor_actions_ui_convert_libraries_to_library(libraries_detect('backbone'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -19,
+  ));
+
+  return $libraries;
+}
+
+
+/**
+ * Implements hook_library_alter().
+ *
+ * Backport a couple of things from jQuery that are required.
+ */
+function visitor_actions_ui_library_alter(&$libraries, $module) {
+  $jquery_version = &drupal_static(__FUNCTION__, NULL);
+  $path = drupal_get_path('module', 'visitor_actions_ui');
+  if ($module == 'system') {
+    $jquery_version = $libraries['jquery']['version'];
+
+    // Tack on an additional JS file to noConflict mode jQuery into a variable.
+    $libraries['jquery']['js'][$path . '/js/jquery/alias.js'] = array('group' => JS_LIBRARY);
+  }
+  if ($jquery_version && $module == 'visitor_actions_ui') {
+    // If the version of jQuery is old, we need to add `on` and `off`.
+    if (version_compare($jquery_version, '1.7', '<')) {
+      $libraries['action.editor']['js'][$path . '/js/jquery/ducktape.events.js'] = array('group' => JS_LIBRARY);
+    }
+    // Prior to jQuery 1.6, jQuery.fn.proxy did not curry additional args.
+    if (version_compare($jquery_version, '1.6', '<')) {
+      $libraries['action.editor']['js'][$path . '/js/jquery/ducktape.proxy.js'] = array('group' => JS_LIBRARY);
+    }
+  }
+}
+
+/**
+ * =======================================================================
+ *  E N D  O F  G E N E R A L   D R U P A L   H O O K S
+ * =======================================================================
+ */
+
+
+/**
+ * =======================================================================
+ *  C O N T R I B   M O D U L E   H O O K S
+ * =======================================================================
+ */
+
+/**
+ * Implements hook_libraries_info().
+ *
+ * @see Libraries module.
+ */
+function visitor_actions_ui_libraries_info() {
+  $libraries['underscore'] = array(
+    'name' => 'Underscore',
+    'vendor url' => 'http://underscorejs.org/',
+    'download url' => 'https://github.com/jashkenas/underscore/archive/1.5.2.zip',
+    'version callback' => '_visitor_actions_ui_libraries_get_version',
+    'variant order' => array('minified', 'source'),
+    'version arguments' => array(
+      'variants' => array(
+        'source' => array(
+          'file' => 'underscore.js',
+          'pattern' => '#VERSION *\W *[\'\"]{1}(.*?)[\'\"]{1}#',
+          // In the unminified Underscore.js 1.5.2, the version is defined on
+          // line 68.
+          'lines' => 100,
+        ),
+        'minified' => array(
+          'file' => 'underscore-min.js',
+          'pattern' => '#VERSION *\W *[\'\"]{1}(.*?)[\'\"]{1}#',
+          'cols' => 2000,
+        ),
+      ),
+    ),
+    'versions' => array(
+      // Means ">=1.5.0": matches 1.5.0, 1.5.2, etc.
+      '1.5.0' => array(
+        'variants' => array(
+          'source' => array(
+            'files' => array(
+              'js' => array(
+                'underscore.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_visitor_actions_ui_libraries_variant_exists',
+            'variant arguments' => array('underscore.js'),
+          ),
+          'minified' => array(
+            'files' => array(
+              'js' => array(
+                'underscore-min.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_visitor_actions_ui_libraries_variant_exists',
+            'variant arguments' => array('underscore-min.js'),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  $libraries['backbone'] = array(
+    'name' => 'Backbone',
+    'vendor url' => 'http://documentcloud.github.io/backbone/',
+    'download url' => 'https://github.com/jashkenas/backbone/archive/1.1.0.zip',
+    'version callback' => '_visitor_actions_ui_libraries_get_version',
+    'variant order' => array('minified', 'source'),
+    'version arguments' => array(
+      'variants' => array(
+        'source' => array(
+          'file' => 'backbone.js',
+          'pattern' => '#VERSION *\W *[\'\"]{1}(.*?)[\'\"]{1}#',
+          // In the unminified Backbone.js 1.1.0, the version is defined on line
+          // 38.
+          'lines' => 50,
+        ),
+        'minified' => array(
+          'file' => 'backbone-min.js',
+          'pattern' => '#VERSION *\W *[\'\"]{1}(.*?)[\'\"]{1}#',
+        ),
+      ),
+    ),
+    'versions' => array(
+      // Means ">=1.0.0": matches 1.0.0, 1.1.0, etc.
+      '1.0.0' => array(
+        'variants' => array(
+          'source' => array(
+            'name' => 'Backbone',
+            'files' => array(
+              'js' => array(
+                'backbone.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_visitor_actions_ui_libraries_variant_exists',
+            'variant arguments' => array('backbone.js'),
+            'dependencies' => array('underscore (>=1.5.0)'),
+          ),
+          'minified' => array(
+            'name' => 'Backbone',
+            'files' => array(
+              'js' => array(
+                'backbone-min.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_visitor_actions_ui_libraries_variant_exists',
+            'variant arguments' => array('backbone-min.js'),
+            'dependencies' => array('underscore (>=1.5.0)'),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Determines the version of a library.
+ *
+ * This is used in case different variants of the library are shipped separately
+ * and, thus, different variants can contain different versions.
+ *
+ * @param array $library
+ *   An associative array containing all information about the library. The
+ *   library is assumed to have the following non-standard keys:
+ *   - variant order: An array of variant names, ordered from the most preferred
+ *     variant to the least preferred.
+ * @param array $options
+ *   An associative array with the following keys:
+ *   - variants: An array of options for libraries_get_version() keyed by
+ *     variant name.
+ *
+ */
+function _visitor_actions_ui_libraries_get_version(&$library, $options = array()) {
+  $versions = array();
+  foreach ($library['variant order'] as $variant_name) {
+    $variant = $library['version arguments']['variants'][$variant_name];
+    // Use the libraries get version function to determine the version string.
+    $versions[$variant_name] = libraries_get_version($library, $variant);
+  }
+
+  // If no versions could be found for any of the variant, there is no version
+  // to return. If different versions have been found, there is no way to
+  // determine the correct one. We cannot use the information on the preferred
+  // variants because we cannot guarantee that a less preferred variant will not
+  // be loaded. Null values are fine. Either that variant file doesn't exist
+  // or id doesn't contain version information. As long as the there is no
+  // conflicting version information, the check should pass.
+  $versions = array_filter($versions, '_visitor_actions_ui_libraries_filter_null_values');
+  $version = array_unique($versions);
+  $vcount = count($version);
+  if ($vcount == 1) {
+    // A version number exists, so suppress any errors that any individual
+    // variant might have raised.
+    unset($library['error']);
+    unset($library['error message']);
+    return array_shift($version);
+  }
+  elseif ($vcount > 1) {
+    $output = array();
+    foreach ($versions as $name => $v) {
+      $output[] = t('@name (@v)', array(
+        '@name' => $name,
+        '@v' => $v,
+      ));
+    }
+
+    $library['error'] = 'inconsistent versions';
+    $library['error message'] = t('The library\'s variants returned inconsistent versions: @variant_info', array(
+      '@variant_info' => implode(', ', $output),
+    ));
+  }
+  // If the version count is zero, then let the error from libraries_get_version
+  // propagate through.
+}
+
+/**
+ * Determines if an item is empty or not.
+ *
+ * @param string $item
+ *   A version number string.
+ * @return boolean
+ *   Whether the $item's value is empty or not.
+ */
+function _visitor_actions_ui_libraries_filter_null_values($item) {
+  return !empty($item);
+}
+
+/**
+ * Converts a libraries module array to a hook_library array.
+ *
+ * @todo Libraries API should automatically register all libraries in
+ *   hook_library(). See https://drupal.org/node/1386368
+ *
+ * @return Array
+ *  Returns a standard Drupal library definition structure.
+ */
+function _visitor_actions_ui_convert_libraries_to_library($library, $options = array()) {
+  // If the library wasn't installed, don't bother converting it.
+  if (!$library['installed']) {
+    return array();
+  }
+
+  $converted = array();
+  $files = array();
+
+  // Get the library files from one of the installed variants.
+  if ($name = _visitor_actions_ui_libraries_get_preferred_variant_name($library)) {
+    $files = $library['variants'][$name]['files'];
+  }
+
+  // Define the library if files exist for it.
+  if (!empty($files)) {
+    // This is the basic structure expected by hook_library().
+    $converted = array(
+      'title' => $library['name'],
+      'website' => $library['vendor url'],
+      'version' => $library['version'],
+    );
+    foreach ($files as $type => $paths) {
+      foreach($paths as $filename => $data) {
+        $converted[$type][$library['library path'] . '/' . $filename] = $options;
+      }
+    }
+  }
+
+  return $converted;
+}
+
+/**
+ * Libraries API variant callback.
+ */
+function _visitor_actions_ui_libraries_variant_exists($library, $variant_name, $required_file) {
+  return file_exists($library['library path'] . '/' . $required_file);;
+}
+
+/**
+ * Returns the variant that should be loaded based on order preference.
+ *
+ * @param array $library
+ *   A libraries module library definition array.
+ * @return string
+ *   The name of the variant that should be loaded.
+ */
+function _visitor_actions_ui_libraries_get_preferred_variant_name($library) {
+  if (!empty($library['variant order'])) {
+    foreach ($library['variant order'] as $name) {
+      if ($variant = $library['variants'][$name]) {
+        if ($variant['installed']) {
+          return $name;
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Implements hook_visitor_actions_selector_ignore().
+ */
+function visitor_actions_ui_visitor_actions_ui_selector_ignore() {
+  return array(
+    'classes' => array(
+      '[a-zA-Z0-9\_\-]*-processed',
+      'quickedit-[a-zA-Z0-9\_]*',
+      'visitor-actions-ui[a-zA-Z0-9\_\-]*',
+      'messages',
+      'contextual-links-[a-zA-Z/-/_]*'
+    ),
+    'ids' => array(
+      '^visitorActionsUI-',
+      '^visitorActionsUIDialog-',
+      '^panels-ipe-'
+    ),
+  );
+}
+
+/**
+ * =======================================================================
+ *  E N D  O F  C O N T R I B   M O D U L E   H O O K S
+ * =======================================================================
+ */
+
+
+/**
+ * Toggles visitor actions edit mode.
+ */
+function visitor_actions_ui_edit_mode_toggle() {
+  if (isset($_SESSION['visitor_actions_ui_edit_mode'])) {
+    unset($_SESSION['visitor_actions_ui_edit_mode']);
+  }
+  else {
+    $_SESSION['visitor_actions_ui_edit_mode'] = 1;
+  }
+}
+
+/**
+ * Takes the user to navigation mode to choose where to add an action.
+ */
+function visitor_actions_ui_start() {
+  if (isset($_GET['destination'])) {
+    $_SESSION['visitor_actions_ui_edit_mode_return'] = $_GET['destination'];
+    unset($_GET['destination']);
+  }
+  visitor_actions_ui_set_nav_message();
+  drupal_goto();
+}
+
+/**
+ * Sets the instructional message for users to navigate to where they
+ * wish to add an action.
+ */
+function visitor_actions_ui_set_nav_message() {
+  $_SESSION['visitor_actions_ui_set_message'] = 1;
+}
+
+/**
+ * Checks whether the instructional navigation message is set.
+ *
+ * @return bool
+ *   TRUE if the message is set, FALSE otherwise.
+ */
+function visitor_actions_ui_nav_message_is_set() {
+  return isset($_SESSION['visitor_actions_ui_set_message']);
+}
+
+/**
+ * Unsets the instructional navigation message.
+ */
+function visitor_actions_ui_unset_nav_message() {
+  unset($_SESSION['visitor_actions_ui_set_message']);
+}
+
+/**
+ * Builds controls for an in-context action definition mode.
+ *
+ * @return String
+ *   The rendered string for display.
+ */
+function visitor_actions_ui_edit_mode_action_in_context() {
+  $build = array(
+    'message' => array(
+      '#markup' => '<p>' . t('To add an action in context, navigate to the page where you want with the intended element, then press the %link link.', array('%link' => 'Add action')) . '</p>',
+    ),
+    'actions' => array(
+      '#theme' => 'visitor_actions_ui_edit_mode_action_in_context_links',
+      '#attributes' => array(
+        'class' => array('visitor-actions-ui-actions'),
+      ),
+      'launch' => array(
+        '#type' => 'link',
+        '#title' => t('Add action'),
+        '#href' => drupal_get_normal_path('admin/structure/visitor_actions/add'),
+        '#options' => array(
+          'attributes' => array(
+            'title' => t('Highlight elements that allow action attachment'),
+            'role' => 'button',
+            'aria-pressed' => 'false',
+            'class' => array('visitor-actions-ui-ignore'),
+          ),
+        ),
+      ),
+      'cancel' => array(
+        '#type' => 'link',
+        '#title' => t('Cancel'),
+        '#href' => drupal_get_normal_path('visitor_actions_ui/edit-mode-off'),
+        '#options' => array(
+          'attributes' => array(
+            'title' => t('Home page'),
+            'class' => array('visitor-actions-ui-ignore'),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  // Allow other modules to modify the message markup.
+  drupal_alter('visitor_actions_ui_edit_mode_actions', $build);
+  return drupal_render($build);
+}
+
+/**
+ * Theme function for the in-context action defintion controls.
+ */
+function theme_visitor_actions_ui_edit_mode_action_in_context_links($variables) {
+  $elements = $variables['elements'];
+  $launch = drupal_render($elements['launch']);
+  $cancel = drupal_render($elements['cancel']);
+  return '<div' . drupal_attributes($elements['#attributes']) . '>' . $launch . ' ' . t('or') . ' ' . $cancel . '</div>';
+}
+
+/**
+ * Disables edit mode and returns to the stored destination.
+ */
+function visitor_actions_ui_edit_mode_disable() {
+  unset($_SESSION['visitor_actions_ui_edit_mode']);
+  $goto = '';
+  $options = array();
+  if (isset($_SESSION['visitor_actions_ui_edit_mode_return'])) {
+    $goto = $_SESSION['visitor_actions_ui_edit_mode_return'];
+    if (strpos($goto, '#overlay=') === 0) {
+      // If the original path was in the overlay, make sure we go back
+      // to the overlay.
+      $path = substr($goto, strlen('#overlay='));
+      $goto = current_path();
+      $options = array('fragment' => 'overlay=' . $path);
+    }
+    unset($_SESSION['visitor_actions_ui_edit_mode_return']);
+    // The above session variable trumps any destination that has been
+    // set so we need to make sure drupal_goto() behaves correctly.
+    if (isset($_GET['destination'])) {
+      unset($_GET['destination']);
+    }
+  }
+  elseif (isset($_GET['destination'])) {
+    $goto = $_GET['destination'];
+    unset($_GET['destination']);
+  }
+  if (visitor_actions_ui_nav_message_is_set()) {
+    visitor_actions_ui_unset_nav_message();
+  }
+  drupal_goto($goto, $options);
+}
+
+/**
+ * Menu callback for toggling edit mode from an ajax request.
+ */
+function visitor_actions_ui_edit_mode_toggle_callback() {
+  visitor_actions_ui_edit_mode_toggle();
+  $edit_mode = visitor_actions_ui_edit_mode_is_enabled();
+  $commands = array();
+  $commands[] = visitor_actions_ui_command_toggle_edit_mode($edit_mode);
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+/**
+ * Commands the client to toggle edit mode.
+ */
+function visitor_actions_ui_command_toggle_edit_mode($edit_mode) {
+  return array(
+    'command' => 'visitor_actions_ui_toggle_edit_mode',
+    'edit_mode' => $edit_mode,
+  );
+}
+
+/**
+ * Sends the assets to render the visitor actions edit mode.
+ */
+function visitor_actions_ui_edit_mode_toggle_assets_callback() {
+  $response['#attached']['library'][] = array('visitor_actions_ui', 'action.editor');
+
+  return $response;
+}
+
+function visitor_actions_ui_edit_mode_is_enabled() {
+  return isset($_SESSION['visitor_actions_ui_edit_mode']);
+}
+
+/**
+ * Responds to AJAX submission of an add action form.
+ */
+function visitor_actions_ui_add_form_ajax_callback($form, &$form_state) {
+  $op = isset($form_state['values']['op']) ? $form_state['values']['op'] : '';
+  $commands = array();
+  if ($op == t('Save')) {
+    $errors = form_get_errors();
+    // If validation errors exist, return the form.
+    if (!empty($errors)) {
+      return $form;
+    }
+    // Otherwise the form submitted. Turn off edit mode and redirect them.
+    $commands[] = visitor_actions_ui_command_redirect();
+  }
+  else if ($op === t('Cancel')) {
+    // Turn off edit mode and redirect them.
+    $commands[] = visitor_actions_ui_command_dismiss();
+  }
+
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+/**
+ * Generates the ignore regular expressions for use when selecting elements.
+ *
+ * @return array
+ *   An array of two keys:
+ *   - classes: The regular expression to use for ignoring classes.
+ *   - ids: The regular expression to use for ignoring ids.
+ */
+function visitor_actions_ui_get_selector_ignore() {
+  $ignore = module_invoke_all('visitor_actions_ui_selector_ignore');
+  $parsed = array();
+  $parsed['classes'] = $parsed['ids'] = '';
+  foreach ($ignore as $type => $expressions) {
+    array_walk($expressions, function(&$expression) {
+      $expression = '(' . $expression . ')';
+    });
+    $parsed[$type] = implode('|', $expressions);
+  }
+  return $parsed;
+}
+
+/**
+ * Commands the add action UI to dismiss.
+ */
+function visitor_actions_ui_command_dismiss() {
+  return array(
+    'command' => 'visitor_actions_ui_dismiss',
+  );
+}
+
+/**
+ * Redirects the user after disabling edit mode.
+ */
+function visitor_actions_ui_command_redirect() {
+  return array(
+    'command' => 'visitor_actions_ui_command_redirect',
+    'redirect_url' => url('visitor_actions_ui/edit-mode-off'),
+  );
+}

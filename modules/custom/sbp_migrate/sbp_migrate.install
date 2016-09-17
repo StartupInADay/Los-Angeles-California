@@ -1,0 +1,149 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ *
+ * When this module is enabled, process all registered migrations.
+ */
+function sbp_migrate_enable() {
+  migrate_static_registration();
+  sbp_migrate_process_imports();
+  _sbp_migrate_set_displays();
+  _sbp_migrate_build_menu_links();
+}
+
+function sbp_migrate_disable() {
+  MigrateGroup::deregister('sbp');
+}
+
+/**
+ * Creating and placing panel panes from the Migrate pages.
+ */
+function _sbp_migrate_set_displays() {
+  ctools_include('export');
+
+  // Placing department display to the departments page.
+  $depts_page = _sbp_migrate_get_node_by_path('resources/departments');
+  $depts_page_variant = 'node:sbp_landing_page:departments';
+  $panelizer = ctools_export_load_object('panelizer_defaults', 'names', array($depts_page_variant));
+  $depts_page->panelizer['page_manager'] = $panelizer[$depts_page_variant];
+  node_save($depts_page);
+
+  // Placing service center display to the service center page.
+  $sc_page = _sbp_migrate_get_node_by_path('resources/service-centers');
+  $sc_page_variant = 'node:sbp_landing_page:service_centers';
+  $panelizer = ctools_export_load_object('panelizer_defaults', 'names', array($sc_page_variant));
+  $sc_page->panelizer['page_manager'] = $panelizer[$sc_page_variant];
+  node_save($sc_page);
+
+  // Placing terms display to the terms page.
+  $terms_page = _sbp_migrate_get_node_by_path('resources/terms-definitions');
+  $terms_page_variant = 'node:sbp_landing_page:terms_and_definitions';
+  $panelizer = ctools_export_load_object('panelizer_defaults', 'names', array($terms_page_variant));
+  $terms_page->panelizer['page_manager'] = $panelizer[$terms_page_variant];
+  node_save($terms_page);
+
+  // Placing r&i display to the r&i page.
+  $ri_page = _sbp_migrate_get_node_by_path('resources/resources-incentives');
+  $ri_page_variant = 'node:sbp_landing_page:resources_incentives';
+  $panelizer = ctools_export_load_object('panelizer_defaults', 'names', array($ri_page_variant));
+  $ri_page->panelizer['page_manager'] = $panelizer[$ri_page_variant];
+  node_save($ri_page);
+
+  // Placing wizard display on the wizard page.
+  $wiz_page = _sbp_migrate_get_node_by_path('start');
+  $wiz_page_variant = 'node:sbp_landing_page:wizard';
+  $panelizer = ctools_export_load_object('panelizer_defaults', 'names', array($wiz_page_variant));
+  $wiz_page->panelizer['page_manager'] = $panelizer[$wiz_page_variant];
+  node_save($wiz_page);
+
+  // Placing resources display on the resources page.
+  $res_page = _sbp_migrate_get_node_by_path('resources');
+  $res_page_variant = 'node:sbp_landing_page:resources';
+  $panelizer = ctools_export_load_object('panelizer_defaults', 'names', array($res_page_variant));
+  $res_page->panelizer['page_manager'] = $panelizer[$res_page_variant];
+  node_save($res_page);
+
+  // Set homepage.
+  variable_set('site_frontpage', 'home');
+}
+
+/**
+ * Creating the menu links from the Migrate pages.
+ */
+function _sbp_migrate_build_menu_links() {
+  $normal_path = drupal_get_normal_path('start');
+  $item = array(
+    'link_path' => $normal_path,
+    'link_title' => 'Startup Guide',
+    'menu_name' => 'main-menu',
+    'weight' => 0,
+    'language' => 'en',
+    'plid' => 0,
+    'module' => 'menu',
+  );
+  menu_link_save($item);
+  $normal_path = drupal_get_normal_path('resources');
+  $item = array(
+    'link_path' => $normal_path,
+    'link_title' => 'Resources',
+    'menu_name' => 'main-menu',
+    'weight' => 1,
+    'language' => 'en',
+    'plid' => 0,
+    'module' => 'menu',
+  );
+  $resources = menu_link_save($item);
+  $normal_path = drupal_get_normal_path('resources/resources-incentives');
+  $item = array(
+    'link_path' => $normal_path,
+    'link_title' => 'Resources & Incentives',
+    'menu_name' => 'main-menu',
+    'weight' => 0,
+    'plid' => $resources,
+    'module' => 'menu',
+  );
+  menu_link_save($item);
+  $normal_path = drupal_get_normal_path('resources/departments');
+  $item = array(
+    'link_path' => $normal_path,
+    'link_title' => 'Departments',
+    'menu_name' => 'main-menu',
+    'weight' => 1,
+    'plid' => $resources,
+    'module' => 'menu',
+  );
+  menu_link_save($item);
+  $normal_path = drupal_get_normal_path('resources/service-centers');
+  $item = array(
+    'link_path' => $normal_path,
+    'link_title' => 'Service Centers',
+    'menu_name' => 'main-menu',
+    'weight' => 2,
+    'plid' => $resources,
+    'module' => 'menu',
+  );
+  menu_link_save($item);
+  $normal_path = drupal_get_normal_path('resources/terms-definitions');
+  $item = array(
+    'link_path' => $normal_path,
+    'link_title' => 'Terms & Definitions',
+    'menu_name' => 'main-menu',
+    'weight' => 3,
+    'plid' => $resources,
+    'module' => 'menu',
+  );
+  menu_link_save($item);
+  menu_cache_clear_all();
+}
+
+/**
+ * Helper function to grab the PID of the panelized node by path.
+ */
+function _sbp_migrate_get_node_by_path($alias) {
+  $path = drupal_lookup_path("source", $alias);
+  $path = explode('/', $path);
+  $node_id = $path[1];
+  $node = node_load($node_id);
+  return $node;
+}

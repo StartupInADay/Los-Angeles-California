@@ -1,0 +1,113 @@
+<?php
+
+/**
+ * @file
+ * Tests for dialog.module.
+ */
+
+/**
+ * Tests use of dialogs as wrappers for Ajax responses.
+ */
+class AJAXDialogTest extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'AJAX dialog commands',
+      'description' => 'Performs tests on opening and manipulating dialogs via AJAX commands.',
+      'group' => 'Dialog',
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('dialog', 'dialog_test'));
+
+    $this->web_user = $this->drupalCreateUser(array('access content'));
+    $this->drupalLogin($this->web_user);
+  }
+
+  /**
+   * Test sending non-JS and AJAX requests to open and manipulate modals.
+   */
+  function testDialog() {
+    // Ensure the elements render without notices or exceptions.
+    $this->drupalGet('ajax-test/dialog');
+
+    // Set up variables for this test.
+    $dialog_renderable = dialog_test_dialog_contents();
+    $dialog_contents = drupal_render($dialog_renderable);
+    $modal_expected_response = array(
+      'command' => 'openDialog',
+      'selector' => '#drupal-modal',
+      'data' => $dialog_contents,
+      'settings' => NULL,
+      'dialogOptions' => array(
+        'modal' => TRUE,
+        'title' => 'AJAX Dialog',
+      ),
+    );
+    $normal_expected_response = array(
+      'command' => 'openDialog',
+      'selector' => '#ajax-test-dialog-wrapper-1',
+      'data' => $dialog_contents,
+      'settings' => NULL,
+      'dialogOptions' => array(
+        'modal' => FALSE,
+        'title' => 'AJAX Dialog',
+      ),
+    );
+    $close_expected_response = array(
+      'command' => 'closeDialog',
+      'selector' => '#ajax-test-dialog-wrapper-1',
+      'persist' => FALSE,
+    );
+
+    // Check that requesting a modal dialog without JS goes to a page.
+    $this->drupalGet('ajax-test/dialog-contents/nojs/1');
+    $this->assertRaw($dialog_contents, 'Non-JS modal dialog page present.');
+
+    // Emulate going to the JS version of the page and check the JSON response.
+    $ajax_result = $this->drupalGetAJAX('ajax-test/dialog-contents/ajax/1', array('query' => array('_format' => 'drupal_ajax')));
+    $this->assertEqual($modal_expected_response, $ajax_result[1], 'Modal dialog JSON response matches.');
+
+    // Check that requesting a "normal" dialog without JS goes to a page.
+    $this->drupalGet('ajax-test/dialog-contents/nojs');
+    $this->assertRaw($dialog_contents, 'Non-JS normal dialog page present.');
+
+    // Emulate going to the JS version of the page and check the JSON response.
+    $ajax_result = $this->drupalGetAJAX('ajax-test/dialog-contents/ajax', array('query' => array('_format' => 'drupal_ajax')));
+    $this->assertEqual($normal_expected_response, $ajax_result[1], 'Normal dialog JSON response matches.');
+
+    // Emulate closing the dialog via an AJAX request. There is no non-JS
+    // version of this test.
+    $ajax_result = $this->drupalGetAJAX('ajax-test/dialog-close', array('query' => array('_format' => 'drupal_ajax')));
+    $this->assertEqual($close_expected_response, $ajax_result[1], 'Close dialog JSON response matches.');
+
+    // Test submitting via a POST request through the button for modals. This
+    // approach more accurately reflects the real responses by Drupal because
+    // all of the necessary page variables are emulated.
+    $ajax_result = $this->drupalPostAJAX('ajax-test/dialog', array(), 'button1');
+
+    // Check that CSS and JavaScript are "added" to the page dynamically.
+    $settings = $this->drupalGetSettings();
+    $css = $settings['ajaxPageState']['css'];
+    $js = $settings['ajaxPageState']['js'];
+
+    $core_path = 'misc/ui/';
+    $dialog_path = drupal_get_path('module', 'dialog') . '/js/dialog/';
+    $jquery_update_path = drupal_get_path('module', 'jquery_update') . '/replace/ui/ui/minified/';
+
+    $dialog_css_exists = array_key_exists($core_path . 'jquery.ui.dialog.css', $css) !== FALSE;
+    $this->assertTrue($dialog_css_exists, 'jQuery UI dialog CSS added to the page.');
+    $dialog_js_exists = array_key_exists($jquery_update_path . 'jquery.ui.dialog.min.js', $js) !== FALSE;
+    $this->assertTrue($dialog_js_exists, 'jQuery UI dialog JS added to the page.');
+    $dialog_js_exists = array_key_exists($dialog_path . 'dialog.ajax.js', $js) !== FALSE;
+    $this->assertTrue($dialog_js_exists, 'Drupal dialog JS added to the page.');
+
+    // Check that the response matches the expected value.
+    $this->assertEqual($modal_expected_response, $ajax_result[1], 'POST request modal dialog JSON response matches.');
+
+    // Abbreviated test for "normal" dialogs, testing only the difference.
+    $ajax_result = $this->drupalPostAJAX('ajax-test/dialog', array(), 'button2');
+    $this->assertEqual($normal_expected_response, $ajax_result[1], 'POST request normal dialog JSON response matches.');
+  }
+}

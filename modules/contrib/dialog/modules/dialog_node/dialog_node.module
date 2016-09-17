@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * @file
+ * Provides dialog integration for node.module.
+ */
+
+/**
+ * Implement hook_form_FORM_ID_alter().
+ */
+function dialog_node_form_node_admin_content_alter(&$form, &$form_state, $form_id) {
+  // Attach the library for handling the dialog in the response.
+  $form['#attached']['library'][] = array('system', 'drupal.ajax');
+
+  $admin_access = user_access('administer nodes');
+
+  // Only use a tableselect when the current user is able to perform any
+  // operations.
+  if ($admin_access) {
+    $options = '#options';
+  }
+  // Otherwise, use a simple table.
+  else {
+    $options = '#rows';
+  }
+
+  // Use a dialog for deleting nodes.
+  foreach ($form['admin']['nodes'][$options] as $nid => $node) {
+    foreach ($node['operations']['data']['#links'] as $link => $elements) {
+      if ($link == 'delete') {
+        $form['admin']['nodes']['#options'][$nid]['operations']['data']['#links'][$link]['attributes']['class'] = array('use-ajax');
+        $form['admin']['nodes']['#options'][$nid]['operations']['data']['#links'][$link]['attributes']['data-dialog'] = 'true';
+        $form['admin']['nodes']['#options'][$nid]['operations']['data']['#links'][$link]['attributes']['data-dialog-options'] = '{"width":"50%"}';
+      }
+    }
+  }
+}
+
+/**
+ * Implement hook_form_FORM_ID_alter().
+ */
+function dialog_node_form_node_delete_confirm_alter(&$form, &$form_state, $form_id) {
+  // Create a plain-text version of the page title since jQuery UI Dialog does
+  // not support HTML in dialog titles.
+  $node = $form['#node'];
+
+  $question = t('Are you sure you want to delete @title?', array('@title' => $node->title));
+  drupal_set_title($question, PASS_THROUGH);
+
+  // Make the 'Delete' button the primary action.
+  $form['actions']['submit']['#attributes']['class'][] = 'button--primary';
+
+  // Remove the 'Cancel' link.
+  $form['actions']['cancel']['#access'] = FALSE;
+}

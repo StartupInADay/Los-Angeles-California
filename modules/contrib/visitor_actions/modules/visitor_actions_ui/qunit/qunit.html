@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>QUnit Tests - Visitor Actions UI</title>
+      <link rel="stylesheet" href="//code.jquery.com/qunit/qunit-1.14.0.css">
+  </head>
+<body>
+    <div id="qunit"></div>
+    <div id="qunit-fixture">
+        <!-- HTML for selection tests -->
+        <div id="page">
+            <p class="ignoreme myclass"><a href="test.html">my link</a></p>
+            <p class="myclass">Duplicate class used.</p>
+            <p id="ignoremyid">Some more text.</p>
+        </div>
+        <p class="ignoreme myclass"></p>
+    </div>
+
+    <script src="//code.jquery.com/qunit/qunit-1.14.0.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.0/underscore-min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min.js"></script>
+    <script src="/misc/drupal.js"></script>
+    <script src="/misc/ajax.js"></script>
+
+    <script type="text/javascript">
+    var Drupal = Drupal || {};
+    Drupal.jQuery = jQuery.noConflict();
+    Drupal.behaviors = Drupal.behaviors || {};
+    Drupal.settings = Drupal.settings || {};
+    Drupal.theme = Drupal.theme || {};
+    Drupal.settings.personalize = Drupal.settings.personalize || {};
+    </script>
+    <script src="../js/jquery/ducktape.position.js"></script>
+    <script src="../js/jquery/selectorator.js"></script>
+    <script src="../js/visitor_actions_ui.selector.js"></script>
+    <script src="../js/visitor_actions_ui.dialog.js"></script>
+    <script src="tests.js"></script>
+</body>
+</html>

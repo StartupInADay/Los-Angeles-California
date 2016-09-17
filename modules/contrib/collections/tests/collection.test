@@ -1,0 +1,63 @@
+<?php
+
+class CollectionTest extends CollectionWebTestCase {
+  protected $node;
+
+  static function getInfo() {
+    return array(
+      'name' => 'Collection',
+      'description' => 'Test the interacting with the collection entity',
+      'group' => 'Collection',
+    );
+  }
+
+/*
+  public function testFieldDuplicate() {
+    // Create node to edit.
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit["body[und][0][value]"] = $this->randomName(16);
+    $edit["field_collection[und][0][value]"] = "test_collection_1";
+    $edit["revision"] = TRUE;
+    $this->drupalPost("node/{$this->node->nid}/edit", $edit, t('Save'));
+    $this->assertText(
+      t('There is another revisions that is using the %collection collection.',
+        array( '%collection' => "test_collection_1")),
+      "Multiple revisions on a collection should not be able to contain the same collection");
+
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit["body[und][0][value]"] = $this->randomName(16);
+    $edit["field_collection[und][0][value]"] = "test_collection_1";
+    $edit['field_collection[und][0][overwrite]'] = TRUE;
+    $edit["revision"] = TRUE;
+    $this->drupalPost("node/{$this->node->nid}/edit", $edit, t('Save'));
+    $this->assertText(
+      t('Article %title has been created..',
+        array( '%title' => $edit['title'])),
+      "A new Revision can remove the collection from a previous revision via form.");
+  }*/
+
+  public function testCollectionRevisionOverwrite() {
+    $node_3 = clone $this->node;
+    $node_3->revision = TRUE;
+    node_save($node_3);
+
+    $node = node_load($this->node->nid, $this->node->vid, TRUE);
+    $node_3 = node_load($node_3->nid, $node_3->vid, TRUE);
+
+    $this->assertEqual("test_collection_1", $node->field_collection[LANGUAGE_NONE][0]['value'],
+      t('Collection was not removed from original revision without overwrite set'));
+    $this->assertFalse($node_3->field_collection[LANGUAGE_NONE][0]['value'],
+      t('Collection was not saved to the new revision without overwrite set'));
+
+    $new_node = clone $this->node;
+    $new_node->revision = TRUE;
+    $new_node->field_collection[LANGUAGE_NONE][0]['overwrite'] = TRUE;
+    node_save($new_node);
+
+    $node = node_load($this->node->nid, $this->node->vid, TRUE);
+    $this->assertFalse($node->field_collection[LANGUAGE_NONE][0]['value'],
+      t('Collection was removed from revision using overwrite'));
+  }
+}

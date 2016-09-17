@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * @file
+ * Install, update and schema hooks for the FlexSlider Picture module.
+ */
+function flexslider_picture_schema() {
+  $schema = array();
+  $schema['flexslider_picture_optionset'] = array(
+    'description' => 'Saves which flexslider optionsets use picture mappings and which use image styles.',
+    'export' => array(
+      'key' => 'flexslider_optionset',
+      'identifier' => 'flexslider_picture_optionset',
+      'api' => array(
+        'owner' => 'flexslider_picture',
+        'api' => 'flexslider_picture_optionset',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'The internal identifier.',
+        'no export' => TRUE, // Do not export database-only keys.
+      ),
+      'flexslider_optionset' => array(
+        'description' => 'The machine-readable option set name.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'imagestyle_type' => array(
+        'description' => 'One of image_style or picture_mapping.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'mapping' => array(
+        'description' => 'The picture mapping for this optionset.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'imagestyle_type' => array('imagestyle_type'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook_schema_alter().
+ */
+function flexslider_picture_schema_alter(&$schema) {
+  $schema['flexslider_optionset']['join']['flexslider_picture'] = array(
+    'table' => 'flexslider_picture_optionset',
+    'left_key' => 'name',
+    'right_key' => 'flexslider_optionset',
+    'callback' => 'flexslider_picture_join_callback',
+    'load' => array(
+      'imagestyle_type',
+      'mapping',
+    ),
+    'fields' => array(
+      'imagestyle_type' => 'imagestyle_type',
+      'mapping' => 'mapping',
+    ),
+  );
+}

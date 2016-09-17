@@ -1,0 +1,86 @@
+diff --git a/text_hierarchical.module b/text_hierarchical.module
+index 084b3c2..666df69 100644
+--- a/text_hierarchical.module
++++ b/text_hierarchical.module
+@@ -186,6 +186,30 @@ function text_hierarchical_field_formatter_settings_summary($field, $instance, $
+ 
+ 
+ /**
++ * Recursive function to render children items in tree.
++ * @param $parent
++ * @param $items
++ */
++function _text_hierarchical_field_formatter_render_children($parent, $level, $items, $elements) {
++  $render_array = array();
++
++  // Loop over items and identify children.
++  foreach ($items as $delta=>$item) {
++    if ($item['parent'] == $parent) {
++      $current_index = count($render_array);
++      $render_array[] = array(
++        'data' => '<div class="field-value field-value-' . ($delta + 1) . '">' . $elements[$delta]['#markup'] . '</div>',
++        'class' => array('depth depth-' . $level),
++      );
++      $render_array[$current_index]['children'] = _text_hierarchical_field_formatter_render_children($delta, ($level+1), $items, $elements);
++    }
++  }
++
++  return $render_array;
++
++}
++
++/**
+  * Implements hook_field_formatter_view().
+  */
+ function text_hierarchical_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+@@ -221,38 +245,18 @@ function text_hierarchical_field_formatter_view($entity_type, $entity, $field, $
+       }
+       break;
+   }
+-  $tree = array();
+-  $refs = array(0 => &$tree);
+-  $depth = 1;
+-  $depths = array(0 => $depth);
+-  foreach ($element as $delta => $item) {
+-    $parent = $items[$delta]['parent'];
+-    if (isset($depths[$parent])) {
+-      $depth = $depths[$parent];
+-    }
+-    else {
+-      $depths[$delta] = ++$depth;
+-    }
+-    $refs[$parent][] = array(
+-      'data' => '<div class="field-value field-value-' . ($delta + 1) . '">' . $item['#markup'] . '</div>',
+-      'children' => array(),
+-      'class' => array('depth depth-' . $depth),
+-    );
+-    $refs[$delta + 1] = &$refs[$parent][count($refs[$parent]) - 1]['children'];
+-  }
+-  if ($tree) {
+-    $result = array(
+-      array(
+-        '#markup' => theme('item_list', array(
+-          'items' => $tree,
+-          'attributes' => array('class' => array('depth', 'depth-0')),
+-        )),
+-      ),
+-    );
+-  }
+-  else {
+-    $result = FALSE;
+-  }
++
++  $refs = _text_hierarchical_field_formatter_render_children('-1', '0', $items, $element);
++
++  $result = array(
++    array(
++      '#markup' => theme('item_list', array(
++        'items' => $refs,
++        'attributes' => array('class' => array('depth', 'depth-0')),
++      )),
++    ),
++  );
++
+ 
+   return $result;
+ }

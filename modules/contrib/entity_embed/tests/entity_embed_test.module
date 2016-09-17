@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * @file
+ * Helper module for the entity_embed tests.
+ */
+
+/**
+ * Implements hook_entity_embed_context_alter().
+ */
+function entity_embed_test_entity_embed_context_alter(&$context, $entity) {
+  // Allow tests to enable or disable this hook.
+  if (!variable_get('entity_embed_test_entity_embed_context_alter', FALSE)) {
+    return;
+  }
+
+  // Force to use 'Label' plugin.
+  $context['data-entity-embed-display'] = 'entityreference:entityreference_label';
+  $context['data-entity-embed-settings'] = array('link' => 1);
+
+  // Set title of the entity.
+//  $entity->title = 'Title set by hook_entity_embed_context_alter';
+}
+
+/**
+ * Implements hook_entity_embed_alter().
+ */
+function entity_embed_test_entity_embed_alter(&$build, $entity, $context) {
+  // Allow tests to enable or disable this hook.
+  if (!variable_get('entity_embed_test_entity_embed_alter', FALSE)) {
+    return;
+  }
+
+  // Set title of the 'node' entity.
+  $node = $build['node'][$entity->nid]['#node'];
+  $node->title = 'Title set by hook_entity_embed_alter';
+}

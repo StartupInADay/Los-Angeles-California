@@ -1,0 +1,10 @@
+// @file
+// Only output css for the specified version of Internet Explorer.
+
+$ie-version: none !default;
+
+@mixin ies-only($version) {
+  @if $ie-version == $version {
+    @content;
+  }
+}

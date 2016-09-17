@@ -1,0 +1,293 @@
+<?php
+
+/**
+ * @file
+ * Tests for Visitor Actions module.
+ */
+
+class VisitorActionsTest extends DrupalWebTestCase {
+
+  protected $adminUser;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Visitor Actions Tests'),
+      'description' => t('Tests basic functionality of Visitor Actions module.'),
+      'group' => t('Visitor Actions'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('visitor_actions_test', 'locale'));
+    // Create and login user.
+    $this->adminUser = $this->drupalCreateUser(array('access administration pages', 'administer visitor actions', 'administer languages'));
+    $this->drupalLogin($this->adminUser);
+
+    // Enable French language.
+    $edit = array();
+    $edit['langcode'] = 'fr';
+    $this->drupalPost('admin/config/regional/language/add', $edit, t('Add language'));
+
+    // Enable URL language detection and selection.
+    $edit = array('language[enabled][locale-url]' => 1);
+    $this->drupalPost('admin/config/regional/language/configure', $edit, t('Save settings'));
+
+    // Create a node and an alias to the node.
+    $this->drupalCreateNode(array('nid' => 13579, 'is_new' => TRUE));
+    $alias_path = array(
+      'source' => 'node/13579',
+      'alias' => 'my_node_13579',
+    );
+    path_save($alias_path);
+
+    // Login out user.
+    $this->drupalLogout($this->adminUser);
+  }
+
+  /**
+   * Tests that actions defined in hook_visitor_actions_info are loaded.
+   */
+  public function testActionsLoad() {
+    $actions = visitor_actions_get_actions();
+    // Assert that an action defined using hook_visitor_actions_info() is loaded.
+    $this->assertTrue(isset($actions['visitor_actions_test_form_click_test']));
+    // Assert that an action defined in a default hook is loaded.
+    $this->assertTrue(isset($actions['test_action']));
+  }
+
+  /**
+   * Tests action behavior under multiple scenarios.
+   */
+  public function testActionSettings() {
+    $this->drupalGet('node');
+    $settings = $this->drupalGetSettings();
+    $va_settings = $settings['visitor_actions'];
+    // Check that the currentPath setting has been set
+    $this->assertEqual('node', $va_settings['currentPath']);
+    // On the home page we should only see settings for those client-side
+    // actions that don't have pages specified, or specify the home page.
+    $expected_actions = array(
+      0 => 'scroll_to_bottom',
+      1 => 'visitor_actions_test_form_click_test',
+      2 => 'visitor_actions_test_form_hover_test',
+      3 => 'visitor_actions_test_form_submit_client_side',
+      4 => 'test_action'
+    );
+    $this->assertEqual($expected_actions, array_keys($va_settings['actions']));
+
+    $this->drupalGet('user');
+    $settings = $this->drupalGetSettings();
+    $va_settings = $settings['visitor_actions'];
+    // On the user page we should see the breadcrumb_link action as well, but not
+    // the test_action action which should only exist on the home page.
+    $expected_actions = array(
+      0 => 'scroll_to_bottom',
+      1 => 'visitor_actions_test_form_click_test',
+      2 => 'visitor_actions_test_form_hover_test',
+      3 => 'visitor_actions_test_form_breadcrumb_link',
+      4 => 'visitor_actions_test_form_submit_client_side',
+    );
+    $this->assertEqual($expected_actions, array_keys($va_settings['actions']));
+  }
+
+  /**
+   * Tests actions' "pages" filtering. See visitor_actions_match_page().
+   */
+  public function testActionPageFiltering() {
+    // The actions that will show on all pages, that are unrelated to this test.
+    $all_page_action_names = array(
+      0 => 'scroll_to_bottom',
+      1 => 'visitor_actions_test_form_click_test',
+      2 => 'visitor_actions_test_form_hover_test',
+      3 => 'visitor_actions_test_form_submit_client_side',
+    );
+
+    // This is an iteration of the truth table.
+    $expected_action_names_per_page_url_array = array(
+      'node/13579' => array(
+        'node/13579', 'node/*', 'my_node_13579',
+      ),
+      'my_node_13579' => array(
+        'node/13579', 'node/*', 'my_node_13579',
+      ),
+      'fr/node/13579' => array(
+        'node/13579', 'node/*', 'my_node_13579', 'fr/node/13579', 'fr/my_node_13579',
+      ),
+      'fr/my_node_13579' => array(
+        'node/13579', 'node/*', 'my_node_13579', 'fr/node/13579', 'fr/my_node_13579',
+      ),
+    );
+
+    // Assert expected action names per pages' URLs.
+    foreach ($expected_action_names_per_page_url_array as $page_url => $expected_action_names) {
+      $this->drupalGet($page_url);
+      $settings = $this->drupalGetSettings();
+      $page_action_names = array_keys($settings['visitor_actions']['actions']);
+      // Eliminate the "background noises" actions that show up on all pages, then reindex.
+      $actual_action_names = array_values(array_diff($page_action_names, $all_page_action_names));
+      $this->assertEqual($expected_action_names, $actual_action_names);
+    }
+  }
+
+  public function testActionCreationForm() {
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet('admin/structure/visitor_actions/add');
+    // The dropdown for selecting the actionable element should exist.
+    $this->assertFieldByName('actionable_element');
+
+    $this->drupalGet('admin/structure/visitor_actions/add/link');
+    // There should be no actionable_element dropdown.
+    $this->assertNoFieldByName('actionable_element');
+    $action_name = strtolower($this->randomName());
+    $edit = array(
+      'machine_name' => $action_name,
+      'title' => $this->randomName(),
+      'identifier[link]' => '.some-class',
+      'event[link]' => 'client::click',
+      'pages' => 'node',
+    );
+    $this->drupalPost('admin/structure/visitor_actions/add/link', $edit, t('Save'));
+    // Now see if the new action shows up.
+    $this->drupalGet('node');
+    $settings = $this->drupalGetSettings();
+    $va_settings = $settings['visitor_actions'];
+
+    $this->assertTrue(in_array($action_name, array_keys($va_settings['actions'])));
+
+    // Now edit the action and specify valid paths.
+    $valid_path_array = array(
+      '<front>',
+      'node',
+      'node/13579',
+      'node/*',
+      'fr/node/13579',
+      'fr/my_node_13579',
+      'fr/node/*',
+      "fr/node\rmy_node_13579",
+      "fr/node\nmy_node_13579",
+      "fr/node\r\nmy_node_13579",
+    );
+    foreach ($valid_path_array as $valid_path) {
+      $edit = array(
+        'pages' => $valid_path,
+      );
+      $this->drupalPost("admin/structure/visitor_actions/manage/$action_name/edit", $edit, t('Save'));
+      $this->assertNoText('You have specified an invalid path for Pages');
+    }
+
+    // Now edit the action and specify invalid paths.
+    $valid_path_array = array(
+      'some invalid url',
+      'node/1111',
+      'de/node/*',
+      "fr/node/13579\nsome invalid url",
+      "fr/node/13579\nde/node/*",
+      "fr/node/13579\nnode/1111",
+    );
+    foreach ($valid_path_array as $valid_path) {
+      $edit = array(
+        'pages' => $valid_path,
+      );
+      $this->drupalPost("admin/structure/visitor_actions/manage/$action_name/edit", $edit, t('Save'));
+      $this->assertText('You have specified an invalid path for Pages');
+    }
+  }
+
+  public function testActionCreationAPI() {
+    $action_name = $this->randomName();
+    $machine_name = preg_replace('/[^a-z0-9_]+/', '_', drupal_strtolower($action_name));
+    $action = array(
+      'plugin' => 'link',
+      'label' => $action_name,
+      'machine_name' => $machine_name,
+      'identifier' => '.some-class',
+      'event' => 'client::click',
+      'pages' => 'node',
+      'data' => array(),
+    );
+    $success = visitor_actions_save_action($action);
+    $this->assertTrue($success);
+    $saved = visitor_actions_custom_load($machine_name);
+
+    $this->assertEqual($saved['machine_name'], $machine_name);
+    $this->assertEqual($saved['label'], $action_name);
+    $this->assertEqual($saved['identifier'], '.some-class');
+    $this->assertEqual($saved['event'], 'client::click');
+    $this->assertEqual($saved['pages'], 'node');
+    $this->assertEqual($saved['plugin'], 'link');
+
+    $action_name = $this->randomName();
+    $action_name .= '-invalid$characters';
+    $machine_name_correct = preg_replace('/[^a-z0-9_]+/', '_', drupal_strtolower($action_name));
+
+    $action = array(
+      'plugin' => 'link',
+      'label' => $action_name,
+      'machine_name' => $action_name,
+      'identifier' => '.some-class',
+      'event' => 'client::click',
+      'pages' => 'node',
+      'data' => array(),
+    );
+    $success = visitor_actions_save_action($action);
+    $this->assertTrue($success);
+    // There should be no action with the submitted machine name.
+    $saved = visitor_actions_custom_load($action_name);
+    $this->assertTrue(empty($saved));
+    // The machine name should have been corrected.
+    $saved = visitor_actions_custom_load($machine_name_correct);
+    $this->assertEqual($saved['machine_name'], $machine_name_correct);
+    $this->assertEqual($saved['label'], $action_name);
+    $this->assertEqual($saved['identifier'], '.some-class');
+    $this->assertEqual($saved['event'], 'client::click');
+    $this->assertEqual($saved['pages'], 'node');
+    $this->assertEqual($saved['plugin'], 'link');
+  }
+
+  function testLimitedUseAction() {
+    $this->drupalLogin($this->adminUser);
+    // Create a link action.
+    $action_name = strtolower($this->randomName());
+    $edit = array(
+      'machine_name' => $action_name,
+      'title' => $this->randomName(),
+      'identifier[link]' => '.some-class',
+      'event[link]' => 'client::click',
+      'pages' => 'node',
+    );
+    $this->drupalPost('admin/structure/visitor_actions/add/link', $edit, t('Save'));
+    $this->resetAll();
+    // The limited use property should be 0.
+    $action = visitor_actions_custom_load($action_name);
+    $this->assertTrue(isset($action['limited_use']));
+    $this->assertFalse($action['limited_use']);
+
+    // Get all actions, excluding limited use ones.
+    $actions = visitor_actions_custom_load_multiple(array(), TRUE);
+    // The action should show up in the list.
+    $this->assertTrue(isset($actions[$action_name]));
+
+    // Now uncheck the reusable checkbox.
+    $edit = array(
+      'reusable' => FALSE
+    );
+    $this->drupalPost("admin/structure/visitor_actions/manage/$action_name/edit", $edit, t('Save'));
+    $this->resetAll();
+    // The limited use property should be 1.
+    $action = visitor_actions_custom_load($action_name);
+    $this->assertTrue(isset($action['limited_use']));
+    $this->assertTrue($action['limited_use']);
+
+    // Get all actions, excluding limited use ones.
+    $actions = visitor_actions_custom_load_multiple(array(), TRUE);
+    // The action should not show up in the list.
+    $this->assertFalse(isset($actions[$action_name]));
+  }
+
+  public function testFormServerSideAction() {
+    $this->drupalPost('visitor-actions-test/form-action', array('test' => 'Test'), t('Save'));
+    $this->assertText('Test action "base_form" subscriber was fired!');
+    $this->assertText('Test action "form_submit" subscriber was fired!');
+    $this->assertText('Test action "form" subscriber was fired!');
+  }
+}

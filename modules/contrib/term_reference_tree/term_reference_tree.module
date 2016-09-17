@@ -1,0 +1,227 @@
+<?php
+
+module_load_include('inc', 'term_reference_tree', 'term_reference_tree.field');
+module_load_include('inc', 'term_reference_tree', 'term_reference_tree.widget');
+
+/**
+ * Implements hook_element_info().
+ */
+function term_reference_tree_element_info() {
+  $types = array(
+    'checkbox_tree' => array(
+      '#input' => TRUE,
+      '#process' => array('term_reference_tree_process_checkbox_tree'),
+      '#theme' => array('checkbox_tree'),
+      '#pre_render' => array('form_pre_render_conditional_form_element'),
+    ),
+    'checkbox_tree_level' => array(
+      '#input' => FALSE,
+      '#theme' => array('checkbox_tree_level'),
+      '#pre_render' => array('form_pre_render_conditional_form_element'),
+    ),
+    'checkbox_tree_item' => array(
+      '#input' => FALSE,
+      '#theme' => array('checkbox_tree_item'),
+      '#pre_render' => array('form_pre_render_conditional_form_element'),
+    ),
+    'checkbox_tree_label' => array(
+      '#input' => FALSE,
+      '#theme' => array('checkbox_tree_label'),
+      '#pre_render' => array('form_pre_render_conditional_form_element'),
+    ),
+    'checkbox_tree_track_list' => array(
+      '#input' => FALSE,
+      '#theme' => array('checkbox_tree_track_list'),
+      '#pre_render' => array('form_pre_render_conditional_form_element'),
+    ),
+  );
+
+  return $types;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function term_reference_tree_theme() {
+  return array(
+    'checkbox_tree' => array(
+      'render element' => 'element',
+    ),
+    'checkbox_tree_level' => array(
+      'render element' => 'element',
+    ),
+    'checkbox_tree_item' => array(
+      'render element' => 'element',
+    ),
+    'checkbox_tree_label' => array(
+      'render element' => 'element',
+    ),
+    'checkbox_tree_track_list' => array(
+      'render element' => 'element',
+    ),
+    'term_tree_list' => array(
+      'render element' => 'element',
+    ),
+  );
+}
+
+
+/**
+ * This function returns a taxonomy term hierarchy in a nested array.
+ *
+ * @param $tid
+ *   The ID of the root term.
+ * @param $vid
+ *   The vocabulary ID to restrict the child search.
+ *
+ * @return
+ *   A nested array of the term's child objects.
+ */
+function _term_reference_tree_get_term_hierarchy($tid, $vid, &$allowed, $filter, $label, $default = array()) {
+  $terms = _term_reference_tree_get_children($tid, $vid, $default);
+
+  $result = array();
+
+  if ($filter != '') {
+    foreach ($allowed as $k => $v) {
+      if (array_key_exists($k, $terms)) {
+        $term =& $terms[$k];
+        $children = _term_reference_tree_get_term_hierarchy($term->tid, $vid, $allowed, $filter, $label, $default);
+        if (is_array($children)) {
+          $term->children = $children;
+          $term->children_selected = _term_reference_tree_children_selected($term, $default);
+        }
+        else {
+          $term->children_selected = FALSE;
+        }
+        $term->TEST = $label;
+        array_push($result, $term);
+      }
+    }
+  }
+  else {
+    foreach ($terms as &$term) {
+      if ($filter == '' || array_key_exists($term->tid, $allowed)) {
+        $children = _term_reference_tree_get_term_hierarchy($term->tid, $vid, $allowed, $filter, $label, $default);
+        if (is_array($children)) {
+          $term->children = $children;
+          $term->children_selected = _term_reference_tree_children_selected($term, $default);
+        }
+        else {
+          $term->children_selected = FALSE;
+        }
+        $term->TEST = $label;
+        array_push($result, $term);
+      }
+    }
+  }
+
+  return $result;
+}
+
+/**
+ * This function is like taxonomy_get_children, except it doesn't load the entire term.
+ *
+ * @param $tid
+ *   The ID of the term whose children you want to get.
+ * @param $vid
+ *   The vocabulary ID.
+ *
+ * @return
+ *   An array of taxonomy terms, each in the form array('tid' => $tid, 'name' => $name)
+ */
+function _term_reference_tree_get_children($tid, $vid) {
+  // DO NOT LOAD TAXONOMY TERMS HERE
+  // Taxonomy terms take a lot of time and memory to load, and this can be
+  // very bad on large vocabularies.  Instead, we load the term as necessary
+  // in cases where it's needed (such as using tokens or when the locale
+  // module is enabled).
+  $query = db_select('taxonomy_term_data', 't');
+  $query->join('taxonomy_term_hierarchy', 'h', 't.tid = h.tid');
+  $query->join('taxonomy_vocabulary', 'v', 'v.vid = t.vid');
+  $query->fields('t', array('tid', 'name'));
+  $query->addField('v', 'machine_name', 'vocabulary_machine_name');
+  $query->condition('t.vid', $vid);
+  $query->condition('h.parent', $tid);
+  $query->addTag('term_access');
+  $query->addTag('translatable');
+  $query->orderBy('t.weight');
+  $query->orderBy('t.name');
+  $results = $query->execute();
+
+  $terms = array();
+  while ($term = $results->fetchObject()) {
+    $terms[$term->tid] = $term;
+  }
+
+  return $terms;
+}
+
+function _term_reference_tree_children_selected($terms, $default) {
+  foreach ($terms->children as $term) {
+    if (isset($default[$term->tid]) || $term->children_selected) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+function _term_reference_tree_get_parent($tid) {
+  $q = db_query_range("SELECT h.parent FROM {taxonomy_term_hierarchy} h WHERE h.tid = :tid", 0, 1, array(':tid' => $tid));
+
+  $t = 0;
+  foreach ($q as $term) {
+    $t = $term->parent;
+  }
+
+  return $t;
+}
+
+/**
+ * Recursively go through the option tree and return a flat array of
+ * options
+ */
+function _term_reference_tree_flatten($element, &$form_state) {
+  $output = array();
+  $children = element_children($element);
+  foreach ($children as $c) {
+    $child = $element[$c];
+    if (array_key_exists('#type', $child) && ($child['#type'] == 'radio' || $child['#type'] == 'checkbox')) {
+      $output[] = $child;
+    }
+    else {
+      $output = array_merge($output, _term_reference_tree_flatten($child, $form_state));
+    }
+  }
+  return $output;
+}
+
+/**
+ * Return an array of options.
+ *
+ * This function converts a list of taxonomy terms to a key/value list of options.
+ *
+ * @param $terms
+ *   An array of taxonomy term IDs.
+ * @param $allowed
+ *   An array containing the terms allowed by the filter view
+ * @param $filter
+ *   A string defining the view to filter by (only used to detect whether view
+ *   filtering is enabled
+ *
+ * @return
+ *   A key/value array of taxonomy terms (name => id)
+ */
+function _term_reference_tree_get_options(&$terms, &$allowed, $filter) {
+  $options = array();
+
+  if (is_array($terms) && count($terms) > 0) {
+    foreach ($terms as $term) {
+      if (!$filter || (is_array($allowed) && $allowed[$term->tid])) {
+        $options[$term->tid] = entity_label('taxonomy_term', $term);
+        $options += _term_reference_tree_get_options($term->children, $allowed, $filter);
+      }
+    }
+  }
+  return $options;
+}

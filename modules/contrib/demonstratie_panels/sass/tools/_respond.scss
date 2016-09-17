@@ -1,0 +1,95 @@
+// @file
+// General logic for responsive layouts.
+
+$no-media-query: false !default;
+$respond-breakpoints: (small, 40) (medium, 60) (large, 80) !default;
+$respond-unit: em !default;
+
+@mixin respond($media) {
+  // Only attempt to construct a media query if needed.
+  @if $no-media-query == false {
+    $breaks: $respond-breakpoints;
+    $length: length($breaks);
+    $found: false;
+    $minimum: false;
+    $maximum: false;
+    $increment: .001;
+    $count: 1;
+
+    @if $respond-unit == px {
+      $increment: 1;
+    }
+
+    @while $count <= $length {
+      $current: nth($breaks, $count);
+      $name: nth($current, 1);
+      $value: nth($current, 2);
+
+      @if length($media) == 1 {
+        // Try to find the simpler media calls first.
+        @if $media == $name {
+          $minimum: $value;
+          $found: true;
+          $count: $length + 1;
+        }
+        @else if $media == "only-#{$name}" {
+          @if $count == 1 {
+            $maximum: $value;
+          }
+          @else if $count == $length {
+            $minimum: $value;
+          }
+          @else {
+            $minimum: $value;
+            $maximum: nth(nth($breaks, $count + 1), 2) - $increment;
+          }
+          $found: true;
+          $count: $length + 1;
+        }
+        @else {
+          $count: $count + 1;
+        }
+      }
+      @else {
+        // If there is not a simple media type, look for the spanning media
+        // types.
+        @if nth($media, 1) == $name {
+          $minimum: $value + $increment;
+        }
+        @if nth($media, 2) == $name {
+          $maximum: $value - $increment;
+        }
+        @if $minimum and $maximum {
+          $count: $length + 1;
+          $found: true;
+        }
+        @else {
+          $count: $count + 1;
+        }
+      }
+    }
+
+    // Construct the media query if it is found, else give a warning.
+    @if $found {
+      $query: "";
+      @if $minimum and $maximum {
+        $query: "(min-width: #{$minimum}#{$respond-unit}) and (max-width: #{$maximum}#{$respond-unit})";
+      }
+      @else if $minimum {
+        $query: "(min-width: #{$minimum}#{$respond-unit})";
+      }
+      @else if $maximum {
+        $query: "(max-width: #{$maximum}#{$respond-unit})";
+      }
+      @media only screen and #{$query} {
+        @content;
+      }
+    }
+    @else {
+      @warn "The breakpoint for the \"#{$media}\" media is not defined and will not be output."
+    }
+  }
+  @else if $no-media-query == $media {
+    @content;
+  }
+}

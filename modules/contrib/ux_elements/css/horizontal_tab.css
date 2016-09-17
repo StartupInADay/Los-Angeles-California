@@ -1,0 +1,53 @@
+
+.horizontal-tabs-processed .horizontal-tabs-pane {
+  clear: both;
+  margin-top: 0;
+  padding: 0;
+}
+
+.horizontal-tabs-processed .horizontal-tabs-pane > legend {
+  display: none;
+}
+
+.horizontal-tabs .horizontal-tabs-list {
+  margin: 0;
+}
+
+.horizontal-tab-button {
+  list-style: none;
+}
+
+.horizontal-tab-button {
+  float: left; /* LTR */
+  margin-right: 4px; /* LTR */
+  position: relative;
+  top: 1px;
+  z-index: 0;
+}
+
+.horizontal-tab-button.last {
+  margin-right: 0;
+}
+
+.horizontal-tab-button a {
+  background: #efefef;
+  border: 1px solid #d5d5d5;
+  border-bottom-color: #ccc;
+  display: inline-block;
+  padding: 1px 5px 3px;
+  color: #000;
+}
+
+.horizontal-tab-button a:hover {
+  background: #d5d5d5;
+  text-decoration: none;
+}
+
+.horizontal-tab-button.selected a,
+.horizontal-tab-button.selected a:active {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-bottom-color: #fff;
+  outline: none;
+  z-index: 1;
+}

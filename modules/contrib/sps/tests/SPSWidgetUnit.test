@@ -1,0 +1,141 @@
+<?php
+class SPSWidgetUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS Test Widget Unit Tests',
+      'description' => 'Test the Widget objects.',
+      'group' => 'SPS',
+    );
+  }
+
+  public function testTestWidget() {
+    $state = array(
+      'values' => array(
+        'text_input' => 'default',
+      ),
+    );
+    $manager = self::getManager();
+
+    $widget = new \Drupal\sps\Test\Widget(array(), $manager);
+    $form = $widget->getPreviewForm(array(), $state);
+    $this->assertEqual($form['text_input']['#default_value'], 'default', 'Widget properly sets default value.');
+
+    form_clear_error();
+    $bad_state = array();
+    $widget->validatePreviewForm($form, $bad_state);
+    $errors = form_get_errors();
+    if (empty($errors['text_input'])) {
+      $this->fail('Widget validate did not detect empty value.');
+    }
+    else {
+      $this->pass('Widget properly set an error.');
+    }
+
+    form_clear_error();
+    $widget->validatePreviewForm($form, $state);
+    $errors = form_get_errors();
+    if (empty($errors)) {
+      $this->pass('Widget properly passes validate.');
+    }
+    else {
+      $this->fail('Widget validate detects error in good state.');
+    }
+
+    form_clear_error();
+    $values = $widget->extractValues($form, $state);
+    $this->assertEqual($values, 'default', 'Widget extract values should be consistant with form state.');
+  }
+
+  public function testDateWidget() {
+    $manager = self::getManager();
+
+    $widget = new \Drupal\sps\Plugins\Widget\DateWidget(array(), $manager);
+
+    //we're cheating by passing a timezone to make this not depend on server time
+    $state = array(
+      'values' => array(
+        'preview_date' => array(
+          'day' => '12',
+          'month' => '7',
+          'year' => '2012',
+        ),
+        'preview_time' => '10:11:12 UTC',
+      ),
+    );
+    $time = 1342087872; //note that this timestamp is UTC
+
+    $init = array();
+    $form = $widget->getPreviewForm(array(), $init);
+    form_clear_error();
+    $widget->validatePreviewForm($form, $state);
+    $this->assertEqual(form_get_errors(), array(), 'DateWidget should accept valid dates and times.');
+    form_clear_error();
+    $bad_state = array(
+      'values' => array(
+        'preview_date' => array(
+          'day' => '43',
+          'month' => '13',
+          'year' => '2012',
+        ),
+        'preview_time' => '27:00:01',
+      ),
+    );
+    $widget->validatePreviewForm($form, $bad_state);
+    $this->assertEqual(count(form_get_errors()), 1, 'DateWidget should reject invalid dates and times.');
+
+    $value = $widget->extractValues($form, $state);
+    $this->assertEqual($value, $time, 'DateWidget should extract values and convert them to a timestamp');
+  }
+
+  /**
+   * Helper function to return a manager object for passing into plugins
+   */
+  protected static function getManager() {
+    $plugins = array(
+      'Override' => array(
+        'test1' => array(
+          'name' => 'test1',
+          'condition' => 'BasicCondition',
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(
+            'type' => 'node',
+          ),
+        ),
+        'test2' => array(
+          'name' => 'test2',
+          'condition' => 'BasicCondition',
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(
+            'type' => 'box',
+          ),
+        ),
+        'test3' => array(
+          'name' => 'test3',
+          'condition' => 'client',
+          'class' => '\Drupal\sps\Test\Override',
+          'instance_settings' => array(),
+        ),
+      ),
+      'Condition' => array(
+        'basic' => array(
+          'name' => 'basic',
+          'class' => '\Drupal\sps\Plugins\Condition\BasicCondition',
+          'instance_settings' => array(
+            'widget' => 'basicWidget',
+            'name' => 'basic',
+          ),
+        ),
+      ),
+      'Widget' => array(
+        'basicWidget' => array(
+          'name' => 'basicWidget',
+          'class' => '\Drupal\sps\Test\Widget',
+        ),
+      )
+    );
+
+    $config_controller = new Drupal\sps\Test\ConfigController();
+    $config_controller->default[SPS_CONFIG_PLUGIN_CONTROLLER]['instance_settings'] = $plugins;
+    return new Drupal\sps\Test\Manager($config_controller);
+  }
+}

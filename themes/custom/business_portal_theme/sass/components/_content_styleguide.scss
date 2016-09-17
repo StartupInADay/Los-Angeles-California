@@ -1,0 +1,226 @@
+/**
+ * @file
+ *
+ * Content Styleguide.
+ *
+ */
+
+@mixin page__content_header--level_1_thin {
+  font-family: Merriweather, serif;
+  font-weight: normal;
+  font-size: 20px;
+  font-weight: 400;
+  border-top: 1px solid #dcdcdc;
+  margin: 0 0 15px;
+  padding: 15px 0 0;
+
+  @include window_size(desktop){
+    font-size: 28px;
+    margin: 0 0 30px;
+    padding: 20px 0 0 0;
+  }
+}
+
+
+@mixin page__content_header--level_1 {
+  font-size:26px;
+  font-weight: 900;
+  padding: 20px 0 0 0;
+  margin:0;
+  color: $dark_blue;
+  font-family: Merriweather, serif;
+  @include window_size(desktop){
+    padding: 30px 0 0 0;
+    font-size:36px;
+  }
+}
+
+
+@mixin page__content_header--level_2{
+  font-family: Merriweather, serif;
+  font-weight: normal;
+  font-size: 20px;
+  font-weight: 400;
+  border-top: 3px solid $dark_blue;
+  margin:20px 0 15px 0;
+  padding: 15px 20px 0 0;
+
+  @include window_size(desktop){
+    font-size: 28px;
+    margin:40px 0 30px 0;
+    padding: 20px 0 0 0;
+  }
+}
+
+@mixin page__content_header--level_2_thin {
+  font-family: Merriweather, serif;
+  font-weight: normal;
+  font-size: 20px;
+  font-weight: 400;
+  border-top: 1px solid #dcdcdc;
+  margin:20px 0 15px 0;
+  padding: 15px 20px 0 0;
+
+  @include window_size(desktop){
+    font-size: 28px;
+    margin:40px 0 30px 0;
+    padding: 20px 0 0 0;
+  }
+}
+
+
+@mixin page__content_header--level_3{
+  font-family: Roboto, sans-serif;
+  font-weight: 700;
+  color:$dark-blue !important;
+  /*padding: 20px 0 0 0;*/
+  font-size: 18px;
+  margin:0 0 10px 0;
+  border: 0px solid red;
+  /*background-image: url("../images/subsections/line_l3.png");*/
+  background-repeat: no-repeat;
+}
+
+
+@mixin page__content_paragraph--intro{
+  font-size: 18px;
+  line-height: 24px;
+   color:rgba(0,0,0,0.6);
+   border: 0px solid red;
+   margin:20px 0 25px 0;
+   padding: 0;
+   @include window_size(desktop){
+    margin:30px 0 40px 0;
+    font-size: 24px;
+    line-height: 30px;
+  }
+}
+
+@mixin page__content_paragraph--level_2{
+  color:rgba(0,0,0,0.6) !important;
+  margin:10px 0 20px 0;
+  padding: 0;
+  font-size: 14px;
+  line-height: 19px;
+  width: 95%;
+
+  @include window_size(desktop){
+    margin:15px 0 25px 0;
+    font-size: 16px;
+    line-height: 22px;
+  }
+}
+
+
+@mixin page__content_paragraph--note($note-bg-color: $tooltip-blue, $note-icon: "bulb") {
+  border: 0px solid red;
+  margin:15px 0 40px 0;
+  padding: 15px 10% 15px 20px;
+  color:rgba(0,0,0,0.6);
+  font-size: 14px;
+  line-height: 18px;
+  background-color: $tip-bg-color;
+  // icon pencil
+  @if $note-icon == pencil {
+    @include note_icon--pencil;
+  }
+  // icon bulb
+  @else if $note-icon == bulb {
+    @include note_icon--bulb;
+  }
+  // Deafult Icon
+  @else {
+    @include note_icon--bulb;
+  } 
+}
+@mixin note_icon--pencil {
+  padding-left: 45px;
+  background-image: url("../images/wizard/icon_pencil_no_circle_smaller_v2.png");
+  background-repeat: no-repeat;
+  background-size: 30px 30px;
+}
+@mixin note_icon--bulb {
+  padding-left: 35px;
+  background-image: url("../images/wizard/icon_bulb_no_circle.png");
+  background-repeat: no-repeat;
+  background-size: 23px 33px;
+}
+
+@mixin page__content_list {
+  padding: 0 0 10px 0;
+  margin: 10px 0 20px 10px;
+  color:rgba(0,0,0,0.6) !important;
+  @include window_size(desktop){
+    font-size: 16px;
+    line-height: 22px;
+    margin: 10px 0 20px 20px;
+  }
+  li{
+    border: 0px solid green;
+    margin: 4px 0 4px 10px;
+    line-height: 1.5em;
+  }
+}
+
+
+@mixin page__content_list--no_bullets {
+  font-size: 14px;
+  line-height: 19px;
+  list-style: none;
+  padding: 0 0 10px 0;
+  margin: 10px 0 20px 0;
+  color: rgba(0, 0, 0, 0.6) !important;
+  @include window_size(desktop) {
+    font-size: 16px;
+    line-height: 22px;
+    margin: 10px 0 20px 0;
+    padding: 0;
+  }
+  li {
+    border: 0px solid green;
+    margin: 10px 0 10px 0;
+    line-height: 1.5em;
+  }
+}
+
+
+
+@mixin page__content_ordered_list {
+  border: 0px solid red !important;
+  padding: 0 0 10px 0;
+  margin: 10px 0 20px 10px;
+  color:rgba(0,0,0,0.6) !important;
+  @include window_size(desktop){
+    font-size: 16px;
+    line-height: 22px;
+    margin: 10px 0 20px 20px;
+  }
+  li{
+    margin: 4px 0 4px 10px;
+    line-height: 1.5em;
+    @include window_size(desktop){
+      margin: 2px 0 2px 10px;
+    }
+  }
+}
+
+
+@mixin page__content_link{
+  font-size: 16px;
+  color:$light-blue;
+  font-weight: 700;
+  border: 0px solid red;
+  margin: 20px 0 30px;
+  padding: 0;
+  background-image: url("../images/subsections/icon_link_arrow.png");
+  background-repeat: no-repeat;
+  background-size: 9px 16px;
+  padding-right: 17px;
+  background-position: right center;
+  display: inline-block;
+  /*width: 120px;*/
+  text-decoration: none !important;
+  @include window_size(desktop){
+    font-size: 18px;
+  }
+}

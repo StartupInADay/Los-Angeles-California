@@ -1,0 +1,29 @@
+/**
+ * Token browser styles
+ */
+
+.ui-widget-content {
+    background: whitesmoke;
+}
+
+.ui-dialog .ui-dialog-titlebar {
+    background-color: #444444;
+    padding: .5em;
+}
+
+.ui-dialog-title {
+    font-weight: bold;
+    color: white;
+}
+
+.token-tree caption {
+    font-style: inherit;
+    font-family: 'Helvetica Neue', helvetica, 'Segoe UI', segoe, Ubuntu, 'Droid Sans', Arial, sans-serif;
+    padding: .5em;
+    text-align: left;
+}
+
+table.token-tree th, table.token-tree td {
+    padding-top: .5em;
+    padding-bottom: .5em;
+}

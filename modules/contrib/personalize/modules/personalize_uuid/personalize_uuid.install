@@ -1,0 +1,51 @@
+<?php
+
+module_load_include('module', 'personalize_uuid');
+
+/**
+ * Implements hook_schema_alter().
+ */
+function personalize_uuid_schema_alter(&$schema = array()) {
+  $schema_field_definition = personalize_uuid_schema_field_definition();
+
+  foreach (personalize_uuid_entities() as $entity_type => $entity_info) {
+    $schema[$entity_info['base table']]['fields'][$entity_info['uuid']] = $schema_field_definition;
+  }
+}
+
+/**
+ * Implements hook_install().
+ */
+function personalize_uuid_install() {
+  $schema_field_definition = personalize_uuid_schema_field_definition();
+
+  foreach (personalize_uuid_entities() as $entity_type => $entity_info) {
+    if (!db_field_exists($entity_info['base table'], $entity_info['uuid'])) {
+      db_add_field($entity_info['base table'], $entity_info['uuid'], $schema_field_definition);
+    }
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function personalize_uuid_uninstall() {
+  foreach (personalize_uuid_entities() as $entity_type => $entity_info) {
+    if (db_field_exists($entity_info['base table'], $entity_info['uuid'])) {
+      db_drop_field($entity_info['base table'], $entity_info['uuid']);
+    }
+  }
+}
+
+/**
+ * Helper function that returns a schema field definition for UUID fields.
+ */
+function personalize_uuid_schema_field_definition() {
+  return array(
+    'type' => 'char',
+    'length' => 36,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'The Universally Unique Identifier.',
+  );
+}

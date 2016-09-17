@@ -1,0 +1,62 @@
+<?php
+
+class CollectionAdminTest extends CollectionWebTestCase {
+
+  protected $adminUser;
+
+  static function getInfo() {
+    return array(
+      'name' => 'Collection Admin Test',
+      'description' => 'Test the Admin interacting with the collection entity',
+      'group' => 'Collection',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp();
+    $this->adminUser = $this->drupalCreateUser(array('administer collections'));
+    $this->drupalLogin($this->adminUser);
+  }
+
+  /**
+   * Test adding a new collection via the admin Screen.
+   */
+  protected function testCreateCollection() {
+    // Test flow:
+    // Collections -> Add Collection -> Save Collection
+    $this->drupalGet('admin/structure/collection');
+    $this->clickLink(t('Add collection'));
+    $edit = array();
+    $edit['label'] = 'collection_test_1';
+    $edit['name'] = 'collection_test_1';
+    $this->drupalPost(NULL, $edit, t('Save Collection'));
+
+    $this->assertText('Machine name: collection_test_1', "The collection_test_1 collection was created");
+  }
+
+  /**
+   * Test deleting collections via the admin Screen.
+   */
+  protected function testDeleteCollection() {
+    // Test flow:
+    // Collections -> Delete Collection
+    $this->drupalGet('admin/structure/collection');
+    $this->clickLink(t('delete'));
+    $this->drupalPost(NULL, array(), t('Confirm'));
+    $this->assertText(t('Deleted Collection Test Collecction 1'), 'Test Collection 1 was deleted');
+  }
+
+  /**
+   * Test editing collections via the admin Screen.
+   */
+  protected function testEditCollection() {
+    // Test flow:
+    // Collections -> Delete Collection
+    $this->drupalGet('admin/structure/collection');
+    $this->clickLink(t('edit'));
+    $edit = array();
+    $edit['label'] = 'Test Collecction edited';
+    $this->drupalPost(NULL, $edit, t('Save Collection'));
+    $this->assertLink(t('Test Collecction edited'), 0, 'Collection label edited');
+  }
+}

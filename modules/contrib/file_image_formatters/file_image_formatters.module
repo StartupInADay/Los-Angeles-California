@@ -1,0 +1,148 @@
+<?php
+
+/**
+ * Implements hook_field_formatter_info_alter().
+ */
+function file_image_formatters_field_formatter_info_alter(&$formatters) {
+  foreach ($formatters as $key => $formatter) {
+    if (strpos($key, 'file_image_') === 0) {
+      continue;
+    }
+
+    if (in_array('image', $formatter['field types']) && !in_array('file', $formatter['field types'])) {
+      // Support image field formatters to be used on file fields.
+      $formatters['file_image_' . $key] = $formatter;
+      $formatters['file_image_' . $key]['field types'] = array('file');
+      // Store the original module so that our hooks get invoked.
+      $formatters['file_image_' . $key]['original'] = array(
+        'module' => $formatter['module'],
+        'type' => $key,
+        'field type' => 'image',
+      );
+      $formatters['file_image_' . $key]['module'] = 'file_image_formatters';
+      // Hide this formatter from being used with File Entity's Manage File
+      // Display page for images since it would duplicate the image formatter.
+      $formatters['file_image_' . $key]['file formatter']['hidden'] = TRUE;
+    }
+    elseif (in_array('file', $formatter['field types']) && !in_array('image', $formatter['field types'])) {
+      // Support file field formattters to be used on image fields.
+      if (!empty($formatter['file formatter']['mime types'])) {
+        $has_image_mime = FALSE;
+        foreach ($formatter['file formatter']['mime types'] as $mime) {
+          if (strpos($mime, 'image/') === 0) {
+            $has_image_mime = TRUE;
+            break;
+          }
+        }
+        if (!$has_image_mime) {
+          continue;
+        }
+      }
+      $formatters['file_image_' . $key] = $formatter;
+      $formatters['file_image_' . $key]['field types'] = array('image');
+      // Store the original module so that our hooks get invoked.
+      $formatters['file_image_' . $key]['original'] = array(
+        'module' => $formatter['module'],
+        'type' => $key,
+        'field type' => 'file',
+      );
+      $formatters['file_image_' . $key]['module'] = 'file_image_formatters';
+      // Hide this formatter from being used with File Entity's Manage File
+      // Display page for images since it would duplicate the image formatter.
+      $formatters['file_image_' . $key]['file formatter']['hidden'] = TRUE;
+    }
+  }
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function file_image_formatters_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = &$instance['display'][$view_mode];
+  $display = _file_image_formatters_process_display($display);
+
+  $function = $display['module'] . '_field_formatter_settings_summary';
+  if (function_exists($function)) {
+    return $function($field, $instance, $view_mode);
+  }
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function file_image_formatters_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = &$instance['display'][$view_mode];
+  $display = _file_image_formatters_process_display($display);
+
+  $function = $display['module'] . '_' . 'field_formatter_settings_form';
+  if (function_exists($function)) {
+    return $function($field, $instance, $view_mode, $form, $form_state);
+  }
+}
+
+/**
+ * Implements hook_field_formatter_prepare_view().
+ */
+function file_image_formatters_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays) {
+  // Normalize file field data into image field data.
+  foreach ($entities as $id => $entity) {
+    foreach ($items[$id] as $delta => &$item) {
+      $display = _file_image_formatters_process_display($displays[$id]);
+
+      // Apply certain processing if normal files are being used with an image
+      // field formatter. For example, the alt, width, and height attributes
+      // are all expected.
+      if ($field['type'] != 'image' && $display['field type'] == 'image') {
+        $item += array(
+          'alt' => NULL,
+          'width' => isset($item['metadata']['width']) ? $item['metadata']['width'] : NULL,
+          'height' => isset($item['metadata']['height']) ? $item['metadata']['height'] : NULL,
+        );
+        if (!isset($item['width']) && !isset($item['height'])) {
+          if ($info = image_get_info($item['uri'])) {
+            $item['width'] = $info['width'];
+            $item['height'] = $info['height'];
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function file_image_formatters_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $display = _file_image_formatters_process_display($display);
+
+  // Filter out certain field items if normal files are being used with an
+  // image field formatter.
+  if ($field['type'] != 'image' && $display['field type'] == 'image') {
+    foreach ($items as $delta => $item) {
+      if (strpos($item['filemime'], 'image/') === FALSE || empty($item['width']) || empty($item['height'])) {
+        unset($items[$delta]);
+      }
+    }
+  }
+
+  $function = $display['module'] . '_field_formatter_view';
+  if (!empty($items) && function_exists($function)) {
+    $elements = $function($entity_type, $entity, $field, $instance, $langcode, $items, $display);
+
+    // Add any necessary corrective CSS.
+    $css = drupal_get_path('module', 'file_image_formatters') . '/file_image_formatters.field.' . $field['type'] . '.css';
+    if (is_file($css)) {
+      $elements['#attached']['css'][] = $css;
+    }
+
+    return $elements;
+  }
+}
+
+function _file_image_formatters_process_display(array $display) {
+  $info = field_info_formatter_types($display['type']);
+  $display['module'] = $info['original']['module'];
+  $display['type'] = $info['original']['type'];
+  $display['field type'] = $info['original']['field type'];
+  return $display;
+}

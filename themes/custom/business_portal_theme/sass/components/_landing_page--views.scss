@@ -1,0 +1,106 @@
+
+.view-id-bp_featured_sub_page,
+.view-bp-featured-resource-page,
+.view-departments,
+.view-labp-service-center,
+.view-sbp-resource-incentives,
+.view-terms-definitions {
+
+  .views-field-name,
+  .views-field-title {
+    font-family: $heading-font;
+    font-weight: 400;
+    width: 70%;
+    line-height: 1.4em;
+    display: inline-block;
+    color: $navy;
+    padding: 0 0 14px;
+    font-size: 1.17em;
+    @include window_size(desktop) {
+      font-size: 1.571em;
+      padding-bottom: 1em;
+    }
+  }
+
+  .views-row{
+    padding: 20px 0;
+    border-bottom: solid 1px $light-blue;
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+.pane-bp-featured-sub-page,
+.pane-bp-featured-resource-page,
+.pane-terms-definitions {
+  margin: 0;
+  padding: 0;
+
+  @include window_size(desktop) {
+    width: $zen-grid-width;
+    @include clearfix;
+  }
+
+  h2,
+  h3 {
+    font-family: $heading-font;
+    font-size: 1.429em;
+    font-weight: 900;
+    color: $dark_blue;
+    padding: 0 1em 0.8em 0;
+    margin: 0;
+    border-bottom: 1px solid $light-blue;
+    @include window_size(tab-wide-up) {
+      font-size: 2em;
+      padding: 0 0 0.8em;
+    }
+  }
+}
+
+.panel-pane + .pane-bp-featured-sub-page {
+  margin-top: 90px;
+}
+
+
+.view-id-bp_featured_sub_page,
+.view-bp-featured-resource-page,
+.view-id-departments,
+.view-terms-definitions,
+.view-id-sbp_resource_incentives {
+  .views-field-view-node,
+  .views-field-field-document {
+    float: right;
+    vertical-align: top;
+  }
+  .views-field-view-node a {
+    text-indent: -9999px;
+    @include page__icon_base;
+  }
+  .views-field-field-document a {
+    text-indent: -9999px;
+    @include page__icon_base("../images/icon_download.png");
+  }
+
+  .views-field-body,
+  .views-field-field-description,
+  .views-field-description {
+    line-height: 1.25em;
+    width: 90%;
+    color: rgba(0, 0, 0, 0.6);
+    @include window_size(tab-wide-up){
+      width: 70%;
+    }
+    @include window_size(desktop){
+      width: 85%;
+      font-size: 1.143em;
+      line-height: 1.35em;
+    }
+  }
+}
+
+.view-id-departments {
+  .views-row-1 {
+    padding-top: 0;
+  }
+}

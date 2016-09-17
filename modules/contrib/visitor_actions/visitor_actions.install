@@ -1,0 +1,130 @@
+<?php
+
+/**
+ * @file Visitor Actions - Installation file.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function visitor_actions_schema() {
+  $schema['visitor_actions_actions'] = array(
+    'export' => array(
+      'key' => 'machine_name',
+      'identifier' => 'visitor_action',
+      'default hook' => 'visitor_actions_default_actions',
+      'api' => array(
+        'owner' => 'visitor_actions',
+        'api' => 'visitor_actions',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+      'export callback' => 'visitor_action_export',
+    ),
+    'fields' => array(
+      'machine_name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'description' => 'The machine-readable name of the action.',
+      ),
+      'label' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'description' => 'The label of the action.',
+        'default' => 'unlabeled',
+      ),
+      'plugin' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'description' => 'The plugin defining this action.',
+      ),
+      'event' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'description' => 'The actual event for this action, e.g. click.',
+      ),
+      'identifier' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'A string that is used to identify the thing being acted on.',
+      ),
+      'pages' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'Contains a list of paths by which to restrict the action.',
+      ),
+      'client_side' => array(
+        'description' => 'Boolean indicating whether this is a client-side action.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'module' => array(
+        'description' => 'The name of the providing module if the action has been defined in code.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => FALSE,
+        'serialize' => TRUE,
+        'description' => 'Everything else, serialized.',
+      ),
+      'limited_use' => array(
+        'description' => 'Boolean indicating whether this action is of limited use, to be excluded from general lists of actions.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('machine_name'),
+    'indexes' => array(
+      'plugin_identifier' => array('plugin', 'identifier')
+    )
+  );
+
+  $schema['cache_visitor_actions'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_visitor_actions']['description'] = 'Cache table for visitor actions to store action subscribers.';
+  return $schema;
+}
+
+/**
+ * Make machine_name the primary key and drop the id column.
+ */
+function visitor_actions_update_7001() {
+  db_drop_unique_key('visitor_actions_actions', 'machine_name');
+  // Before we drop the primary key we have to convert it to an int field,
+  // because you can't have an auto-increment field that's not a primary key.
+  db_change_field('visitor_actions_actions', 'id', 'id', array(
+    'description' => 'Boolean indicating whether this is a client-side action.',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+
+  db_drop_primary_key('visitor_actions_actions');
+  db_drop_field('visitor_actions_actions', 'id');
+  db_add_primary_key('visitor_actions_actions', array('machine_name'));
+}
+
+/**
+ * Add the 'limited_use' field to the visitor_actions_actions table.
+ */
+function visitor_actions_update_7002() {
+  db_add_field('visitor_actions_actions', 'limited_use', array(
+    'description' => 'Boolean indicating whether this action is of limited use, to be excluded from general lists of actions.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+}

@@ -1,0 +1,22 @@
+CKEDITOR.plugins.setLang('foundationAccordion', 'fo', {
+	plugin 			: 'Foundation Accordion',
+    title 			: 'Title',
+	content 		: 'Content',
+	htmlIsAllowed	: 'HTML is Allowed',
+	addNewItem		: 'Add New Item',
+	minimum			: 'Plugin must contain at least 1 item',
+	link			: 'Link',
+	style			: 'Stlye',
+	type			: 'Type',
+	size			: 'Size',
+	blockLevel		: 'Block Level',
+	active			: 'Active',
+	enabled			: 'Enabled',
+	text			: 'Text',
+	preview			: 'Preview',
+	optional		: 'Optional',
+	badge			: 'Badge',
+	caption			: 'Caption',
+	image			: 'Image',
+	delete			: 'Are you sure you want to delete this item?'
+});

@@ -1,0 +1,22 @@
+CKEDITOR.plugins.setLang('foundationAccordion', 'is', {//Icelandic
+	plugin 			: 'Foundation Harmónikku',
+    title 			: 'Title',
+	content 		: 'Content',
+	htmlIsAllowed	: 'HTML er Leyft',
+	addNewItem		: 'Bæta Við Nýjum Lið',
+	minimum			: 'Plugin verður að innihalda að minnsta kosti 1 atriði',
+	link			: 'Link',
+	style			: 'Style',
+	type			: 'Gerð',
+	size			: 'Size',
+	blockLevel		: 'Block Level',
+	active			: 'Active',
+	enabled			: 'Virkt',
+	text			: 'Texti',
+	preview			: 'Preview',
+	optional		: 'Valfrjálst',
+	badge			: 'Badge',
+	caption			: 'Caption',
+	image			: 'Mynd',
+	delete			: 'Ert þú viss um að þú viljir eyða þessu atriði?'
+});

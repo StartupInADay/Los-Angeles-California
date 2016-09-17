@@ -1,0 +1,104 @@
+<?php
+
+/**
+ * @file personalize_taxonomy_context.module
+ * Provides a visitor context plugin for taxonomy.
+ */
+
+/**
+ * Implements hook_personalize_visitor_contexts().
+ */
+function personalize_taxonomy_context_personalize_visitor_context() {
+  $info = array();
+  $path = drupal_get_path('module', 'personalize_taxonomy_context') . '/plugins';
+  $info['taxonomy_context'] = array(
+    'path' => $path . '/visitor_context',
+    'handler' => array(
+      'file' => 'TaxonomyContext.inc',
+      'class' => 'TaxonomyContext',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function personalize_taxonomy_context_node_view($node, $view_mode, $langcode) {
+  if ($view_mode == 'full') {
+    personalize_taxonomy_context_node_taxonomy($node);
+  }
+}
+
+/**
+ * Implements hook_ctools_render_alter().
+ *
+ * This provides support for panelizer nodes, which don't fire hook_view_alter.
+ */
+function personalize_taxonomy_context_ctools_render_alter(&$info, &$page, &$context) {
+  $task = $context['task'];
+  if ($page && $task['module'] == 'page_manager' && $task['name'] == 'node_view' && !empty($context['args'])) {
+    $nid = $context['args'][0];
+    if (isset($context['contexts']['argument_entity_id:node_1']) && $context['contexts']['argument_entity_id:node_1']->argument == $nid) {
+      $node = $context['contexts']['argument_entity_id:node_1']->data;
+      personalize_taxonomy_context_node_view($node, 'full', NULL);
+    }
+  }
+}
+
+/**
+ * Handles the node-specific taxonomy data.
+ *
+ * @param $node
+ *   (optional) If passed then the taxonomy terms for the selected node
+ *   are added to the page taxonomy context.
+ * @return array
+ *   Returns the taxonomy context for the page.
+ */
+function personalize_taxonomy_context_node_taxonomy($node = NULL) {
+  $taxonomy = &drupal_static(__FUNCTION__);
+  if (!isset($taxonomy)) {
+    $taxonomy = array();
+  }
+
+  // 1) Add vocabulary and terms only if the node is passed in.
+  if (!isset($node)) {
+    return $taxonomy;
+  }
+
+  // 2) Otherwise, use the node to collect taxonomy data.
+  // For each vocabulary, add any terms that are applied to the viewed node.
+  if (isset($taxonomy['vocabularies'])) {
+    return;
+  }
+  $results = db_query('SELECT tid FROM {taxonomy_index} WHERE nid = :nid', array(':nid' => $node->nid));
+  $terms = taxonomy_term_load_multiple($results->fetchCol());
+
+  $vocabularies = array();
+  foreach ($terms as $term) {
+    $vocabulary_machine_name = $term->vocabulary_machine_name;
+    if (!isset($vocabularies[$vocabulary_machine_name])) {
+      $vocabularies[$vocabulary_machine_name] = $term->name;
+      continue;
+    }
+    $vocabularies[$vocabulary_machine_name] .= ',' . $term->name;
+  }
+  $taxonomy['vocabularies'] = $vocabularies;
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function personalize_taxonomy_context_page_build(&$page) {
+  $page['page_top']['personalize_taxonomy_context'] = array(
+    '#attached' => array(
+      'js' => array(
+        drupal_get_path('module', 'personalize_taxonomy_context') . '/js/personalize_taxonomy_context.js' => array(),
+        array(
+          'data' => array('personalize_taxonomy_context' => personalize_taxonomy_context_node_taxonomy()),
+          'type' => 'setting',
+        ),
+      ),
+    )
+  );
+}

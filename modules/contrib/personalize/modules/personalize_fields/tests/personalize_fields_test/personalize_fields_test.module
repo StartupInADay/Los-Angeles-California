@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file personalize_fields_test.module
+ */
+
+
+/**
+ * Implements hook_personalize_fields_auto_agent_create_alter().
+ */
+function personalize_test_personalize_fields_auto_agent_create_alter(&$data, &$context) {
+  $data['title'] = 'Altered ' . $context['field_name'] . $context['entity_id'];
+}

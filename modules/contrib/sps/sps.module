@@ -1,0 +1,520 @@
+<?php
+
+define('SPS_CONFIG_ROOT_CONDITION', "root_condition_settings");
+define('SPS_CONFIG_PLUGIN_CONTROLLER', "plugin_controller_settings");
+define('SPS_CONFIG_HOOK_CONTROLLER', "hook_controller_settings");
+define('SPS_CONFIG_DRUPAL_CONTROLLER', "drupal_controller_settings");
+define('SPS_CONFIG_STATE_CONTROLLER', "state_controller_settings");
+define('SPS_CONFIG_SITESTATE', "sitestate_settings");
+define('SPS_CONFIG_OVERRIDE_CONTROLLERS', "override_controllers_settings");
+define('SPS_CONFIG_PREFIX', "sps_config");
+define('SPS_NO_ALTER_QUERY_TAG', "sps_no_alter");
+
+/**
+ * Implements hook_menu().
+ */
+function sps_menu_alter(&$items) {
+  $items['node/%node/revisions/%/view']['page callback'] = 'sps_node_revision';
+  $items['node/%node/revisions/%/view']['page arguments'] = array(1, 3);
+  $items['block/%bean_delta/revisions/%/view']['page callback'] = 'sps_bean_revision';
+  $items['block/%bean_delta/revisions/%/view']['page arguments'] = array(1, 3);
+  $items['block/%bean_delta/revisions/%']['page callback'] = 'sps_bean_revision';
+  $items['block/%bean_delta/revisions/%']['page arguments'] = array(1, 3);
+}
+
+/**
+ * Implements hook_sps_plugin_types().
+ */
+function sps_sps_plugin_types() {
+  return array(
+    'reaction' => array(
+      'interface' => 'Drupal\sps\Plugins\ReactionInterface',
+      'defaults' => array(
+        'instance_settings' => array(),
+      ),
+      'requires' => array(
+        'class' => TRUE,
+      ),
+    ),
+    'override_controller' => array(
+      'interface' => 'Drupal\sps\Plugins\OverrideControllerInterface',
+      'defaults' => array(
+        'instance_settings' => array(),
+      ),
+      'requires' => array(
+        'class' => TRUE,
+        'implements_controller_api' => TRUE,
+      ),
+    ),
+    'override' => array(
+      'interface' => 'Drupal\sps\Plugins\OverrideInterface',
+      'defaults' => array(
+        'instance_settings' => array(),
+      ),
+      'requires' => array(
+        'condition' => TRUE,
+      ),
+    ),
+    'condition' => array(
+      'interface' => 'Drupal\sps\Plugins\ConditionInterface',
+      'defaults' => array(
+        'class' => 'Drupal\sps\Plugins\Condition\BasicCondition',
+        'instance_settings' => array(),
+      ),
+      'requires' => array(),
+    ),
+    'widget' => array(
+      'interface' => 'Drupal\sps\Plugins\WidgetInterface',
+      'defaults' => array(
+        'class' => 'Drupal\sps\Plugins\Widget\Widget',
+        'instance_settings' => array(),
+      ),
+      'requires' => array(),
+    ),
+  );
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function sps_hook_info() {
+  $hooks = array();
+  foreach (sps_sps_plugin_types() as $name => $type) {
+    $hooks["sps_{$name}_plugins"] = array('group' => 'sps_plugins');
+  }
+  return $hooks;
+}
+
+/**
+ * A form callback for use by drupal_get_form().
+ *
+ * When called like:
+ * drupal_get_form('sps_condition_preview_form', array($this, 'getPreviewForm'))
+ * by the manager or a condition, it will return that form.
+ *
+ * @param $form
+ * @param $form_state
+ *
+ * @return array
+ *  A FAPI array for drupal_get_form if a callback is provided, or NULL
+ *
+ * @see \Drupal\sps\Manager::getPreviewForm();
+ */
+function sps_condition_preview_form($form, &$form_state) {
+
+  $form['title'] = array(
+    '#markup' => '<div class="sps-preview-form-title">' . t('Site Preview') . '</div>',
+  );
+
+  $form['#attached']['css'] = array(
+    drupal_get_path('module', 'sps') . '/css/sps.css',
+  );
+
+  if (!empty($form_state['build_info']['args'][0])) {
+    $condition = $form_state['build_info']['args'][0];
+    $form_state['root_condition'] = $condition;
+    $form = $condition->getElement($form, $form_state);
+
+    $form['buttons'] = array(
+      '#tree' => FALSE,
+      '#type' => 'fieldset',
+      '#attributes' => array(
+        'class' => array('sps-preview-buttons'),
+      ),
+    );
+
+    $form['buttons']['preview'] = array(
+      '#type' => 'submit',
+      '#value' => t('Enable Preview'),
+      '#weight' => 2,
+    );
+
+    if (!empty($form_state['values'])) {
+      $form['buttons']['cancel'] = array(
+        '#type' => 'submit',
+        '#value' => t('Disable Preview'),
+        '#weight' => 1,
+      );
+      $form['buttons']['preview']['#value'] = t('Update Preview');
+    }
+
+
+    $form['#prefix'] = '<div class="sps-preview-form clearfix">';
+    $form['#suffix'] = '</div>';
+    return $form;
+  }
+}
+
+/**
+ * Form validation handler for sps_condition_preview_form().
+ *
+ * Find the root condition (from the build args) and call its
+ * validateElement() method.
+ *
+ * Also if we click cancel then clear the site state.
+ */
+function sps_condition_preview_form_validate($form, &$form_state) {
+
+  // If cancel was pressed blow away the site state and refresh.
+  if (isset($form_state['clicked_button']['#id']) && $form_state['clicked_button']['#id'] == 'edit-cancel') {
+    sps_get_manager()->clearSiteState();
+    drupal_goto(current_path());
+  }
+
+  if (!empty($form_state['build_info']['args'][0])) {
+    $condition = $form_state['build_info']['args'][0];
+    $form_state['root_condition'] = $condition;
+    $condition->validateElement($form, $form_state);
+  }
+}
+
+/**
+ * A submit will find the root condition (from the build args)
+ * and call its submitElement method
+ *
+ * Then the manager is notified that the submit happened.
+ */
+function sps_condition_preview_form_submit($form, &$form_state) {
+
+  if (!empty($form_state['build_info']['args'][0])) {
+    $condition = $form_state['build_info']['args'][0];
+    $form_state['root_condition'] = $condition;
+    $condition->submitElement($form, $form_state);
+    sps_get_manager()->previewFormSubmitted($condition);
+  }
+}
+
+/**
+ * Get the default Storage Controller.
+ *
+ * @return \Drupal\sps\StorageController\DrupalVariableController
+ */
+function sps_get_default_config_controller() {
+  $controller = &drupal_static(__FUNCTION__);
+
+  if (!isset($controller)) {
+    $controller = new \Drupal\sps\StorageController\DrupalVariableController(SPS_CONFIG_PREFIX);
+  }
+  return $controller;
+}
+
+/**
+ * Get the default Manager.
+ *
+ * @return \Drupal\sps\Manager
+ */
+function sps_get_manager() {
+  $manager = &drupal_static(__FUNCTION__);
+
+  if (!isset($manager)) {
+    $manager = new \Drupal\sps\Manager(sps_get_default_config_controller());
+  }
+
+  return $manager;
+}
+
+/**
+ * Implements hook_query_alter().
+ *
+ * This is done on behave of the node_select_query_alter reaction
+ */
+function sps_query_alter($query) {
+  $data = new stdClass();
+  $data->query = $query;
+  sps_get_manager()->react('entity_select_query_alter', $data);
+}
+
+/**
+ * Implements hook_entitycache_load_alter().
+ */
+function sps_entitycache_load_alter(&$entities) {
+  $state = sps_get_manager()->getSiteState();
+  if ($state !== NULL) {
+    // If the state is not empty, do not let entitycache load things from cache.
+    $entities = array();
+  }
+}
+
+/**
+ * Implements hook_entitycache_save_alter().
+ */
+function sps_entitycache_save_alter(&$entities){
+    $state = sps_get_manager()->getSiteState();
+    if ($state !== NULL) {
+    // If the state is not empty, do not let entitycache save things in cache.
+    $entities = array();
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * Make sure SPS entity_info_alter runs last, this guarantee that any module
+ * that alters the controller class (ex. EntityCache) still works as expected.
+ */
+function sps_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'entity_info_alter' && isset($implementations['sps'])) {
+    $group = $implementations['sps'];
+    unset($implementations['sps']);
+    $implementations['sps'] = $group;
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * Changing the Entity Controller on behalf of the entity_load Reaction.
+ *
+ * @see sps_module_implements_alter()
+ */
+function sps_entity_info_alter(&$entity_info) {
+  // Add SPS support to Nodes.
+  if (isset($entity_info['node'])) {
+    $entity_info['node']['previewable'] = TRUE;
+  }
+  // Add SPS support to Beans.
+  if (isset($entity_info['bean'])) {
+    $entity_info['bean']['previewable'] = TRUE;
+  }
+
+
+  // Change controller class for previewable entities.
+  foreach ($entity_info as &$info) {
+    if (isset($info['revision table']) && isset($info['previewable']) && $info['previewable'] === TRUE) {
+      $info['controller class base'] = $info['controller class'];
+      $info['controller class'] = '\Drupal\sps\EntityController\EntityControllerWrapper';
+      $info['creation callback'] = 'sps_entity_create';
+    }
+  }
+}
+
+/**
+ * Create a new entity object.
+ *
+ * We need a custom creation callback because the entity API module requires
+ * the EntityAPIControllerInterface and
+ * \Drupal\sps\EntityController\EntityControllerWrapper does not contain
+ * EntityAPIControllerInterface.
+ *
+ * @param array $values
+ *   An array of values to set, keyed by property name. If the entity type has
+ *   bundles the bundle key has to be specified.
+ * @param string $entity_type
+ *   The type of the entity.
+ *
+ * @return
+ *   A new instance of the entity type or FALSE if there is no information for
+ *   the given entity type.
+ *
+ * @see entity_type_supports()
+ */
+function sps_entity_create($values, $entity_type) {
+  return entity_get_controller($entity_type)->create($values);
+}
+
+/**
+ * Implements hook_iib_page_item().
+ */
+function sps_iib_page_item() {
+  $manager = sps_get_manager();
+  $preview_form = $manager->getPreviewForm();
+  $items['left'] = array(
+    '#weight' => -10,
+    'form' => $preview_form,
+  );
+  return $items;
+}
+
+/**
+* This callback is used by the wrapper condition to change out which
+* condition is being used
+*
+* @see \Drupal\sps\Plugins\Condition\WrapperCondition::getElement()
+* @param $form
+*   A drupal form array
+* @param $form_state
+*  A drupal form state array
+* @return
+*   a drupal render array
+*/
+function sps_wrapper_condition_ajax_callback($form, $form_state) {
+  array_pop($form_state['triggering_element']['#parents']);
+  foreach ($form_state['triggering_element']['#parents'] as $key) {
+    $form = $form[$key];
+  }
+  return $form;
+}
+
+/**
+ * This is to assit in calling function outside of the sps
+ * module that might have side effect. It allows for test to
+ * change the function for there tests
+ * the syntax to use is
+ *
+ * sps_drupal()->FUNCTIONNAME(Param1, Param2, Param3);
+ * eg.g sps_drupal()->drupal_get_form('sps_preview_form');
+ *
+ * if a param needs to be passed by reference the following syntax can be used
+ * sps_drupal()->ref[FUNCTIONNAME](Param1, Param2, Param3);
+ * eg.g sps_drupal()->set('drupal_get_form','sps_preview_form');
+ *
+ * if a test need to reset that function it can run
+ * sps->call['drupal_get_form'] = 'test_drupal_get_form';
+ * and then if something called drupal_get_form it would call
+ * test_drupal_get_form instead.
+ */
+function sps_drupal() {
+  return sps_get_manager()->getDrupalController();
+}
+
+/**
+ * Override of the node/%node/revisions/%/view page callback.
+ *
+ * set a override for this version and go to node view page
+ *
+ * @param Node $node
+ * @param $revision_id
+ *
+ * @return string
+ */
+function sps_node_revision($node, $revision_id) {
+  $message = array(
+    '#markup' => t('Viewing %title; revision %date', array(
+      '%date' => format_date($node->revision_timestamp),
+      '%title' => $node->title)
+    ),
+  );
+  sps_add_override($message, $node->nid, 'node', array('revision_id' => $revision_id));
+  drupal_goto("node/{$node->nid}");
+
+  return '';
+}
+
+function sps_bean_revision($node, $revision_id) {
+  $message = array('#markup' => t('Viewing %title; revision %date', array('%date' => $node->vid, '%title' => $node->title)));
+  sps_add_override($message, $node->bid, 'bean', array('revision_id' => $revision_id));
+  drupal_goto("block/{$node->label}");
+
+  return '';
+}
+
+/**
+ * Set the SiteState to a single Override.
+ *
+ * @param $message
+ *   a render array that should be used by the sps form to say what is showing
+ * @param $entity_id
+ *   the id of the entity that should have overrides
+ * @param $entity_type
+ *   the type of entity that is overridden
+ * @param array $overrides
+ *   A assoc array of overrides, with they keys the fields to override
+ * @param $manager NULL|\Drupal\sps\Manager
+ *   The manager to set the site state (if NULL this will come from sps_get_manager()
+ *
+ * @return void NULL
+ */
+function sps_add_override($message, $entity_id, $entity_type, $overrides = array(), $manager = NULL) {
+  $manager = $manager ?: sps_get_manager();
+  $overrides = array(array(
+    'type' => $entity_type,
+    'id' => $entity_id,
+  ) + $overrides);
+
+  $condition = new \Drupal\sps\Plugins\Condition\FixedOverrideCondition(
+    array(
+      'message' => $message,
+      'override' => new \Drupal\sps\Plugins\Override\FixedOverride(array('overrides' => $overrides), $manager),
+    ),
+    $manager
+  );
+
+  $manager->setSiteState($condition);
+}
+
+
+
+/**
+* implements hook_preprocess()
+*/
+function sps_preprocess(&$vars, $hook) {
+  _sps_preprocess($vars, $hook, sps_get_manager());
+}
+
+/**
+* For node process we add the overridden class if the node has an override
+* and for all of the style level view theme functions we are doing the same
+*
+* @param $vars
+*   from hook_preprocess
+* @param $hook
+*   from hook_preprocess
+* @param $manager
+*   The manager to use for reactions
+*
+*/
+function _sps_preprocess(&$vars, $hook, $manager) {
+  switch ($hook) {
+    case 'block':
+      if($vars['block']->module == 'bean') {
+        $bean = bean_delta_load($vars['block']->delta);
+        $id = $bean ? $bean->internalIdentifier() : FALSE;
+        if ($id && ($class = $manager->react('add_class', array('id'=> $id, 'type' => 'bean')))) {
+          $vars['classes_array'][] = $class;
+        }
+      }
+    break;
+    case 'node';
+      if ($class = $manager->react('add_class', array('id'=> $vars['nid'], 'type' => 'node'))) {
+        $vars['classes_array'][] = $class;
+      }
+    break;
+    case 'views_view_unformatted':
+    case 'views_view_list':
+      if($vars['view']->base_table == 'node') {
+        foreach($vars['view']->result as $index => $row) {
+          if ($class = $manager->react('add_class', array('id'=> $row->nid, 'type' => 'node'))) {
+            $vars['classes_array'][$index] .= " $class";
+          }
+        }
+      }
+    break;
+    case 'views_view_table':
+      if($vars['view']->base_table == 'node') {
+        foreach($vars['view']->result as $index => $row) {
+          if ($class = $manager->react('add_class', array('id'=> $row->nid, 'type' => 'node'))) {
+            $vars['row_classes'][$index][]= $class;
+          }
+        }
+      }
+    break;
+    case 'views_view_grid':
+      if($vars['view']->base_table == 'node') {
+        $view     = $vars['view'];
+        $result   = $view->result;
+        $options  = $view->style_plugin->options;
+        $columns  = $options['columns'];
+        foreach($result as $index => $row) {
+          if ($class = $manager->react('add_class', array('id'=> $row->nid, 'type' => 'node'))) {
+            $row_index = 0;
+            $col_index = 0;
+            $total = count($result);
+            $rows = ceil($total/$columns);
+            if ($options['alignment'] == 'horizontal') {
+              $row_index = floor($index/$rows);
+              $col_index = $index - ($row_index*$rows);
+            }
+            else {
+              $col_index = floor($index/$columns);
+              $row_index = $index - ($col_index*$columns);
+            }
+            $vars['column_classes'][$row_index][$col_index] .= " $class";
+          }
+        }
+      }
+    break;
+    default :
+  }
+}
+
+

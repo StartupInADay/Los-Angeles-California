@@ -1,0 +1,15 @@
+name = Dialog
+description = Provides an API for opening content in an interactive overlay.
+package = Dialog
+core = 7.x
+
+dependencies[] = jquery_update
+
+files[] = dialog.test
+
+; Information added by Drupal.org packaging script on 2016-01-04
+version = "7.x-2.0-alpha8"
+core = "7.x"
+project = "dialog"
+datestamp = "1451879739"
+

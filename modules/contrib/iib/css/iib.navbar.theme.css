@@ -1,0 +1,113 @@
+/**
+ * @file
+ * Styling for IIB.
+ */
+
+#navbar-administration .navbar-tab-iib .iib-options {
+  background-color: white;
+}
+#navbar-administration .navbar-tab-iib .iib-options {
+  box-shadow: 0 0.8em 2.5em -0.8em rgba(0, 0, 0, 0.75);
+}
+[dir] #navbar-administration .navbar-tab-iib .iib-options li {
+  margin: 0;
+  padding: 0;
+}
+#navbar-administration .navbar-tab-iib .iib-trigger {
+  cursor: pointer;
+  line-height: 1;
+  height: 3em;
+  margin: 0;
+}
+#navbar-administration .navbar-tab-iib .iib-trigger:hover {
+  background-image: -webkit-linear-gradient(rgba(255, 255, 255, 0.125) 20%, transparent 200%);
+  background-image: -moz-linear-gradient(rgba(255, 255, 255, 0.125) 20%, transparent 200%);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.125) 20%, transparent 200%);
+}
+#navbar-administration .navbar-tab-iib .iib-trigger.active,
+#navbar-administration .navbar-tab-iib .iib-trigger.active:hover {
+  background-image: -webkit-linear-gradient(top, rgb(78,159,234) 0%, rgb(69,132,221) 100%);
+  background-image: -moz-linear-gradient(rgb(78,159,234) 0%,rgb(69,132,221) 100%);
+  background-image: linear-gradient(rgb(78,159,234) 0%,rgb(69,132,221) 100%);
+}
+#navbar-administration .navbar-tab-iib .iib-trigger:after {
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-style: solid;
+  border-width: 0.4545em 0.4em 0;
+  color: #a0a0a0;
+  content: ' ';
+  display: block;
+  height: 0;
+  line-height: 0;
+  overflow: hidden;
+  position: absolute;
+  right: 1.6667em; /* LTR */
+  top: 50%;
+  margin-top: -0.1666em;
+  width: 0;
+  z-index: 1
+}
+[dir="rtl"] #navbar-administration .navbar-tab-iib .iib-trigger:after {
+  left: 1em;
+  right: auto;
+}
+#navbar-administration .navbar-tab-iib.open:before {
+  background-color: white;
+  bottom: 0;
+  content: ' ';
+  display: block;
+  position: absolute;
+  right: 0; /* LTR */
+  top: 0;
+  width: 2em;
+  z-index: 1;
+}
+[dir="rtl"] #navbar-administration .navbar-tab-iib.open:before {
+  left: 0;
+  right: auto;
+}
+#navbar-administration .navbar-tab-iib.open .iib-trigger:after {
+  border-bottom: 0.4545em solid;
+  border-top-color: transparent;
+  color: black;
+  right: 0.7em; /* LTR */
+  top: 1.25em;
+}
+[dir="rtl"] #navbar-administration .navbar-tab-iib.open .iib-trigger:after {
+  left: 0.7em;
+  right: auto;
+}
+#navbar-administration .navbar-tab-iib:hover .iib-trigger:after,
+#navbar-administration .navbar-tab-iib .iib-trigger.active:after,
+#navbar-administration .navbar-tab-iib:hover .iib-trigger.active:after,
+#navbar-administration .navbar-tab-iib.sps-active .iib-trigger:after {
+  color: white;
+}
+#navbar-administration .navbar-tab-iib.open:hover .iib-trigger:after {
+  color: black;
+}
+#navbar-administration .navbar-tab-iib.sps-active,
+#navbar-administration .navbar-tab-iib.sps-active:hover {
+  background-image: -webkit-linear-gradient(top, rgb(78,159,234) 0%, rgb(69,132,221) 100%);
+  background-image: linear-gradient(rgb(78,159,234) 0%,rgb(69,132,221) 100%);
+}
+#navbar-administration .navbar-tab-iib .sps-preview-form-title {
+  line-height: 1em;
+  border-bottom: 1px solid #D0D0D0;
+  display: block;
+  width: 100%;
+  padding: 1em;
+}
+#navbar-administration .navbar-tab-iib #edit-buttons button,
+#navbar-administration .navbar-tab-iib #edit-buttons input[type='submit'],
+#navbar-administration .navbar-tab-iib #edit-buttons input[id*='edit-preview'] {
+  padding: 0em 1em 1em 1em;
+  color: #0074BD;
+  cursor: pointer;
+}
+#navbar-administration .navbar-tab-iib #edit-buttons button:hover,
+#navbar-administration .navbar-tab-iib #edit-buttons input[type='submit']:hover {
+  color: black;
+}

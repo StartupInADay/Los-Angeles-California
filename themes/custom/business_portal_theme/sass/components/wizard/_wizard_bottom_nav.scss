@@ -1,0 +1,244 @@
+// Navigation between the screens
+.wizard__nav, .wizard__nav_context {
+  display: inline-block;
+  width: 100%;
+  box-sizing: border-box;
+  @media all and (max-width : 719px) {
+    position: fixed;
+    left: 0; bottom: 0;
+  }
+  @include window_size(tab-wide-up){
+    padding-right: 60px;
+    margin: 25px 0 0 0;
+    box-sizing: border-box;
+  }
+  @include window_size(desktop){
+    max-width: $wizard_content_width;
+    padding-right: 0;
+  }
+}
+
+.wizard__nav_context {
+  @include window_size(tab-wide-up){
+    max-width: 100% !important;
+    margin: 0;
+  }
+}
+  
+
+hr.wizard__arrow-line {
+  border: 0;
+  height: 2px;
+  background: white;
+  display: none;
+  @include window_size(tab-wide-up){
+    display: block;
+    margin: 0;
+  }
+}
+
+a.wizard__arrow-up, 
+a.wizard__arrow-back,
+a.wizard__arrow-down {
+  display: block;
+  position: relative;
+  background-image: image-url("wizard/arrow_down.png");
+  background-repeat: no-repeat;
+  background-size: 24px 25px;
+  background-position: 0 50%;
+  margin: 0 0 0 25px;
+  padding: 12px 0;
+  width: 24px; height: 24px;
+  line-height: 24px;
+  text-indent: -100000px;
+  color: #000;
+  font-weight: 700;
+  
+  @include window_size(tab-wide-up){
+    color: #fff;
+    margin: 0;
+  }
+  
+  &.enabled {
+    @media all and (max-width : 719px) {
+      text-indent: 0;
+      padding-left: 65px;
+      width: 100% !important;
+      max-width: 100%;
+      margin-left: 0;
+      background-size: 720px 48px;
+    }
+  }
+}
+
+a.wizard__arrow-up {
+  background-image: image-url("wizard/arrow_up.png");
+}
+
+a.wizard__arrow-down {
+  background-image: image-url("wizard/arrow_down.png");
+  @media all and (max-width : 719px) {
+    &::before {
+      content: '';
+      width: 25px; height: 2px;
+      background: #fff;
+      position: absolute; 
+      top: 0; left: 0;
+    }
+  }
+  
+  &.enabled {
+    @media all and (max-width : 719px) {
+      background-image: image-url("wizard/arrow_down_enabled.png");
+      &::before {
+        height: 0;
+      }
+    }
+    @include window_size(tab-wide-up) {
+      background-image: image-url("wizard/arrow_down_enabled_desktop.png");
+    }
+  }
+  
+  &.start, &.section {
+    @include window_size(tab-wide-up) {
+      text-indent: 0;
+      padding-left: 40px;
+      width: auto;
+    }
+  }
+}
+
+a.wizard__arrow-back {
+  background-image: image-url("wizard/arrow_left_enabled_desktop.png");
+  background-position: 100% center;
+  float: right;
+  text-align: right;
+  width: auto;
+  text-indent: 0;
+  @media all and (max-width : 719px) {
+    padding-right: 65px;
+  }
+  @include window_size(tab-wide-up) {
+    padding-right: 40px;
+  }
+  &.enabled {
+    @media all and (max-width : 719px) {
+      background-image: image-url("wizard/arrow_left_enabled_help.png");
+    }
+  }
+}
+
+
+/*.wizard__arrow-up.enabled.left,
+.wizard__arrow-back.enabled.left {
+  background-image: image-url("wizard/arrow_left_enabled_desktop.png");
+  display: inline-block;
+  background-position-y: 50%;
+  float: right;
+  padding-top: 7px;
+  line-height: 25px;
+}*/
+
+
+
+a.wizard__arrow-down.enabled.section {
+/*  text-indent: 65px;
+  color: white;
+  width: 100%;
+  margin-bottom: 5px;*/
+  /*padding-top: 3px;*/
+}
+
+
+
+
+.wizard__arrow-up.enabled.left.start-over {
+/*  padding-left: 40px;
+  color: white;
+  font-weight: 400;
+  font-size: 1em;
+  float: none;
+  background-repeat: no-repeat;
+  -webkit-background-size:24px 25px;
+  background-size:24px 25px;
+  line-height: 25px;
+  width: 70px;
+  border-width: 0;
+  text-indent: 0;
+  margin-bottom: 0;*/
+}
+
+/*.wizard__arrow-down.enabled.start {
+  padding-left: 40px;
+  color: white;
+  font-size: 1em;
+  float: none;
+  background-repeat: no-repeat;
+  -webkit-background-size:24px 25px;
+  background-size:24px 25px;
+  line-height: 25px;
+  width: 40px;
+  font-weight: 700;
+  border-width: 0;
+  text-indent: 0;
+  margin-bottom: 0;
+}*/
+
+
+.wizard__arrow-down--filled {
+/*  background-image: image-url("wizard/arrow_down_filled.png");
+  background-repeat: no-repeat;
+  background-size: 100%;
+  width: 320px;
+  height: 94px;
+  margin-top: 5px;
+  display: block;
+  border: 0px solid white;
+  @include window_size(tab-wide-up){
+    border: 0px solid red;*/
+  /*}*/
+}
+
+// Copy next to the arrow
+.wizard__nav_label{
+/*  color:$dark_blue;
+  font-weight: 700;
+  float: left;
+  font-size: 1em;
+  border: 0px solid red;
+  margin: 0;
+  padding: 15px 0 0 4px;
+  @include window_size(tab-wide-up){
+    color:$white;
+  }*/
+}
+// Copy next to the arrow on contextual help screens
+.wizard__nav_label_help{
+/*  color:$white;
+  font-weight: 700;
+  font-size: 1em;
+  border: 0px solid red;
+  margin: 10px 10px 10px 10px;
+  width: 30%;
+  text-align: right;
+  float: right;
+  display: inline;*/
+}
+
+
+/*
+}*/
+
+/*.wizard__nav--full_width {
+  display: inline-block;
+  max-width: 100%;
+  width: 100%;
+  float: left;
+  margin:10px 0 0 0;
+  border:0px solid red;
+  @include window_size(tab-wide-up){
+
+  }
+  @include window_size(desktop){
+  }
+}*/

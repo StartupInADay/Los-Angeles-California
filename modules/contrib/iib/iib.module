@@ -1,0 +1,298 @@
+<?php
+/**
+ * @file The Interactive Information Bar module provides an area at the top of rendered
+ * entities for other modules to use to display admin information regarding
+ * that entity.
+ */
+
+/**
+ * Get the items to place into the IIB.
+ *
+ * To add items to this list a module should implement hook_iib_page_item($items)
+ * and return a render array
+ * The result of this hook invocation is alterable using hook_iib_page_item_alter().
+ *
+ * @see iib.api.php
+ */
+function iib_get_page_data() {
+  $items = module_invoke_all('iib_page_item');
+  drupal_alter('iib_page_item', $items);
+  return $items;
+}
+
+/**
+ * Implements hook_iib_page_item().
+ *
+ * Add anything added by calling iib_set_data().
+ */
+function iib_iib_page_item() {
+  $data = drupal_static('iib_set_items', array());
+  drupal_static_reset('iib_set_items');
+  return $data;
+}
+
+/**
+ * Allows other modules to add items to the IIB.
+ *
+ * Calling this function and passing a renderable element will result
+ * in that element getting appended to the Interactive Information Bar
+ * at the page level.
+ *
+ * It is equivalent to implementing hook_iib_page_item() and simply appending
+ * the data to the end of items, however, it may be called in the context of
+ * other hooks.
+ *
+ * @param $renderable
+ *  A renderable element (a render array) to be added to the IIB.
+ *
+ * @see iib.api.php
+ */
+function iib_set_item($renderable) {
+  $items = &drupal_static('iib_set_items', array());
+  $items = array_merge_recursive($items, $renderable);
+}
+
+/**
+ * Implements hook_page_alter().
+ *
+ * Add the page level iib to a page, this is done in the page alter to allow
+ * other modules to add data throughout the page load process.
+ */
+function iib_page_alter(&$page) {
+  if (iib_should_show_view() && !module_exists('navbar')) {
+    $items = iib_get_page_data();
+    if (!empty($items)) {
+      if (iib_is_hidden()) {
+        $page['page_top']['iib'] = iib_create_render_array($items, array('page-iib', 'iib-hidden'));
+      }
+      else {
+        $page['page_top']['iib'] = iib_create_render_array($items, array('page-iib'));
+      }
+      _iib_add_libraries();
+    }
+  }
+}
+
+/**
+ * Should the IIB be hidden
+ *
+ * @return bool
+ *
+ * @see iib.api.php
+ */
+function iib_is_hidden() {
+  $hidden = path_is_admin($_GET['q']);
+  drupal_alter('iib_hidden', $hidden);
+  return $hidden;
+}
+
+
+/**
+ * Retreive entity data for IIB.
+ *
+ * To add items to this list a module should implement hook_iib_entity_item($items)
+ * and return a render array
+ * The result of this hook invocation is alterable using hook_iib_entity_item_alter().
+ *
+ * @see iib.api.php
+ */
+function iib_get_entity_data($entity, $type, $view_mode) {
+  $items = module_invoke_all('iib_entity_item', $entity, $type, $view_mode);
+  $extra = array(
+    'entity_type' => $type,
+    'view_mode' => $view_mode,
+  );
+  drupal_alter('iib_entity_item', $items, $entity, $extra);
+  return $items;
+}
+
+
+/**
+ * Implements hook_entity_view().
+ *
+ * Provides a way for modules to add information to each entity being rendered
+ * during a page load.  This function invokes hook_iib_entity_item().
+ *
+ * @see iib.api.php
+ */
+function iib_entity_view($entity, $type, $view_mode, $langcode) {
+  if (iib_should_show_view()) {
+    $items = iib_get_entity_data($entity, $type, $view_mode);
+    if (!empty($items)) {
+      $entity->content['iib'] = iib_create_render_array($items, array('entity-iib'));
+      _iib_add_libraries();
+    }
+  }
+}
+
+/**
+ * A helper function to add js and css to the page.
+ *
+ */
+function _iib_add_libraries() {
+  drupal_add_css(drupal_get_path('module', 'iib') . '/css/iib.css');
+  drupal_add_js(drupal_get_path('module', 'iib') . '/js/iib.js');
+}
+
+/**
+ * A helper function to construct a render array from items.
+ *
+ * @param $items
+ *  An array of renderable elements
+ *
+ * @return
+ *  A render array containing the proper wrapping elements.
+ */
+function iib_create_render_array($items, $classes) {
+  return array(
+    '#prefix' => '<div class="iib '.implode(' ', $classes).'">',
+    'items' => $items,
+    '#suffix' => '</div>',
+    '#weight' => -100,
+  );
+}
+
+/**
+ * Check our configuration to see if we should show the iib for this
+ * entity.
+ *
+ * @return
+ *  A boolean representing whether or not the iib should be shown
+ */
+function iib_should_show_view() {
+  $should_view = user_access('view interactive information bar');
+  drupal_alter('iib_view', $should_view);
+  return $should_view;
+}
+
+/**
+ * Implements hook_permission().
+ *
+ * Add a permission for viewing the interactive information bar
+ */
+function iib_permission() {
+  return array(
+    'view interactive information bar' => array(
+      'title' => t('View Interactive Information Bar'),
+      'description' => t('Allow users to view the IIB.  This may allow users to perform administrative tasks.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_hook_info()
+ *
+ * @return array
+ */
+function iib_hook_info() {
+  $hooks = array();
+  $group = 'iib';
+  $iib_hooks = array(
+    'iib_page_item',
+    'iib_entity_item',
+    'iib_page_item_alter',
+    'iib_entity_item_alter',
+  );
+
+  foreach ($iib_hooks as $iib_hook) {
+    $hooks[$iib_hook] = array(
+      'group' => $group,
+    );
+  }
+  return $hooks;
+}
+
+/**
+ * Implements template_preprocess_toolbar()
+ *
+ * Place a link in the toolbar
+ */
+function iib_preprocess_toolbar(&$vars) {
+  $vars['toolbar']['toolbar_drawer'][0]['iib'] = array(
+    '#type' => 'link',
+    '#title' => t('Information Bar'),
+    '#href' => '',
+    '#options' => array(
+      'attributes' => array(
+        'id' => 'iib-toolbar-link',
+        'class' => 'iib-trigger',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_library().
+ */
+function iib_library() {
+  $path = drupal_get_path('module', 'iib');
+  $options = array(
+    'scope' => 'header',
+    'defer' => FALSE,
+  );
+  $libraries['iib-navbar'] = array(
+    'title' => 'Interactive information bar',
+    'version' => VERSION,
+    'css' => array(
+      $path . '/css/iib.navbar.base.css',
+      $path . '/css/iib.navbar.icons.css',
+      $path . '/css/iib.navbar.theme.css',
+    ),
+    'js' => array(
+      $path . '/js/iib.navbar.js' => $options,
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('navbar', 'underscore'),
+      array('navbar', 'backbone'),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Implements hook_navbar().
+ */
+function iib_navbar() {
+  $items = array();
+  $data = iib_get_page_data();
+  if (!empty($data)) {
+    $element = iib_create_render_array($data, array('page-iib'));
+    $items['iib_navbar'] = array(
+      '#type' => 'navbar_item',
+      'tab' => array(
+        'trigger' => array(
+            '#theme' => 'html_tag',
+            '#tag' => 'button',
+            '#value' => t('iib'),
+            '#value_prefix' => '<span class="element-invisible">',
+            '#value_suffix' => '</span>',
+            '#attributes' => array(
+              'title' => t('Interactive Preview'),
+              'class' => array('iib-icon', 'iib-icon-iib', 'iib-trigger'),
+            ),
+        ),
+        'iib_options' => array(
+          '#theme' => 'html_tag',
+          '#tag' => 'div',
+          '#attributes' => array(
+            'class' => array('iib-options', 'item-list'),
+          ),
+          '#value' => render($element),
+        ),
+      ),
+      '#wrapper_attributes' => array(
+        'id' => 'iib-navbar-tab',
+        'class' => array('navbar-tab-iib'),
+      ),
+      '#weight' => 190,
+      '#access' => iib_should_show_view(),
+      '#attached' => array(
+        'library' => array(
+          array('iib', 'iib-navbar'),
+        ),
+      ),
+    );
+  }
+  return $items;
+}

@@ -1,0 +1,22 @@
+name = Quick Edit
+description = In-place content editing.
+package = Spark
+core = 7.x
+
+dependencies[] = contextual
+dependencies[] = entity
+dependencies[] = field (>=7.22)
+dependencies[] = filter
+dependencies[] = libraries (>=2.x)
+dependencies[] = ctools
+
+test_dependencies[] = ckeditor
+
+files[] = quickedit.test
+
+; Information added by Drupal.org packaging script on 2015-10-21
+version = "7.x-1.4"
+core = "7.x"
+project = "quickedit"
+datestamp = "1445408341"
+

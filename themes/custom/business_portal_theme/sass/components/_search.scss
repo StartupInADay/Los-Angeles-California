@@ -1,0 +1,141 @@
+
+.pane-sbp-resource-incentives-panel-pane-1 {
+  margin: 0;
+  padding: 0;
+
+  @include window_size(desktop){
+    width: $zen-grid-width;
+    @include clearfix;
+  }
+
+}
+
+.pane-sbp-resource-incentives-panel-pane-1 h2{
+  font-family: Merriweather, serif;
+  font-weight: normal;
+  font-size: 1.429em;
+  font-weight: 900;
+  color: $dark_blue;
+  margin-bottom: 0;
+  @include window_size(desktop){
+    font-size:2em;
+  }
+
+  border-bottom:1px solid $light-blue;
+  padding: 0 10px 0.8em 0;
+}
+
+.view-id-sbp_resource_incentives .views-field-title {
+  font-family: Merriweather, serif;
+  font-weight: 400;
+
+  padding:0;
+  margin: 5px 0px 5px 0;
+  width: 70%;
+  display: inline-block;
+  line-height: 1.2em;
+  @include window_size(desktop){
+    font-size:1.571em;
+  }
+}
+
+.view-id-sbp_resource_incentives .views-field-view-node {
+  width: 20%;
+  display: inline-block;
+}
+
+.view-id-sbp_resource_incentives .views-field-view-node a {
+  text-indent: -9999px;
+  @include page__icon_base;
+}
+
+.view-id-sbp_resource_incentives .views-field-body {
+  line-height: 1.25em;
+  width: 90%;
+  @include window_size(desktop){
+    width: 85%;
+    font-size: 1.143em;
+    line-height: 1.35em;
+  }
+}
+
+.view-bp-search {
+  .view-header {
+    font-weight: normal;
+    font-size: 1.142em;
+    color: rgba(0, 0, 0, .6);
+    margin-bottom: 30px;
+    @include window_size(desktop){
+      font-size: 1.714em;
+      margin-bottom: 20px;
+    }
+  }
+  .view-filters {
+    margin: 0 0 30px;
+    .views-widget-filter-search_api_views_fulltext {
+      margin: 0;
+    }
+    .views-exposed-form {
+      position: relative;
+    }
+    #edit-search-wrapper {
+      padding: 0;
+      float: none;
+      label {
+        display: none;
+      }
+    }
+    
+    #edit-search {
+      width: 100%;
+      padding: 15px 55px 15px 19px;
+      border: solid 1px #d8d8d8;
+      outline: none !important;
+      font-size: 1.142em;
+      color: rgba(0, 0, 0, .6);
+    }
+    #edit-submit-bp-search {
+      position: absolute;
+      right: 15px; top: 50%;
+      margin-top: -16px;
+      width: 25px; height: 25px;
+      background-color: transparent;
+      background: url(../images/icon-search-blue.png) no-repeat 0 0;
+      background-size: 25px 25px;
+      border: none;
+      text-indent: -999em;
+      line-height: 0;
+    }
+  }
+  .views-row {
+    margin: 0 0 30px;
+    border-top: 1px solid #dcdcdc;
+    padding: 15px 0 10px;
+    @include window_size(desktop) {
+      margin: 0 0 20px;
+    }
+    .views-field-field-hero-title {
+      
+      margin: 0 0 10px;
+      font-weight: 700;
+      font-size: 1.142em;
+      a {
+        color: $navy;
+        &:hover {
+          color: $light-blue;
+        }
+      }
+      @include window_size(desktop) {
+        font-size: 1.285em;
+        max-width: 85%;
+      }
+    }
+    .views-field-field-description {
+      color: rgba(0, 0, 0, .6);
+      @include window_size(desktop) {
+        font-size: 1.142em;
+        max-width: 85%;
+      }
+    }
+  }
+}

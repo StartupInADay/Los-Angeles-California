@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * @file
+ * Main module file for Rabbit Hole taxonomy terms module.
+ *
+ * This module will add the Rabbit Hole functionality to taxonomy terms.
+ */
+
+/**
+ * Implements hook_rabbit_hole().
+ */
+function rh_taxonomy_rabbit_hole() {
+  return array(
+    'rh_taxonomy' => array(
+      'entity type' => 'taxonomy_term',
+      'base table' => 'taxonomy_term_data',
+      'view path' => 'taxonomy/term/%/view',
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This will add Rabbit Hole options to the vocabulary form. These settings will
+ * be used as default for every term of this vocabulary.
+ */
+function rh_taxonomy_form_taxonomy_form_vocabulary_alter(&$form, $form_state) {
+  if (isset($form_state['confirm_delete'])) {
+    // We're on the delete confirmation form.
+    return;
+  }
+
+  // Add the Rabbit Hole form.
+  rabbit_hole_form($form, 'taxonomy_term', $form['#vocabulary']->machine_name, 'rh_taxonomy');
+}
+
+/**
+ * Submit callback for the bundle form.
+ *
+ * This will set the value of the variables, and update the name of the
+ * variables if the machine name of the vocabulary has changed.
+ */
+function rh_taxonomy_bundle_form_submit($form, $form_state) {
+  $values = $form_state['values'];
+
+  // Set the values of the variables. This will be set to the provided values,
+  // if there are any provided values. They may be NULL if the user doesn't have
+  // the administer rh_taxonomy permission. In this case, we'll set the
+  // variables according to the stored values for the old machine name. We'll
+  // use the old machine name in case it has changed.
+  variable_set('rh_taxonomy_term_override_' . $values['machine_name'], isset($values['rh_taxonomy_term_override']) ? $values['rh_taxonomy_term_override'] : variable_get('rh_taxonomy_term_override_' . $values['old_machine_name']));
+  variable_set('rh_taxonomy_term_action_' . $values['machine_name'], isset($values['rh_taxonomy_term_action']) ? $values['rh_taxonomy_term_action'] : variable_get('rh_taxonomy_term_action_' . $values['old_machine_name']));
+  variable_set('rh_taxonomy_term_redirect_' . $values['machine_name'], isset($values['rh_taxonomy_term_redirect']) ? $values['rh_taxonomy_term_redirect'] : variable_get('rh_taxonomy_term_redirect_' . $values['old_machine_name']));
+  variable_set('rh_taxonomy_term_redirect_response_' . $values['machine_name'], isset($values['rh_taxonomy_term_redirect_response']) ? $values['rh_taxonomy_term_redirect_response'] : variable_get('rh_taxonomy_term_redirect_response_' . $values['old_machine_name']));
+
+  // Delete old variables if the machine name has changed.
+  if ($values['machine_name'] != $values['old_machine_name']) {
+    rabbit_hole_delete_variables('taxonomy_term', $values['old_machine_name']);
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This will add Rabbit Hole options to the taxonomy term form. The user will
+ * be able to override the default Rabbit Hole options.
+ */
+function rh_taxonomy_form_taxonomy_form_term_alter(&$form, $form_state) {
+  if (isset($form_state['confirm_delete'])) {
+    // We're on the delete confirmation form.
+    return;
+  }
+
+  // Add the Rabbit Hole form.
+  rabbit_hole_form($form, 'taxonomy_term', $form['#bundle'], 'rh_taxonomy', (object) $form['#term']);
+}
+
+/**
+ * Implements hook_taxonomy_term_view().
+ */
+function rh_taxonomy_taxonomy_term_view($term, $view_mode, $langcode) {
+  // Execute Rabbit Hole, if the term is being viewed at its own page using the
+  // full view mode, and the current user isn't able to override Rabbit Hole.
+  if ($view_mode == 'full' && taxonomy_term_is_page($term) && !user_access('bypass rh_taxonomy')) {
+    rabbit_hole_execute('taxonomy_term', $term);
+  }
+}
+
+/**
+ * Implements hook_taxonomy_vocabulary_delete().
+ */
+function rh_taxonomy_taxonomy_vocabulary_delete($vocabulary) {
+  // Delete variables connected to this vocabulary.
+  rabbit_hole_delete_variables('taxonomy_term', $vocabulary->machine_name);
+}

@@ -1,0 +1,7 @@
+<?php
+
+/**
+ * @file
+ * A Drush command that hits a set of URIs of a drupal site.
+ */
+

@@ -1,0 +1,22 @@
+CKEDITOR.plugins.setLang('foundationAccordion', 'sk', {//Slovak
+	plugin 			: 'Nadácie Accordion',
+    title 			: 'Názov',
+	content 		: 'Obsah',
+	htmlIsAllowed	: 'HTML Je Povolené',
+	addNewItem		: 'Pridať Novú Položku',
+	minimum			: 'Plugin musí obsahovať aspoň 1 položka',
+	link			: 'Odkaz',
+	style			: 'štýl',
+	type			: 'Typ',
+	size			: 'Veľkosť',
+	blockLevel		: 'Block Level',
+	active			: 'Aktívny',
+	enabled			: 'Povolené',
+	text			: 'Text',
+	preview			: 'Preview',
+	optional		: 'Voliteľný',
+	badge			: 'Odznak',
+	caption			: 'Titulok',
+	image			: 'Obraz',
+	delete			: 'Ste si istí, že chcete túto položku odstrániť?'
+});

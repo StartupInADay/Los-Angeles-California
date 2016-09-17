@@ -1,0 +1,192 @@
+<?php
+/**
+ * @file
+ * Code for the Business Portal Wizard feature.
+ */
+
+include_once 'sbp_wizard.features.inc';
+include_once 'inc/sbp_wizard_email_form.inc';
+
+/**
+* Implements hook_menu().
+*/
+function sbp_wizard_menu(){
+  $items = array();
+  $items['labp/wizard-email'] = array(
+    'title' => 'Email callback',
+    'page callback' => 'sbp_email_process',
+    'access arguments' => array('access content'),
+    'type' => MENU_SUGGESTED_ITEM,
+  );
+  $items['admin/settings/business-portal/wizard-email'] = array(
+    'title' => 'Settings for Startup Wizard Results Email',
+    'description' => 'Configure subject and from email.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sbp_wizard_admin'),
+    'access arguments' => array('administer onthisdate settings'),
+    'type' => MENU_NORMAL_ITEM,
+   );
+
+  return $items;
+}
+
+function sbp_wizard_admin() {
+  global $base_root;
+  $url = preg_replace('#^https?://#', '', $base_root);
+  $form = array();
+  $form['sbp_wizard_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email address results email should come from.'),
+    '#default_value' => variable_get('sbp_wizard_email', 'no-reply@' . $url),
+    '#size' => 25,
+    '#maxlength' => 64,
+    '#required' => TRUE,
+  );
+
+  $form['sbp_wizard_subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email Subject'),
+    '#default_value' => variable_get('sbp_wizard_subject', '[site:name] has sent you an email'),
+    '#size' => 64,
+    '#maxlength' => 255,
+    '#required' => TRUE,
+  );
+  $form['tokens'] = array(
+    '#theme' => 'token_tree',
+    '#token_types' => array('site'),
+    '#global_types' => FALSE,
+    '#click_insert' => FALSE,
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Callback for processing ajax form
+ */
+function sbp_email_process(){
+  global $base_root;
+  $url = preg_replace('#^https?://#', '', $base_root);
+
+  $module = 'sbp_wizard';
+  $key = 'wizard_results';
+  $to = $_POST['email'];
+  $from = variable_get('sbp_wizard_email', 'no-reply@' . $url);
+  $params = $_POST;
+  $language = language_default();
+  $send = TRUE;
+
+  // Check the form token and check the honeypot we put in.
+  if (drupal_valid_token($_POST['emailtoken'])
+    and !empty($_POST['emailvalidate'])) {
+    print t('Good bye.');
+    exit();
+  }
+
+  $result =  drupal_mail(
+    'sbp_wizard',
+    'wizard_results',
+    $to,
+    //user_preferred_language($account),
+    language_default(),
+    $params,
+    $from,
+    $send
+  );
+
+  if ($result['result'] == TRUE) {
+    print t('Your message has been sent.');
+  }
+  else {
+    print t('There was a problem sending your message and it was not sent.');
+  }
+  exit();
+}
+
+/**
+ * Impliments hook_mail()
+ */
+function sbp_wizard_mail($key, &$message, $params) {
+  global $user;
+
+  $options = array(
+    'langcode' => $message['language']->language,
+  );
+
+  switch ($key) {
+    // Send a simple message from the contact form.
+    case 'wizard_results':
+      if ($message['from']) {
+        $headers['From'] = $headers['Sender'] = $headers['Return-Path'] = $message['from'];
+      }
+      $headers = array(
+        'MIME-Version' => '1.0',
+        'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
+        'Content-Transfer-Encoding' => '8Bit',
+      );
+
+      $message['headers'] = $headers;
+      $message['subject'] = t('@subject', array('@subject' => t(variable_get('sbp_wizard_subject', '@site has sent you an email'),array('@site' => variable_get('site_name', "Business Portal")))), $options);
+      // Note that the message body is an array, not a string.
+      $message['body'][] = check_plain($params['message']);
+      break;
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function sbp_wizard_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['json'] = array(
+    'label' => t('json'),
+    'custom settings' => TRUE,
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function sbp_wizard_theme() {
+  return array(
+    'sbp_wizard_block' => array(
+      'variables' => array('address_form' => NULL, 'email_form' => NULL),
+      'template' => 'sbp-wizard-block',
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function sbp_wizard_block_info() {
+  $blocks = array();
+  $blocks['wizard'] = array(
+    'info' => t('Wizard Block'),
+    'cache' => DRUPAL_CACHE_PER_ROLE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function sbp_wizard_block_view($delta = '') {
+  if (module_exists('labp_address_wizard')) {
+    $address_form = drupal_get_form('labp_address_wizard_address_input');
+    $address_form = drupal_render($address_form);
+  } else {
+    $address_form = '';
+  }
+  
+  $email_form = drupal_get_form('sbp_wizard_email_form');
+  $email_form = drupal_render($email_form);
+  
+  $block = array();
+  switch ($delta) {
+    case 'wizard':
+      $block['subject'] = NULL;
+      $block['content'] = theme('sbp_wizard_block', array('address_form'=>$address_form, 'email_form'=>$email_form));
+      break;
+  };
+  return $block;
+}

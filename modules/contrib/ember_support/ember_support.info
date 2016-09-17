@@ -1,0 +1,22 @@
+name = Ember Support
+description = Additional functionality and unified interfaces for the Ember administration theme.
+core = 7.x
+dependencies[] = media
+
+stylesheets[all][] = css/ember-contextual.css
+stylesheets[all][] = css/ember-ctools.css
+stylesheets[all][] = css/ember-media.css
+stylesheets[all][] = css/ember-modal.css
+stylesheets[all][] = css/ember-panels-ipe.css
+stylesheets[all][] = css/ember-purr.css
+stylesheets[all][] = css/ember-token.css
+stylesheets[all][] = css/ember-workbench.css
+
+scripts[]          = js/ember-support.js
+
+; Information added by Drupal.org packaging script on 2015-12-17
+version = "7.x-1.0-alpha4+30-dev"
+core = "7.x"
+project = "ember_support"
+datestamp = "1450386548"
+

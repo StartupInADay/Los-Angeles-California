@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the SBP Hero feature.
+ */
+
+include_once 'sbp_hero.features.inc';

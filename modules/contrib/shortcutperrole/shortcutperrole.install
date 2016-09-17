@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall Shortcut per Role.
+ */
+
+/**
+ * Implements hook_uninstall()
+ */
+function shortcutperrole_uninstall() {
+  variable_del('shortcutperrole');
+}

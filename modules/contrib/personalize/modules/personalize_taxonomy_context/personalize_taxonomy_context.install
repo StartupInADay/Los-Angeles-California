@@ -1,0 +1,10 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function personalize_taxonomy_context_enable() {
+  // We're adding a new visitor context plugin so make sure the plugin cache
+  // is cleared.
+  cache_clear_all("plugins:personalize:visitor_context", "cache");
+}

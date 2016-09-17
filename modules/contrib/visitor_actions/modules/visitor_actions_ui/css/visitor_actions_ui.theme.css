@@ -1,0 +1,28 @@
+/**
+ * @file visitor_actions_ui.theme.css
+ */
+#navbar-administration .visitor-actions-ui-toggle-active,
+.visitor-actions-ui-toggle-active {
+  font-weight: bold;
+}
+.visitor-actions-ui-actionable-elements-without-identifiers {
+  background-color: #484848;
+  padding: 0.5em 0.25em;
+}
+.visitor-actions-ui-dialog,
+.visitor-actions-ui-dialog a,
+.visitor-actions-ui-dialog legend a,
+.visitor-actions-ui-dialog legend a:visited,
+.visitor-actions-ui-dialog legend a:hover,
+.visitor-actions-ui-dialog legend a:focus,
+.visitor-actions-ui-dialog legend a:active {
+  color: white;
+}
+
+.visitor-actions-ui-enabled {
+  outline: 1px solid #0BBCFF;
+}
+
+.visitor-actions-ui-actionable-elements-without-identifiers .visitor-actions-ui-enabled {
+  outline: none
+}

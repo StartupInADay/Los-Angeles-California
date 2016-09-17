@@ -1,0 +1,14 @@
+diff --git a/text_hierarchical.module b/text_hierarchical.module
+index 084b3c2..d7636f8 100644
+--- a/text_hierarchical.module
++++ b/text_hierarchical.module
+@@ -431,7 +431,7 @@ function _text_hierarchical_field_form($name, $entity, &$form, $form_state) {
+           $item['parent'] = array(
+             '#type' => 'hidden',
+             '#title' => t('Parent'),
+-            '#default_value' => isset($entity->{$name}[$l][$delta]['parent']) ? $entity->{$name}[$l][$delta]['parent'] - 1 : -1,
++            '#default_value' => isset($entity->{$name}[$l][$delta]['parent']) ? $entity->{$name}[$l][$delta]['parent'] : -1,
+             '#attributes' => array(
+               'class' => array('parent'),
+             ),
+

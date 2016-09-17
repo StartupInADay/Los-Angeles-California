@@ -1,0 +1,10 @@
+name = Rabbit Hole
+description = Basic functionality that is shared among the different Rabbit Hole modules.
+core = 7.x
+
+; Information added by Drupal.org packaging script on 2014-07-10
+version = "7.x-2.23"
+core = "7.x"
+project = "rabbit_hole"
+datestamp = "1405026229"
+

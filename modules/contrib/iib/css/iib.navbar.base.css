@@ -1,0 +1,43 @@
+/**
+ * @file
+ * Styling for the IIB tab.
+ */
+
+#toolbar a#iib-toolbar-link.active {
+  background: #000;
+}
+
+#navbar-administration .navbar-tab-iib {
+  display: none;
+  position: relative;
+}
+#navbar-administration.navbar-oriented .navbar-bar .navbar-tab-iib.navbar-tab {
+  display: block;
+  float: right; /* LTR */
+  position: relative;
+}
+[dir="rtl"] #navbar-administration.navbar-oriented .navbar-bar .navbar-tab-iib.navbar-tab {
+  float: left;
+}
+#navbar-administration .navbar-tab-iib .iib-trigger {
+  display: block;
+}
+#navbar-administration .navbar-tab-iib .item-list {
+  display: none;
+  width: 16em;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  z-index: 1;
+  right: 0;
+}
+#navbar-administration .navbar-tab-iib.open .item-list {
+  display: block;
+}
+#navbar-administration .navbar-tab-iib .form-type-select {
+  padding: 0em 1em 1em 1em;
+  line-height: 2em;
+}
+#navbar-administration .navbar-tab-iib .messages.error {
+  display: none;
+}

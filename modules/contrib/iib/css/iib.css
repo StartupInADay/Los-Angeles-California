@@ -1,0 +1,59 @@
+.iib {
+  background: #efefef;
+  font-family: "Source Sans Pro", "Lucida Grande", Verdana, sans-serif
+}
+
+.iib input.form-submit {
+  margin-bottom: 0.4em;
+}
+
+.entity-iib {
+  font-size: 0.8em;
+  padding: 0.4em;
+}
+
+.page-iib {
+  z-index: 1300;
+  display: none;
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.3333);
+  position: fixed;
+  width: 100%;
+  background-color: #E6E6E6;
+}
+
+.iib-active {
+  display: block;
+}
+
+.iib-trigger {
+  cursor: pointer;
+}
+
+#toolbar a#iib-toolbar-link {
+  padding: 0px 5px;
+  line-height: 24px;
+  margin: 5px 15px;
+  border: 0;
+  float:right;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+}
+
+#toolbar a#iib-toolbar-link:hover {
+  background: #555;
+}
+
+#toolbar a#iib-toolbar-link.active {
+  background: #E6E6E6;
+  color: #555;
+  padding: 0px 5px 6px 5px;
+  -moz-border-radius: 5px 5px 0px 0px;
+  -webkit-border-radius: 5px 5px 0px 0px;
+}
+
+#toolbar a#iib-toolbar-link.sps-active,
+.page-iib.sps-active {
+  background: #FFF;
+  color: #555;
+}

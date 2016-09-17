@@ -1,0 +1,59 @@
+<?php
+class SPSFixedOverrideConditionUnitTest extends SPSBaseUnitTest {
+  static function getInfo() {
+    return array(
+      'name' => 'SPS FixedOverrideCondition Unit Tests',
+      'description' => 'Test the public interface to the FixedOverrideCondition object',
+      'group' => 'SPS',
+    );
+  }
+
+  public function testFIxedOverrideCondition_contruct() {
+    $manager = new \Drupal\sps\Test\Manager();
+    $settings = array(
+      'message' => array( '#markup' => "Viewing the site as test"),
+    );
+    $this->assertThrows(
+      function() use ($manager,$settings) {$condition = new \Drupal\sps\Plugins\Condition\FixedOverrideCondition($settings, $manager);},
+      '\Drupal\sps\Exception\NonoperativePluginException',
+      'condition does not have an override',
+      '::__construct should throw exception if there is no override'
+    );
+  }
+  public function testFIxedOverrideCondition_getElement() {
+    $manager = new \Drupal\sps\Test\Manager();
+    $settings = array(
+      'message' => array( '#markup' => "Viewing the site as test"),
+      'override' => new \Drupal\sps\Test\Override(array(), $manager),
+    );
+    $condition = new \Drupal\sps\Plugins\Condition\FixedOverrideCondition($settings, $manager);
+    $form = array();
+    $form_state = array();
+
+    $element = $condition->getElement($form,$form_state);
+    $this->assertEqual(
+      $element['message']['message_body'],
+      $settings['message'],
+      '::getElement should deliver the message pass in on creation'
+    );
+    $this->assertTrue(
+      !empty($form_state['values']),
+      '::getElement should insure that there are form values'
+    );
+  }
+  public function testWrapperCondition_getOverride() {
+    $config = new \Drupal\sps\Test\ConfigController();
+    $manager = new \Drupal\sps\Test\Manager();
+    $settings = array(
+      'message' => array( '#markup' => "Viewing the site as test"),
+      'override' => new \Drupal\sps\Test\Override(array(), $manager),
+    );
+    $condition = new \Drupal\sps\Plugins\Condition\FixedOverrideCondition($settings, $manager);
+    $this->assertEqual(
+      $condition->getOverride(),
+      $settings['override'],
+      '::getOverride should return the override passed in.'
+    );
+  }
+
+}

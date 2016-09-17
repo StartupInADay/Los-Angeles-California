@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function nra_menu() {
+  $items = array();
+
+  $items['admin/content/content-revisions'] = array(
+    'title' => 'Content Revisions',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('nra_content_page'),
+    'access arguments' => array('administer content revisions'),
+    'type' => MENU_NORMAL_ITEM | MENU_LOCAL_TASK,
+    'file' => 'nra.admin.inc',
+    'weight' => -9,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function nra_permission() {
+  return array(
+    'administer content revisions' => array(
+      'title' => t('Administer content revisions'),
+    ),
+  );
+}
+
+/**
+ * Get the node Revision operation
+ */
+function nra_get_node_revision_operations() {
+  $operations = module_invoke_all('node_revision_operations');
+  drupal_alter('node_revision_operations', $operations);
+  return $operations;
+}
+
+/**
+ * List node administration filters that can be applied.
+ */
+function nra_revision_filters() {
+  $filters = module_invoke_all('node_revision_filters');
+  drupal_alter('node_revision_filters', $filters);
+  /**
+   * Expected format for each
+   *
+   * array('key' => array(
+   *   'form' => form element
+   *   )
+   * )
+   *
+   * They should implement hook_query_node_revision_alter()
+   */
+  return $filters;
+}
+
+/**
+ * Get the state of a revision
+ *
+ * @TODO allow this in bulk
+ */
+function nra_get_revision_status($node) {
+  $status = array();
+  foreach (module_implements('node_revision_status') as $module) {
+    $function = "{$module}_node_revision_status";
+    $status[] = $function($node);
+  }
+
+  return implode(' | ', $status);
+}

@@ -1,0 +1,15 @@
+/* Panels Preview Styles */
+#modal-content .widget-preview-single.panels-preview-full,
+#modal-content .panels-add-content-modal .panels-section-columns {
+  width: 100%;
+}
+
+#modal-content .vertical-tabs {
+  display: none;
+}
+
+/* As we force a single-column layout for the panels_add_content_modal, make sure the width isn't set at 50% */
+
+.panels-section-column.panels-section-column-0 {
+  width: inherit;
+}

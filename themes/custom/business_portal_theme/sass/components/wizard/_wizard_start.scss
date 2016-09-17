@@ -1,0 +1,80 @@
+// styles for the start screen of the Wizard
+.wizard__header--start {
+  font-weight: 700;
+  font-size: 1em;
+  margin: 10px 0;
+  padding: 35px 0 0 0;
+  width: 100%;
+  border: 0px solid red;
+  background-image: url("../images/wizard/illustrations/illustration_clouds.png");
+  background-size: 112px 48px;
+  background-repeat: no-repeat;
+  background-position: 120px 0;
+  @include window_size(tab-wide-up){
+    margin: 60px 0 10px 0;
+    background-position: 150px 0;
+  }
+}
+
+.wizard__start-block {
+  display: inline-block;
+  border: 0px solid black;
+  padding: 0;
+  @include window_size(desktop){
+  }
+}
+
+.wizard__header--title-start-super {
+  border: 0px solid white;
+  color: $white;
+  font-size: 1.357em;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.wizard__header--title-start{
+  border: 0px solid white;
+  font-size: 2.429em;
+  color: $white;
+  padding: 0;
+  margin:0 0 15px 0;
+  @include window_size(tab-wide-up){
+    font-size: 3em;
+  }
+}
+
+.wizard__copy--section_start {
+  @include window_size(tab-wide-up) {
+    max-width: 85%;
+  }
+  
+  p {
+    padding: 0;
+    border: 0px solid red;
+    font-size: 0.929em;
+    margin:0 0 22px 0;
+    @include window_size(tab-wide-up){
+      font-size: 1.357em;
+    }
+  }
+  p:last-child {
+    font-weight: 700;
+    margin:0 0 20px 0;
+    
+    @include window_size(tab-wide-up){
+      font-size: 1.071em;
+      line-height: 1.4;
+    }
+  }
+}
+
+.wizard__copy--time-estimate{
+  border: 0px solid red;
+  font-weight: 700;
+  color: $white;
+  font-size: 0.857em;
+  @include window_size(tab-wide-up){
+    font-size: 1.2em;
+  }
+}

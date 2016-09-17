@@ -1,0 +1,8 @@
+/**
+ * @file
+ * Styles for Personalize URL Context administration page.
+ */
+
+div.personalize-url-context-textarea .form-textarea-wrapper {
+    width: 400px;
+}

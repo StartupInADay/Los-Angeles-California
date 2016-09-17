@@ -1,0 +1,51 @@
+Search API Autocomplete 1.4 (2015-08-29):
+-----------------------------------------
+- #2503607 by drunken monkey: Added support for custom autocomplete scripts.
+- #2458629 by sherakama, drunken monkey, mgifford: Added ARIA roles for search
+  field and parent wrapper.
+- #2503613 by drunken monkey: Fixed issues with multiple search fields on the
+  same page.
+- #2493919 by sg88, drunken monkey: Added the option to disable auto-submit.
+- #2502937 by drunken monkey: Added flexibility for returned suggestions.
+- #2503593 by drunken monkey: Added a hidden variable for changing the
+  autocomplete delay.
+- #2475435 by drunken monkey: Added support for switching the autocomplete
+  implementation.
+
+Search API Autocomplete 1.3 (2015-08-19):
+-----------------------------------------
+- Fixed escaping of search keywords returned in suggestions HTML.
+
+Search API Autocomplete 1.2 (2015-06-03):
+-----------------------------------------
+- #2335701 by marvil07, drunken monkey: Added an alter hook for the detected
+  fulltext fields in views.
+- #2415057 by das-peter: Added a JS select event when auto-completing.
+- #2345683 by drunken monkey: Fixed error message in admin UI when there are no
+  (recognized) searches.
+- #2368795 by theo_: Fixed Javascript error when overriding autocomplete.
+- #2352567 by das-peter, drunken monkey: Fixed CTools incompatibility of JS
+  submit handler.
+- #2334563 by Begun, drunken monkey, marvil07: Added an advanced option to
+  change the jQuery button selector.
+- #2280111 by drunken monkey: Fixed handling of settings for deleted searches.
+
+Search API Autocomplete 1.1 (2014-05-24):
+-----------------------------------------
+- #2229613 by das-peter: Fixed search submit while suggestions are displayed.
+- #2062969 by queenvictoria, das-peter: Fixed AJAX errors on click or return.
+- #2195657 by drunken monkey: Added a note about permissions to README.txt.
+- #2147555 by drunken monkey: Improved error handling.
+- #2134675 by Julian Maurice, drunken monkey: Added
+  hook_search_api_autocomplete_suggestions_alter().
+- #2121135 by eugene.ilyin, drunken monkey: Added minimum key length option.
+- #1357954 by drunken monkey: Clarified documentation.
+- #2079951 by drunken monkey: Fixed concatenation of words when there is a
+  trailing space.
+- #2023947 by drunken monkey: Fixed behavior when user input contains trailing
+  whitespace.
+- #2012710 by drunken monkey: Fixed $reset parameter for load functions.
+
+Search API Autocomplete 1.0 (2013-04-22):
+-----------------------------------------
+First stable release of the Search API Autocomplete project.

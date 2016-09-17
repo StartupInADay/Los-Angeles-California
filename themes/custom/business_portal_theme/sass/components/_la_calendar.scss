@@ -1,0 +1,242 @@
+$lacity-border-color: #6BC3F3;
+$lacity-text-color: #39afef;
+
+.lacity-calendar-container {
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
+  
+  font-family: Roboto, sans-serif;
+  .fc-toolbar {
+    border-bottom: 1px solid $lacity-border-color;
+    position: relative;
+    padding: 20px 160px 20px 90px;
+    .fc-left, .fc-right, .fc-center {
+      float: none !important;
+    }
+    .fc-left {
+      position: absolute;
+      left: 0; top: 25px;
+    }
+    .fc-right {
+      position: absolute;
+      right: 0; top: 20px;
+    }
+    .fc-center {
+      display: block;
+      min-width: 200px;
+      color: $dark_blue;
+      h2 {
+        color: $dark_blue;
+        font-size: 20px;
+        line-height: 28px;
+        margin: 0; padding: 0;
+        font-weight: 700;
+      }
+    }
+  }
+  
+  thead, tbody, td, th {
+    border: none !important;
+  }
+  
+  .fc-thead {
+    text-align: left;
+    background: none;
+  }
+  .fc-day-header {
+    text-align: left;
+    background: none;
+    border: none;
+    color: $dark_blue;
+    font-size: 15px;
+    padding: 10px 0 20px;
+  }
+  
+  .fc-event-container {
+    border: none;
+    padding: 10px 15px 10px 0;
+    background: none;
+    .fc-day-grid-event {
+      margin: 0; padding: 0;
+      background: none;
+      border-radius: none;
+      border: none !important;
+      font-size: 14px;
+      &:hover {
+        color: $dark_blue;
+      }
+      
+      .fc-content {
+        
+        .fc-time {
+          color: $dark_blue;
+          font-weight: 400;
+        }
+        .fc-title {
+          white-space: normal;
+        }
+      }
+    }
+  }
+  .fc-more-cell {
+    padding-top: 50px;
+    padding-right: 15px;
+    div {
+      border-top: 1px solid $lacity-border-color !important;
+      padding-top: 10px;
+      a {
+        font-size: 14px;
+      }
+    }
+  }
+  .fc-today {
+    background: none !important;
+  }
+  
+  
+  .fc-basicDay-view {
+    .fc-day-header {
+      padding-left: 90px;
+    }
+    .fc-content {
+      position: relative;
+      padding-left: 90px;
+      .fc-time {
+        position: absolute;
+        left: 0; top: 0;
+        max-width: 70px;
+      }
+      .fc-title {
+        
+      }
+    }
+  }
+  .fc-basicThreeDay-view, .fc-basicWeek-view {
+    .fc-content {
+      position: relative;
+      .fc-time {
+        display: block;
+        padding-bottom: 5px;
+      }
+      .fc-title {
+        
+      }
+    }
+  }
+    
+  .fc-basicWeek-view {
+    
+  }
+  .fc-basicThreeDay-view {
+    
+  }
+  
+  .fc-month-view {
+    table {
+      border-collapse: separate;
+    }
+    td {
+      height: 55px;
+      padding-bottom: 20px;
+    }
+    .fc-day-number {
+      border-top: 1px solid $lacity-border-color !important;
+      border-color: $lacity-border-color !important;
+      border-top-width: 1px !important;
+      padding-top: 10px;
+      padding-bottom: 10px;
+      text-align: left !important;
+      color: $navy;
+      font-weight: 700;
+      position: relative;
+      height: auto;
+      &::before {
+        position: absolute !important;
+        width: 10px;
+        z-index: 999;
+        content: '';
+        position: absolute;
+        top: -2px; right: 0;
+        height: 2px;
+        background: #fff;
+      }
+      &:last-child::before {
+        display: none;
+      }
+    }
+    .fc-event-container, .fc-more-cell {
+      padding-bottom: 30px;
+    }
+    .fc-more-cell {
+      padding-top: 0;
+      div {
+        border-top: none !important;
+      }
+    }
+  }
+  
+  
+  
+  
+  .fc-today-button, .calendar-share-btn, .mobile-filter {
+    display: none;
+  }
+  
+  .fc-button {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    &:focus,&:active {
+      outline: none;
+    }
+    &.fc-corner-left, &.fc-corner-right {
+      border-radius: 0 !important;
+    }
+    &.fc-prev-button,
+    &.fc-next-button {
+      text-indent: -999em;
+      font-size: 0; line-height: 0;
+      display: inline-block;
+      width: 11px;
+      height: 18px;
+      background: transparent;
+      border: none;
+      background-position: center center;
+      background-size: 11px 18px;
+      background-repeat: no-repeat;
+    }
+    &.fc-prev-button {
+      background-image: url(../images/calendar-prev.svg);
+    }
+    &.fc-next-button {
+      margin-left: 25px !important;
+      background-image: url(../images/calendar-next.svg);
+    }
+  }
+  
+  .fc-right {
+    display: none;
+    @include window_size(desktop) {
+      display: block;
+    }
+    .fc-button-group {
+      padding-left: 64px !important;
+    }
+    .fc-button {
+      box-sizing: border-box;
+      margin-left: 10px !important;
+      padding: 5px 10px;
+      height: auto;
+      border: none;
+      background: transparent;
+      &.fc-state-active {
+        border: 1px solid $lacity-border-color;
+        font-weight: 700;
+      }
+      &.fc-month-button {
+        position: absolute;
+        left: 0; top: 0;
+      }
+    }
+  }  
+}

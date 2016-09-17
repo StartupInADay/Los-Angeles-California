@@ -1,0 +1,12 @@
+name = UX Elements
+description = Adds more element types to those provided by Drupal core
+core = 7.x
+files[] = ux_elements.module
+
+
+; Information added by drush on 2016-02-18
+version = "7.x-1.0-beta1+1-dev"
+core = "7.x"
+project = "ux_elements"
+datestamp = "1455828860"
+

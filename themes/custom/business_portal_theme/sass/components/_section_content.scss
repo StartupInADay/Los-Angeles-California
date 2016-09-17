@@ -1,0 +1,88 @@
+
+@mixin panel__icons--default($color:'transparent'){
+  background-color: $color;
+  padding: 20px 25px 20px 25px;
+
+  @include window_size(tab-wide-up){
+    padding: 50px 35px 50px 35px;
+    @include clearfix;
+
+  }
+
+  @include window_size(desktop){
+    padding: 75px 0 75px 0;
+    @include clearfix;
+  }
+
+
+}
+
+//root container of all the panels
+.panel__intro{
+  @include window_size(desktop){
+    padding: 0;
+    background-repeat: no-repeat;
+    background-position: top right;
+  }
+  display: block;
+  width: 100%;
+}
+
+.panel__intro_header{
+  @include headline($heading-font, $zen-grid-width);
+}
+
+.panel__intro_paragraph{
+  font-size:1.286em;
+  line-height: 1.4em;
+
+  @include window_size(tab-wide-up){
+    font-size: 1.429em;
+    width: 90%;
+  }
+
+}
+
+.panel__header-line {
+  @include hr-thick;
+}
+
+.panel__button {
+  @include panel__button--base($yellow, $navy);
+}
+
+.panel__buttons {
+  a:link, a:visited {
+    color: $navy;
+  }
+}
+
+.panel__background_image {
+  display: none;
+  @include window_size(desktop) {
+    display: block;
+    width: 45%;
+    float: right;
+    img {
+      vertical-align: bottom;
+    }
+  }
+}
+
+.pane-bundle-section-content > .pane-title {
+  display: none;
+}
+
+/************************************************
+*              LAYOUT
+*************************************************/
+.panel__content_wrapper{
+  @include zen-grid-container();
+  @include window_size(desktop){
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+
+

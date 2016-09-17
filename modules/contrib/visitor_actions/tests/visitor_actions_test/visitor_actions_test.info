@@ -1,0 +1,13 @@
+name = Visitor Actions Test
+description = Module for testing base Visitor Actions functionality.
+dependencies[] = visitor_actions
+package = Testing
+core = 7.x
+hidden = TRUE
+
+; Information added by Drupal.org packaging script on 2015-10-19
+version = "7.x-1.4"
+core = "7.x"
+project = "visitor_actions"
+datestamp = "1445266450"
+

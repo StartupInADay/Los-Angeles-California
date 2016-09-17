@@ -1,0 +1,16 @@
+name = Media Internet Test
+description = Provides hooks for testing Media Internet module functionality.
+package = Media
+core = 7.x
+hidden = TRUE
+
+files[] = includes/MediaInternetTestStreamWrapper.inc
+files[] = includes/MediaInternetTestHandler.inc
+
+
+; Information added by drush on 2016-02-18
+version = "7.x-2.0-beta1+8-dev"
+core = "7.x"
+project = "media"
+datestamp = "1455828868"
+

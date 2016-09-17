@@ -1,0 +1,17 @@
+name = Visitor Actions
+description = The Visitor Actions module is an API for tracking client-side and server-side visitor actions on your site.
+
+dependencies[] = ctools
+
+files[] = includes/visitor_actions.classes.inc
+files[] = tests/visitor_actions.test
+
+package = Visitor Actions
+core = 7.x
+
+; Information added by Drupal.org packaging script on 2015-10-19
+version = "7.x-1.4"
+core = "7.x"
+project = "visitor_actions"
+datestamp = "1445266450"
+
