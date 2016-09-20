@@ -27,7 +27,7 @@ The San Francisco Business Portal was designed and developed by innovation firm 
 
 The L.A. Business Portal was, again, designed by Tomorrow Partners, who also did the front-end development. The Drupal backend and distribution was built by [CivicActions](http://civicactions.com), a team of developers and certified project managers who help organizations execute large-scale software projects using open standards technologies and Agile management practices.  
 
-The project was was lead by Los Angeles Mayor Garcetti’s Innovation Team, a team of civic leaders, data scientists, designers and project managers who function as in-house consultants to the Mayor and are funded by Bloomberg Philanthropies to design and implement new solutions for the City of Los Angeles and drive a culture of innovation. 
+The project was lead by Los Angeles Mayor Garcetti’s Innovation Team, a team of civic leaders, data scientists, designers and project managers who function as in-house consultants to the Mayor and are funded by Bloomberg Philanthropies to design and implement new solutions for the City of Los Angeles and drive a culture of innovation. 
 
 ## COPYRIGHT
 The Business Portal distribution is designed to work with Drupal version 7 and is licensed under Affero General Public License (AGPL) version 3 or later found in the [LICENSE](https://github.com/StartupInADay/Los-Angeles-California/blob/master/LICENSE) file. 
