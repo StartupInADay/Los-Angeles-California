@@ -30,7 +30,7 @@ The L.A. Business Portal was, again, designed by Tomorrow Partners, who also did
 The project was was lead by Los Angeles Mayor Garcetti’s Innovation Team, a team of civic leaders, data scientists, designers and project managers who function as in-house consultants to the Mayor and are funded by Bloomberg Philanthropies to design and implement new solutions for the City of Los Angeles and drive a culture of innovation. 
 
 ## COPYRIGHT
-The Business Portal distribution is designed to work with Drupal version 7 and is licensed under Affero General Public License (AGPL) version 3 or later found in the LICENSE file. 
+The Business Portal distribution is designed to work with Drupal version 7 and is licensed under Affero General Public License (AGPL) version 3 or later found in the [LICENSE](https://github.com/StartupInADay/Los-Angeles-California/blob/master/LICENSE) file. 
 Drupal is licensed under the GPLv2 or later. The Drupal copyright is held by the Drupal developers. See [Drupal.org](http://drupal.org) for more information.
 
 Text content and visual design is licensed under the terms of the [Creative Commons License Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/).
