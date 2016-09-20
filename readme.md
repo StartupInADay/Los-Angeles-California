@@ -4,7 +4,7 @@
 
 Launching and running a small business can be daunting. That is why two California cities have taken the lead in the last several years to address the needs of their local business communities and pave the way to innovative, collaborative solutions. 
 
-In 2014, San Francisco Mayor Ed Lee seized an opportunity to rethink how the City could better support its entrepreneurial culture and small business community. The inaugural San Francisco Business Portal (link: businessportal.sfgov.org) was created by engaging local business owners and the many city agencies that serve them. The Business Portal is a comprehensive one-stop shop that features a wealth of resources aimed at first time or seasoned business owners. 
+In 2014, San Francisco Mayor Ed Lee seized an opportunity to rethink how the City could better support its entrepreneurial culture and small business community. The inaugural [San Francisco Business Portal](http://businessportal.sfgov.org) was created by engaging local business owners and the many city agencies that serve them. The Business Portal is a comprehensive one-stop shop that features a wealth of resources aimed at first time or seasoned business owners. 
 
 Sixteen months later, Los Angeles approached San Francisco to learn about their approach and suggested a partnership to further build on their award-winning work. 
 
