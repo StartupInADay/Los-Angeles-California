@@ -25,7 +25,7 @@ Just like the partnership between San Francisco and Los Angeles, which sets an e
 ## CREDITS
 The San Francisco Business Portal was designed and developed by innovation firm [Tomorrow Partners](http://businessportal.tomorrowpartners.com), who began the project with in-depth customer research, which resulted in the experience strategy. Tomorrow’s diverse team of designers, strategists and developers use their cross-disciplinary creative firepower to envision game-changing ideas for positive impact in society and realize them with ingenious, yet, practical solutions. 
 
-The L.A. Business Portal was, again, designed by Tomorrow Partners, who also did the front-end development. The Drupal backend and distribution was built by [CivicActions](http://civicactions.com), a team of developers and certified project managers who help organizations execute large-scale software projects using open standards technologies and Agile management practices.  
+The L.A. Business Portal was, again, designed by Tomorrow Partners, who also did the front-end development. The Drupal backend and distribution were built by [CivicActions](http://civicactions.com), a team of developers and certified project managers who help organizations execute large-scale software projects using open standards technologies and Agile management practices.  
 
 The project was lead by Los Angeles Mayor Garcetti’s Innovation Team, a team of civic leaders, data scientists, designers and project managers who function as in-house consultants to the Mayor and are funded by Bloomberg Philanthropies to design and implement new solutions for the City of Los Angeles and drive a culture of innovation. 
 
