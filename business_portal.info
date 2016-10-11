@@ -168,3 +168,4 @@ dependencies[] = sbp_translation
 dependencies[] = sbp_users
 dependencies[] = sbp_views
 dependencies[] = sbp_wizard
+dependencies[] = sbp_wysiwyg
