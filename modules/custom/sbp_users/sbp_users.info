@@ -3,6 +3,7 @@ description = User roles and permissions
 core = 7.x
 package = Business Portal
 version = 7.x-1.4
+dependencies[] = editor
 dependencies[] = features
 dependencies[] = fieldable_panels_panes
 dependencies[] = file_entity
