@@ -79,6 +79,9 @@ function sbp_migrate_map() {
  * Enable required custom migrate support modules.
  */
 function sbp_migrate_enable_migrate_support($modules = array()) {
+  // Ensure that migration classes are registered.
+  migrate_get_module_apis(TRUE);
+  $map = sbp_migrate_map();
   if (!empty($modules)) {
     $map = array_intersect($map, $modules);
   }
