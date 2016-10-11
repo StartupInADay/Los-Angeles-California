@@ -45,7 +45,6 @@ dependencies[] = cache_warmer
 dependencies[] = classy_panel_styles
 dependencies[] = collection
 dependencies[] = colorbox
-dependencies[] = composer_manager
 dependencies[] = context_admin
 dependencies[] = ctools
 dependencies[] = date
