@@ -5,10 +5,12 @@ core = 7.x
 dependencies[] = editor
 dependencies[] = filter
 dependencies[] = migrate
+dependencies[] = sbp_sponsors
 dependencies[] = sbp_landing_page
 dependencies[] = sbp_terms_definitions
 
 files[] = sbp_migrate.migrate.inc
+files[] = migrate/sbp_business_sponsors.inc
 files[] = migrate/sbp_landing_page.inc
 files[] = migrate/sbp_migrate.industry_tags.inc
 files[] = migrate/nodes.inc
