@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- *  Business Portal Landing Page migration.
+ *  Business Portal Sponsor Page migration.
  * 
  * No custom imports necessary at this point.
  */
