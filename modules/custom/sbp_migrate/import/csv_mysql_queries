@@ -1,2 +1,0 @@
-# for sbp_business_sponsors:
-# select 'id', 'title', 'promote', 'comment', 'field_sponsor_url', 'field_sponsor_url_title', 'field_sponsor_url_attributes' UNION select n.type, n.title, n.promote, n.comment, u.field_sponsor_url_url, n.title, u.field_sponsor_url_attributes from field_data_field_sponsor_url u, node n where n.type like '%sponsor%' and n.nid = u.entity_id into outfile "/var/lib/mysql-files/business_portal_sponsors.csv" fields terminated by "," enclosed by "" lines terminated by "\n";
