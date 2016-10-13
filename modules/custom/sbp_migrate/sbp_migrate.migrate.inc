@@ -65,6 +65,17 @@ abstract class SBPMigration extends Migration {
     $columns[] = array('image_alt', 'Image alt');
   }
 
+  protected function addUrlCsvColumns(&$columns) {
+    $columns[] = array('field_sponsor_url', 'Sponsor URL Link Field');
+    #$columns[] = array('field_sponsor_url_url', 'Sponsor URL');
+    $columns[] = array('field_sponsor_url_title', 'Sponsor URL title');
+    $columns[] = array('field_sponsor_url_attributes', 'Sponsor URL attributes');
+  }
+
+  protected function addSponsorCustCsvColumns(&$columns) {
+    $columns[] = array('comment', 'Comment');
+  }
+
   protected function getImportFilePath() {
     return $this->baseImportDirectory . '/' . $this->importFileName;
   }
@@ -113,11 +124,13 @@ abstract class SBPMigrationNode extends SBPMigration {
     $this->addFieldMapping('promote', 'promote');
     $this->addFieldMapping('path', 'path');
 
-    if ($this->useImages = FALSE) {
+    if ($this->useImages = FALSE && $this->useSponsorCust != 1) {
       $this->addImageFieldMappings('field_image');
     }
-    $this->addFieldMapping('body', 'body');
-    $this->addFieldMapping('body:format')->defaultValue('filtered_html');
+    if($this->useSponsorCust != 1) {
+      $this->addFieldMapping('body', 'body');
+      $this->addFieldMapping('body:format')->defaultValue('filtered_html');
+    }
 
     if ($this->useTags) {
       $this->addFieldMapping('field_tags', 'tags')
@@ -139,18 +152,34 @@ abstract class SBPMigrationNode extends SBPMigration {
     $this->addFieldMapping($field_name . ':title', 'image_title');
   }
 
+  protected function addUrlFieldMappings($field_name) {
+    $this->addFieldMapping($field_name, 'field_sponsor_url');
+    #$this->addFieldMapping($field_name . ':url', 'field_sponsor_url_url');
+    $this->addFieldMapping($field_name . ':attributes', 'field_sponsor_url_attributes');
+    $this->addFieldMapping($field_name . ':title', 'field_sponsor_url_title');
+    $this->addFieldMapping($field_name . ':language')->defaultValue(LANGUAGE_NONE);
+  }
+
   function csvcolumns() {
     $columns[] = array('id', 'ID');
     $columns[] = array('title', 'Title');
     $columns[] = array('promote', 'Promote');
     $columns[] = array('path', 'Path');
-    if ($this->useImages = FALSE) {
+    if ($this->useImage = FALSE) {
       $this->addImageCsvColumns($columns);
+    }
+    if ($this->useUrl = 1) {
+      $this->addUrlCsvColumns($columns);
+    }
+    if ($this->useSponsorCust = 1) {
+      $this->addSponsorCustCsvColumns($columns);
     }
     if ($this->useTags) {
       $columns[] = array('tags', 'Tags');
     }
-    $columns[] = array('body', 'Body');
+    if($this->useSponsorCust != 1) {
+      $columns[] = array('body', 'Body');
+    }
     return $columns;
   }
 
