@@ -73,7 +73,8 @@ function sbp_migrate_map() {
   // a custom class.
   drupal_alter('sbp_migrate_map', $map);
   // Only add a class if its corresponding module is enabled.
-  return array_filter($map, 'module_exists');
+  return $map;
+  //return array_filter($map, 'module_exists');
 }
 
 /**
