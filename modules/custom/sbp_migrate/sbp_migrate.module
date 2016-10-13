@@ -60,6 +60,7 @@ function sbp_migrate_migrate_api() {
 function sbp_migrate_map() {
   $map = array(
     'SBPMigrationNodeLandingPage' => 'sbp_landing_page',
+    'SBPMigrationNodeBusinessSponsor' => 'sbp_business_sponsors',
     'SBPMigrationStarterKit' => 'sbp_starter_kit',
     'SBPMigrationTermIndustryTags' => 'taxonomy',
     'SBPMigrationTermBusinessNeeds' => 'sbp_taxonomy',
@@ -72,7 +73,8 @@ function sbp_migrate_map() {
   // a custom class.
   drupal_alter('sbp_migrate_map', $map);
   // Only add a class if its corresponding module is enabled.
-  return array_filter($map, 'module_exists');
+  return $map;
+  //return array_filter($map, 'module_exists');
 }
 
 /**
