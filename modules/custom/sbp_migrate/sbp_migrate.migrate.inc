@@ -65,9 +65,16 @@ abstract class SBPMigration extends Migration {
     $columns[] = array('image_alt', 'Image alt');
   }
 
+  protected function addLogoCsvColumns(&$columns) {
+    $columns[] = array('field_logo', 'Logo filename');
+    $columns[] = array('field_logo_alt', 'Logo alt');
+    $columns[] = array('field_logo_title', 'Logo title');
+    $columns[] = array('field_logo_source_dir', 'Logo source directory');
+  }
+
   protected function addUrlCsvColumns(&$columns) {
-    $columns[] = array('field_sponsor_url', 'Sponsor URL Link Field');
-    #$columns[] = array('field_sponsor_url_url', 'Sponsor URL');
+    $columns[] = array('field_sponsor_url', 'Sponsor Link Field');
+    $columns[] = array('field_sponsor_url_url', 'Sponsor URL');
     $columns[] = array('field_sponsor_url_title', 'Sponsor URL title');
     $columns[] = array('field_sponsor_url_attributes', 'Sponsor URL attributes');
   }
@@ -141,8 +148,8 @@ abstract class SBPMigrationNode extends SBPMigration {
     
     $this->addFieldMapping('is_new')->defaultValue(TRUE);
   }
-  
-  protected function addImageFieldMappings($field_name) {
+
+  protected function addImageFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'image');
     $this->addFieldMapping($field_name . ':file_replace')
       ->defaultValue(FILE_EXISTS_REPLACE);
@@ -152,11 +159,21 @@ abstract class SBPMigrationNode extends SBPMigration {
     $this->addFieldMapping($field_name . ':title', 'image_title');
   }
 
-  protected function addUrlFieldMappings($field_name) {
+  protected function addLogoFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_logo');
+    $this->addFieldMapping($field_name . ':file_replace')
+      ->defaultValue(FILE_EXISTS_REPLACE);
+    $this->addFieldMapping($field_name . ':source_dir', 'field_logo_source_dir')
+      ->defaultValue($this->getImageDirectoryPath());
+    $this->addFieldMapping($field_name . ':alt', 'field_logo_alt');
+    $this->addFieldMapping($field_name . ':title', 'field_logo_title');
+  }
+
+  protected function addUrlFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'field_sponsor_url');
-    #$this->addFieldMapping($field_name . ':url', 'field_sponsor_url_url');
-    $this->addFieldMapping($field_name . ':attributes', 'field_sponsor_url_attributes');
+    $this->addFieldMapping($field_name . ':url', 'field_sponsor_url_url');
     $this->addFieldMapping($field_name . ':title', 'field_sponsor_url_title');
+    $this->addFieldMapping($field_name . ':attributes', 'field_sponsor_url_attributes');
     $this->addFieldMapping($field_name . ':language')->defaultValue(LANGUAGE_NONE);
   }
 
@@ -168,11 +185,14 @@ abstract class SBPMigrationNode extends SBPMigration {
     if ($this->useImage = FALSE) {
       $this->addImageCsvColumns($columns);
     }
+    if ($this->useSponsorCust = 1) {
+      $this->addSponsorCustCsvColumns($columns);
+    }
     if ($this->useUrl = 1) {
       $this->addUrlCsvColumns($columns);
     }
-    if ($this->useSponsorCust = 1) {
-      $this->addSponsorCustCsvColumns($columns);
+    if ($this->useLogo = 1) {
+      $this->addLogoCsvColumns($columns);
     }
     if ($this->useTags) {
       $columns[] = array('tags', 'Tags');
