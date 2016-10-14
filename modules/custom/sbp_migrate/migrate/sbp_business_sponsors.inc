@@ -13,10 +13,12 @@ class SBPMigrationNodeBusinessSponsor extends SBPMigrationNode {
     $this->useTags = FALSE;
     $this->useImage = FALSE;
     $this->useUrl = TRUE;
+    $this->useLogo = TRUE;
     $this->useSponsorCust = TRUE;
     $this->addFieldMapping('pathauto')->defaultValue(0);
     $this->addFieldMapping('comment', 'comment');
-    $this->addUrlFieldMappings('field_sponsor_url');
+    $this->addUrlFieldMapping('field_sponsor_url');
+    $this->addLogoFieldMapping('field_logo');
     parent::__construct($arguments);
 
     $this->description = t('Import Sponsor Pages.');
