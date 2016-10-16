@@ -151,22 +151,22 @@ abstract class SBPMigrationNode extends SBPMigration {
 
   protected function addImageFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'image');
-    $this->addFieldMapping($field_name . ':file_replace')
-      ->defaultValue(FILE_EXISTS_REPLACE);
     $this->addFieldMapping($field_name . ':source_dir')
       ->defaultValue($this->getImageDirectoryPath());
+    $this->addFieldMapping($field_name . ':file_replace')
+      ->defaultValue(FILE_EXISTS_REPLACE);
     $this->addFieldMapping($field_name . ':alt', 'image_alt');
     $this->addFieldMapping($field_name . ':title', 'image_title');
   }
 
   protected function addLogoFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'field_logo');
+    $this->addFieldMapping($field_name . ':alt', 'field_logo_alt');
+    $this->addFieldMapping($field_name . ':title', 'field_logo_title');
     $this->addFieldMapping($field_name . ':file_replace')
       ->defaultValue(FILE_EXISTS_REPLACE);
     $this->addFieldMapping($field_name . ':source_dir', 'field_logo_source_dir')
       ->defaultValue($this->getImageDirectoryPath());
-    $this->addFieldMapping($field_name . ':alt', 'field_logo_alt');
-    $this->addFieldMapping($field_name . ':title', 'field_logo_title');
   }
 
   protected function addUrlFieldMapping($field_name) {
