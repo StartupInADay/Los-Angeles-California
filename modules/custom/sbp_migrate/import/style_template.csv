@@ -1,0 +1,10 @@
+name,description,format,weight,parent_name,field_style_class
+Blue,,filtered_html,,,blue
+Dark Blue,,filtered_html,,,dark_blue
+Dark Grey,,filtered_html,,,dark_grey
+Green,,filtered_html,,,grey
+Light Grey,,filtered_html,,,light_grey
+Mint,,filtered_html,,,mint
+Orange,,filtered_html,,,orange
+Yellow,,filtered_html,,,yellow
+White,,filtered_html,,,white
