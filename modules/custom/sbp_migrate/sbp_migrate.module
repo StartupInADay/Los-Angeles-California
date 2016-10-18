@@ -59,20 +59,24 @@ function sbp_migrate_migrate_api() {
  */
 function sbp_migrate_map() {
   $map = array(
-    'SBPMigrationNodeLandingPage' => 'sbp_landing_page',
-    'SBPMigrationNodeBusinessSponsor' => 'sbp_business_sponsors',
-    'SBPMigrationNodeOnlineResources' => 'sbp_online_resources',
-    'SBPMigrationNodeIncentives' => 'sbp_incentives',
-    'SBPMigrationFieldCollectionOnlineResourcesHero' => 'sbp_field_collection_online_resources_hero',
-    'SBPMigrationFieldCollectionIncentivesHero' => 'sbp_field_collection_incentives_hero',
-    'SBPMigrationStarterKit' => 'sbp_starter_kit',
-    'SBPMigrationTermIndustryTags' => 'taxonomy',
+    'SBPMigrationTermDepartmentType' => 'sbp_taxonomy',
     'SBPMigrationTermBusinessNeeds' => 'sbp_taxonomy',
     'SBPMigrationTermBusinessOwnership' => 'sbp_taxonomy',
+    'SBPMigrationTermIndustryTags' => 'sbp_taxonomy',
     'SBPMigrationTermResourceType' => 'sbp_taxonomy',
-    'SBPMigrationTermTermsDefinitions' => 'sbp_taxonomy',
-    'SBPMigrationTermTermsDefinitionsGrouping' => 'sbp_taxonomy',
     'SBPMigrationTermStyleTemplate' => 'style_template',
+    'SBPMigrationTermTermsDefinitionsGrouping' => 'sbp_taxonomy',
+    'SBPMigrationTermTermsDefinitions' => 'sbp_taxonomy',
+    'SBPMigrationNodeLandingPage' => 'sbp_landing_page',
+    'SBPMigrationNodeBusinessSponsor' => 'sbp_business_sponsors',
+    'SBPMigrationNodeIncentives' => 'sbp_incentives',
+    'SBPMigrationNodeOnlineResources' => 'sbp_online_resources',
+    'SBPMigrationNodeStarterKit' => 'sbp_starter_kit',
+    'SBPMigrationFieldCollectionOnlineResourcesHero' => 'sbp_field_collection_online_resources_hero',
+    'SBPMigrationFieldCollectionIncentivesHero' => 'sbp_field_collection_incentives_hero',
+    'SBPMigrationFieldCollectionStarterKitHero' => 'sbp_field_collection_starter_kit_hero',
+    'SBPMigrationFieldCollectionStarterKitChecklistItems' => 'sbp_field_collection_starter_kit_checklist_items',
+    'SBPMigrationFieldCollectionStarterKitPermitSection' => 'sbp_field_collection_starter_kit_permit_section'
   );
   // Allow other modules to alter the migrations to, for example, use
   // a custom class.

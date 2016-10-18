@@ -73,7 +73,6 @@ abstract class SBPMigration extends Migration {
 
   protected function addUrlCsvColumns(&$columns) {
     $columns[] = array('field_sponsor_url', 'Sponsor Link Field');
-    $columns[] = array('field_sponsor_url_url', 'Sponsor URL');
     $columns[] = array('field_sponsor_url_title', 'Sponsor URL title');
     $columns[] = array('field_sponsor_url_attributes', 'Sponsor URL attributes');
   }
@@ -101,6 +100,23 @@ abstract class SBPMigration extends Migration {
     $columns[] = array('field_industry_tag', 'Resource Industry Tags Field');
     $columns[] = array('field_business_ownership', 'Resource Business Ownership Field');
     $columns[] = array('field_resource_type', 'Resource Resource Type Field');
+  }
+
+  protected function addStarterKitCust(&$columns) {
+    $columns[] = array('field_guide_title', 'Guide Title');
+    $columns[] = array('field_guide_description', 'Guide Description');
+    $columns[] = array('field_permit_description', 'Permit Description');
+    $columns[] = array('field_checklist_description', 'Checklist Description');
+    $columns[] = array('field_guide_pdf_description', 'Guide PDF Description');
+    $columns[] = array('field_guide_pdf_display', 'Guide PDF Display');
+    $columns[] = array('field_permit_pdf_description', 'Permit PDF Description');
+    $columns[] = array('field_permit_pdf_display', 'Permit PDF Display');
+    $columns[] = array('field_guide_image', 'Guide filename');
+    $columns[] = array('field_guide_image_alt', 'Guide alt');
+    $columns[] = array('field_guide_image_title', 'Guide title');
+    $columns[] = array('field_permit_image', 'Permit filename');
+    $columns[] = array('field_permit_image_alt', 'Permit alt');
+    $columns[] = array('field_permit_image_title', 'Permit title');
   }
 
   protected function getImportFilePath() {
@@ -162,11 +178,7 @@ abstract class SBPMigrationNode extends SBPMigration {
     if ($this->useImages = FALSE && isset($this->useSponsorCust) && $this->useSponsorCust != 1) {
       $this->addImageFieldMappings('field_image');
     }
-    if(isset($useSponsorCust) && $this->useSponsorCust != 1) {
-      $this->addFieldMapping('body', 'body');
-      $this->addFieldMapping('body:format')->defaultValue('filtered_html');
-    }
-    if(!isset($useSponsorCust)) {
+    if(!isset($this->useNotBody) || isset($useNotBody) && $this->useNotBody != 1) {
       $this->addFieldMapping('body', 'body');
       $this->addFieldMapping('body:format')->defaultValue('filtered_html');
     }
@@ -203,21 +215,19 @@ abstract class SBPMigrationNode extends SBPMigration {
 
   protected function addUrlFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'field_sponsor_url');
-    $this->addFieldMapping($field_name . ':url', 'field_sponsor_url_url');
     $this->addFieldMapping($field_name . ':title', 'field_sponsor_url_title');
     $this->addFieldMapping($field_name . ':attributes', 'field_sponsor_url_attributes');
     $this->addFieldMapping($field_name . ':language')->defaultValue(LANGUAGE_NONE);
   }
 
   protected function addDocumentFieldMapping($field_name) {
+    $this->addFieldMapping($field_name . ':file_class')->defaultValue('MigrateFileUri');
+    $this->addFieldMapping($field_name . ':file_replace')->defaultValue(FILE_EXISTS_RENAME);
+    $this->addFieldMapping($field_name . ':preserve_files')->defaultValue(FALSE);
+    $this->addFieldMapping($field_name . ':source_dir')->defaultValue($this->getImageDirectoryPath());
+    $this->addFieldMapping($field_name . ':destination_file')->defaultValue('sample.png');
     $this->addFieldMapping($field_name . ':description', 'field_document_description');
-    $this->addFieldMapping($field_name . ':display', 'field_document_display')
-      ->defaultValue(1);
-    $this->addFieldMapping($field_name . ':file_replace')
-      ->defaultValue(FILE_EXISTS_REPLACE);
-    $this->addFieldMapping($field_name . ':source_dir')
-      ->defaultValue($this->getImageDirectoryPath());
-
+    $this->addFieldMapping($field_name . ':display', 'field_document_display');
   }
 
   protected function addIncentiveUrlFieldMapping($field_name) {
@@ -235,7 +245,7 @@ abstract class SBPMigrationNode extends SBPMigration {
     $this->addFieldMapping($field_name, 'field_secondary_feature');
   }
 
-  protected function addBusinessNeedFieldMapping($field_name) {
+  protected function addBusinessNeedsFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'field_business_need');
     $this->addFieldMapping($field_name . ':source_type')->defaultValue('tid');
   }
@@ -256,6 +266,46 @@ abstract class SBPMigrationNode extends SBPMigration {
     $this->addFieldMapping($field_name . ':source_type')->defaultValue('tid');
   }
 
+  protected function addGuidePdfFieldMapping($field_name) {
+    $this->addFieldMapping($field_name . ':file_class')->defaultValue('MigrateFileUri');
+    $this->addFieldMapping($field_name . ':file_replace')->defaultValue(FILE_EXISTS_RENAME);
+    $this->addFieldMapping($field_name . ':preserve_files')->defaultValue(FALSE);
+    $this->addFieldMapping($field_name . ':source_dir')->defaultValue($this->getImageDirectoryPath());
+    $this->addFieldMapping($field_name . ':destination_file')->defaultValue('sample.png');
+    $this->addFieldMapping($field_name . ':description', 'field_guide_pdf_description');
+    $this->addFieldMapping($field_name . ':display', 'field_guide_pdf_display');
+  }
+
+  protected function addPermitPdfFieldMapping($field_name) {
+    $this->addFieldMapping($field_name . ':file_class')->defaultValue('MigrateFileUri');
+    $this->addFieldMapping($field_name . ':file_replace')->defaultValue(FILE_EXISTS_RENAME);
+    $this->addFieldMapping($field_name . ':preserve_files')->defaultValue(FALSE);
+    $this->addFieldMapping($field_name . ':source_dir')->defaultValue($this->getImageDirectoryPath());
+    $this->addFieldMapping($field_name . ':destination_file')->defaultValue('sample.png');
+    $this->addFieldMapping($field_name . ':description', 'field_permit_pdf_description');
+    $this->addFieldMapping($field_name . ':display', 'field_permit_pdf_display');
+  }
+
+  protected function addGuideImageFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_guide_image');
+    $this->addFieldMapping($field_name . ':alt', 'field_guide_image_alt');
+    $this->addFieldMapping($field_name . ':title', 'field_guide_image_title');
+    $this->addFieldMapping($field_name . ':file_replace')
+      ->defaultValue(FILE_EXISTS_REPLACE);
+    $this->addFieldMapping($field_name . ':source_dir')
+      ->defaultValue($this->getImageDirectoryPath());
+  }
+
+  protected function addPermitImageFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_permit_image');
+    $this->addFieldMapping($field_name . ':alt', 'field_permit_image_alt');
+    $this->addFieldMapping($field_name . ':title', 'field_permit_image_title');
+    $this->addFieldMapping($field_name . ':file_replace')
+      ->defaultValue(FILE_EXISTS_REPLACE);
+    $this->addFieldMapping($field_name . ':source_dir')
+      ->defaultValue($this->getImageDirectoryPath());
+  }
+
   function csvcolumns() {
     $columns[] = array('id', 'ID');
     $columns[] = array('title', 'Title');
@@ -267,9 +317,7 @@ abstract class SBPMigrationNode extends SBPMigration {
     if ($this->useTags) {
       $columns[] = array('tags', 'Tags');
     }
-    if(isset($this->useSponsorCust) && $this->useSponsorCust = 1) {
-    }
-    else {
+    if(!isset($this->useNotBody) || isset($useNotBody) && $this->useNotBody != 1) {
       $columns[] = array('body', 'Body');
     }
     if (isset($this->useSponsorCust) && $this->useSponsorCust = 1) {
@@ -289,6 +337,9 @@ abstract class SBPMigrationNode extends SBPMigration {
     }
     if (isset($this->useResourcesIncentivesSharedCust) && $this->useResourcesIncentivesSharedCust = 1) {
       $this->addResourcesIncentivesSharedCust($columns);
+    }
+    if (isset($this->useStarterKitCust) && $this->useStarterKitCust = 1) {
+      $this->addStarterKitCust($columns);
     }
     return $columns;
   }
@@ -312,6 +363,11 @@ abstract class SBPMigrationTerm extends SBPMigration {
     // Create a map object for tracking the relationships between source rows
     $this->map = new MigrateSQLMap($this->machineName,
       array(
+        'id' => array(
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+        ),
         'name' => array(
           'type' => 'varchar',
           'length' => 255,
@@ -334,6 +390,7 @@ abstract class SBPMigrationTerm extends SBPMigration {
   }
 
   function csvcolumns() {
+    $columns[] = array('id', 'ID');
     $columns[] = array('name', 'Name');
     $columns[] = array('description', 'Description');
     $columns[] = array('format', 'Format');

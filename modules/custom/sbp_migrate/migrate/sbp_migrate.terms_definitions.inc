@@ -10,6 +10,9 @@ class SBPMigrationTermTermsDefinitions extends SBPMigrationTerm {
     $this->setProperties('terms_definitions');
     parent::__construct($arguments);
     $this->description = t('Import Terms and Definitions terms.');
+    
+    $this->dependencies = array('SBPMigrationTermTermsDefinitionsGrouping','SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType','SBPMigrationTermStyleTemplate');
+    
     $this->addFieldMapping('field_term_definitions_grouping', 'grouping');
   }
 

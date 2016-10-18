@@ -6,24 +6,24 @@
  * No custom imports necessary at this point.
  */
 
-class SBPMigrationFieldCollectionIncentivesHero extends SBPMigration {
+class SBPMigrationFieldCollectionStarterKitHero extends SBPMigration {
 
   public function __construct($arguments) {
-    $this->setProperties('field_collection_incentives_hero');
+    $this->setProperties('field_collection_starter_kit_hero');
     parent::__construct($arguments);
 
-    $this->dependencies = array('SBPMigrationNodeIncentives','SBPMigrationTermStyleTemplate');
-    
+    $this->dependencies = array('SBPMigrationNodeStarterKit','SBPMigrationTermStyleTemplate');
+
     $this->destination = new MigrateDestinationFieldCollection(
       'field_hero',
       array('host_entity_type' => 'node')
     );
 
     $this->addFieldMapping('host_entity_id', 'id')
-      ->sourceMigration('SBPMigrationNodeIncentives');
+      ->sourceMigration('SBPMigrationNodeStarterKit');
 
     $columns = array(
-      array('id', 'IncentiveID'),
+      array('id', 'StarterKitID'),
       array('field_hero_title', 'Title'),
       array('field_description', 'Description'),
       array('field_background', 'Background'),
@@ -37,15 +37,13 @@ class SBPMigrationFieldCollectionIncentivesHero extends SBPMigration {
       array('field_background_image', 'Background Image filename'),
       array('field_background_image_alt', 'Background Image alt'),
       array('field_background_image_title', 'Background Image title'),
-      array('field_background_image_source_dir', 'Background Image source directory'),
       array('field_icon', 'Icon filename'),
       array('field_icon_alt', 'Icon alt'),
       array('field_icon_title', 'Icon title'),
-      array('field_icon_source_dir', 'Icon source directory'),
     );
 
     $this->source = new MigrateSourceCSV(
-      drupal_get_path('module', 'sbp_migrate') . '/import/field_collection_incentives_hero.csv',
+      drupal_get_path('module', 'sbp_migrate') . '/import/field_collection_starter_kit_hero.csv',
       $columns,
       array('header_rows' => 1)
     );
@@ -68,26 +66,26 @@ class SBPMigrationFieldCollectionIncentivesHero extends SBPMigration {
       'field_subtitle_long',
       'field_subtitle_2',
     ));
-    $this->addHeroIncentivesPaneStyleFieldMapping('field_pane_style');
-    $this->addHeroIncentivesCallsToActionFieldMapping('field_calls_to_action');
-    $this->addHeroIncentivesBackgroundImageFieldMapping('field_background_image');
-    $this->addHeroIncentivesIconFieldMapping('field_icon');
+    $this->addHeroStarterKitPaneStyleFieldMapping('field_pane_style');
+    $this->addHeroStarterKitCallsToActionFieldMapping('field_calls_to_action');
+    $this->addHeroStarterKitBackgroundImageFieldMapping('field_background_image');
+    $this->addHeroStarterKitIconFieldMapping('field_icon');
 
   }
 
-  protected function addHeroIncentivesPaneStyleFieldMapping($field_name) {
+  protected function addHeroStarterKitPaneStyleFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'field_pane_style');
     $this->addFieldMapping($field_name . ':source_type')->defaultValue('tid');
   }
 
-  protected function addHeroIncentivesCallsToActionFieldMapping($field_name) {
+  protected function addHeroStarterKitCallsToActionFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'field_calls_to_action');
     $this->addFieldMapping($field_name . ':title', 'field_calls_to_action_title');
     $this->addFieldMapping($field_name . ':attributes', 'field_calls_to_action_attributes');
     $this->addFieldMapping($field_name . ':language')->defaultValue(LANGUAGE_NONE);
   }
 
-  protected function addHeroIncentivesBackgroundImageFieldMapping($field_name) {
+  protected function addHeroStarterKitBackgroundImageFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'field_background_image');
     $this->addFieldMapping($field_name . ':alt', 'field_background_image_alt');
     $this->addFieldMapping($field_name . ':title', 'field_background_image_title');
@@ -97,7 +95,7 @@ class SBPMigrationFieldCollectionIncentivesHero extends SBPMigration {
       ->defaultValue($this->getImageDirectoryPath());
   }
 
-  protected function addHeroIncentivesIconFieldMapping($field_name) {
+  protected function addHeroStarterKitIconFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'field_icon');
     $this->addFieldMapping($field_name . ':alt', 'field_icon_alt');
     $this->addFieldMapping($field_name . ':title', 'field_icon_title');

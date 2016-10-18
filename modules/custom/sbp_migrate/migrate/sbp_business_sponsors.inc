@@ -15,6 +15,7 @@ class SBPMigrationNodeBusinessSponsor extends SBPMigrationNode {
     $this->useUrl = TRUE;
     $this->useLogo = TRUE;
     $this->useSponsorCust = TRUE;
+    $this->useNotBody = TRUE;
     $this->addFieldMapping('pathauto')->defaultValue(0);
     $this->addFieldMapping('comment', 'comment');
     $this->addUrlFieldMapping('field_sponsor_url');
@@ -22,6 +23,7 @@ class SBPMigrationNodeBusinessSponsor extends SBPMigrationNode {
     parent::__construct($arguments);
 
     $this->description = t('Import Sponsor Pages.');
+    $this->dependencies = array('SBPMigrationTermTermsDefinitions');
   }
 
   function csvcolumns() {
