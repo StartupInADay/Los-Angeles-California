@@ -10,6 +10,8 @@ class SBPMigrationTermBusinessOwnership extends SBPMigrationTerm {
     $this->setProperties('business_ownership');
     parent::__construct($arguments);
     $this->description = t('Import Industry Tag terms.');
+
+    $this->addSoftDependencies(array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds'));
   }
 
   function csvcolumns() {

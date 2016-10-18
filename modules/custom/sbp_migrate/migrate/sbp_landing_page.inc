@@ -15,5 +15,7 @@ class SBPMigrationNodeLandingPage extends SBPMigrationNode {
     $this->addFieldMapping('pathauto')->defaultValue(0);
     parent::__construct($arguments);
     $this->description = t('Import Landing Pages.');
+
+    $this->dependencies = array('SBPMigrationTermTermsDefinitions');
   }
 }

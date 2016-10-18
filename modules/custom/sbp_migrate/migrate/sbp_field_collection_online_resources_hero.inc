@@ -12,7 +12,7 @@ class SBPMigrationFieldCollectionOnlineResourcesHero extends SBPMigration {
     $this->setProperties('field_collection_online_resources_hero');
     parent::__construct($arguments);
 
-    $this->dependencies = array('SBPMigrationNodeOnlineResources');
+    $this->dependencies = array('SBPMigrationNodeOnlineResources','SBPMigrationTermStyleTemplate');
 
     $this->destination = new MigrateDestinationFieldCollection(
       'field_hero',
@@ -75,6 +75,7 @@ class SBPMigrationFieldCollectionOnlineResourcesHero extends SBPMigration {
   
   protected function addHeroOnlineResourcesPaneStyleFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'field_pane_style');
+    $this->addFieldMapping($field_name . ':source_type')->defaultValue('tid');
   }
   
   protected function addHeroOnlineResourcesCallsToActionFieldMapping($field_name) {
