@@ -328,7 +328,7 @@ abstract class SBPMigrationTerm extends SBPMigration {
 
     $this->addFieldMapping('name', 'name');
     $this->addFieldMapping('description', 'description');
-    $this->addFieldMapping('format', 'filtered_html');
+    $this->addFieldMapping('format', 'format')->defaultValue('filtered_html');
     $this->addFieldMapping('weight', 'weight');
     $this->addFieldMapping('parent_name', 'parent_name');
   }
@@ -339,6 +339,11 @@ abstract class SBPMigrationTerm extends SBPMigration {
     $columns[] = array('format', 'Format');
     $columns[] = array('weight', 'Weight');
     $columns[] = array('parent_name', 'Parent name');
+
+    if (isset($this->useStyleClass) && $this->useStyleClass = 1) {
+      $columns[] = array('field_style_class', 'Style Class');
+    }
+
     return $columns;
   }
 

@@ -1,3 +1,3 @@
 id,title,promote,path,body,field_document_display,field_document_description,field_main_feature,field_secondary_feature,field_business_need,field_industry_tag,field_business_ownership,field_resource_type
-10001,Title Resource 1,0,resources/1,‘All the resources you ever wanted at half the price.’,2,Description 1 Extended,1,0,137,52,146,152
-10002,Title Resource 2,0,resources/2,‘All the resources you ever wanted at a quarter of the price.’,2,Description 2 Extended,0,1,131,73,149,155
+10001,SolarIMG Artis,0,resources/solar,‘All the resources about the sun and weather you ever wanted at half the price.’,2,SOLARIMG,1,0,137,52,146,152
+10002,USGS Earthquakes,0,resources/usgs,‘All the resources abaout earthquakes you ever wanted at a quarter of the price.’,2,USGS,0,1,131,73,149,155
