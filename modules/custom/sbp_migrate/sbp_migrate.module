@@ -61,6 +61,10 @@ function sbp_migrate_map() {
   $map = array(
     'SBPMigrationNodeLandingPage' => 'sbp_landing_page',
     'SBPMigrationNodeBusinessSponsor' => 'sbp_business_sponsors',
+    'SBPMigrationNodeOnlineResources' => 'sbp_online_resources',
+    'SBPMigrationNodeIncentives' => 'sbp_incentives',
+    'SBPMigrationFieldCollectionOnlineResourcesHero' => 'sbp_field_collection_online_resources_hero',
+    'SBPMigrationFieldCollectionIncentivesHero' => 'sbp_field_collection_incentives_hero',
     'SBPMigrationStarterKit' => 'sbp_starter_kit',
     'SBPMigrationTermIndustryTags' => 'taxonomy',
     'SBPMigrationTermBusinessNeeds' => 'sbp_taxonomy',
@@ -68,6 +72,7 @@ function sbp_migrate_map() {
     'SBPMigrationTermResourceType' => 'sbp_taxonomy',
     'SBPMigrationTermTermsDefinitions' => 'sbp_taxonomy',
     'SBPMigrationTermTermsDefinitionsGrouping' => 'sbp_taxonomy',
+    'SBPMigrationTermStyleTemplate' => 'style_template',
   );
   // Allow other modules to alter the migrations to, for example, use
   // a custom class.

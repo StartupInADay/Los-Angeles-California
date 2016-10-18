@@ -6,16 +6,16 @@
  * No custom imports necessary at this point.
  */
 
-class SBPMigrationNodeOnlineResource extends SBPMigrationNode {
+class SBPMigrationNodeOnlineResources extends SBPMigrationNode {
 
   public function __construct($arguments) {
-    $this->setProperties('online_resources');
+    $this->setProperties('online_resource');
     $this->useTags = FALSE;
     $this->useImage = FALSE;
-    $this->useResourceIncentiveSharedCust = TRUE;
-    $this->useResourceCust = TRUE;
+    $this->useResourcesCust = TRUE;
+    $this->useResourcesIncentivesSharedCust = TRUE;
     $this->addFieldMapping('pathauto')->defaultValue(0);
-    $this->addHeroFieldMapping('field_hero');
+    $this->addDocumentFieldMapping('field_document');
     $this->addMainFeatureFieldMapping('field_main_feature');
     $this->addSecondaryFeatureFieldMapping('field_secondary_feature');
     $this->addBusinessNeedFieldMapping('field_business_need');

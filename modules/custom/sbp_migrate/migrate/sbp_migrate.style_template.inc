@@ -1,15 +1,15 @@
 <?php
 /**
  * @file
- *  Taxonomy Industry Tags migration.
+ *  Taxonomy Style Template migration.
  */
 
-class SBPMigrationTermBusinessNeeds extends SBPMigrationTerm {
+class SBPMigrationTermStyleTemplate extends SBPMigrationTerm {
 
   public function __construct($arguments) {
-    $this->setProperties('business_needs');
+    $this->setProperties('style_template');
     parent::__construct($arguments);
-    $this->description = t('Import Business Needs terms.');
+    $this->description = t('Import Style Template terms.');
   }
 
   function csvcolumns() {

@@ -1,21 +1,21 @@
 <?php
 /**
  * @file
- *  Online Resources migration.
+ *  Incentives migration.
  * 
  * No custom imports necessary at this point.
  */
 
-class SBPMigrationNodeOnlineResource extends SBPMigrationNode {
+class SBPMigrationNodeIncentives extends SBPMigrationNode {
 
   public function __construct($arguments) {
-    $this->setProperties('online_resources');
+    $this->setProperties('incentives');
     $this->useTags = FALSE;
     $this->useImage = FALSE;
-    $this->useResourceIncentiveSharedCust = TRUE;
-    $this->useResourceCust = TRUE;
+    $this->useIncentivesCust = TRUE;
+    $this->useResourcesIncentivesSharedCust = TRUE;
     $this->addFieldMapping('pathauto')->defaultValue(0);
-    $this->addHeroFieldMapping('field_hero');
+    $this->addIncentiveUrlFieldMapping('field_incentive_url');
     $this->addMainFeatureFieldMapping('field_main_feature');
     $this->addSecondaryFeatureFieldMapping('field_secondary_feature');
     $this->addBusinessNeedFieldMapping('field_business_need');
