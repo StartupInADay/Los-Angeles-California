@@ -1,36 +1,54 @@
 <?php
 /**
  * @file
- *  Hero Field Collection migration for online_resource content types.
+ *  Hero Field Collection migration for incentives content types.
  * 
  * No custom imports necessary at this point.
  */
 
-class SBPMigrationFieldCollectionOnlineResourcesHero extends SBPMigration {
+class SBPMigrationFieldCollectionIncentivesHero extends SBPMigration {
 
   public function __construct($arguments) {
-    $this->setProperties('field_collection_online_resources_hero');
+    $this->setProperties('field_collection_incentives_hero');
     parent::__construct($arguments);
 
+    $this->dependencies = array('SBPMigrationNodeIncentives');
 
     $this->destination = new MigrateDestinationFieldCollection(
       'field_hero',
       array('host_entity_type' => 'node')
     );
-    
+
+    $this->addFieldMapping('host_entity_id', 'id')
+      ->sourceMigration('SBPMigrationNodeIncentives');
+
     $columns = array(
-      array('id', 'ResourceID'),
-      array('title', 'Title'),
+      array('id', 'IncentiveID'),
+      array('field_hero_title', 'Title'),
       array('field_description', 'Description'),
+      array('field_background', 'Background'),
+      array('field_width', 'Width'),
+      array('field_subtitle_long', 'Subtitle Long'),
+      array('field_subtitle_2', 'Subtitle_2'),
+      array('field_pane_style', 'Pane Style'),
+      array('field_calls_to_action', 'Calls to Action Link Field'),
+      array('field_calls_to_action_title', 'Calls to Action URL title'),
+      array('field_calls_to_action_attributes', 'Calls to Action URL attributes'),
+      array('field_background_image', 'Background Image filename'),
+      array('field_background_image_alt', 'Background Image alt'),
+      array('field_background_image_title', 'Background Image title'),
+      array('field_background_image_source_dir', 'Background Image source directory'),
+      array('field_icon', 'Icon filename'),
+      array('field_icon_alt', 'Icon alt'),
+      array('field_icon_title', 'Icon title'),
+      array('field_icon_source_dir', 'Icon source directory'),
     );
 
     $this->source = new MigrateSourceCSV(
-      drupal_get_path('module', 'sbp_migrate') . '../import/field_collection_online_resources_hero.csv',
+      drupal_get_path('module', 'sbp_migrate') . '/import/field_collection_incentives_hero.csv',
       $columns,
       array('header_rows' => 1)
     );
-
-    $this->destination = new MigrateDestinationNode('online_resource');
 
     $this->map = new MigrateSQLMap($this->machineName,
       array(
@@ -42,17 +60,49 @@ class SBPMigrationFieldCollectionOnlineResourcesHero extends SBPMigration {
       MigrateDestinationNode::getKeySchema()
     );
 
-    $this->addFieldMapping('uid', NULL)->defaultValue(1);
     $this->addSimpleMappings(array(
-      'title',
+      'field_hero_title',
       'field_description',
+      'field_background',
+      'field_width',
+      'field_subtitle_long',
+      'field_subtitle_2',
     ));
-  
-  }
-  
+    $this->addHeroIncentivesPaneStyleFieldMapping('field_pane_style');
+    $this->addHeroIncentivesCallsToActionFieldMapping('field_calls_to_action');
+    $this->addHeroIncentivesBackgroundImageFieldMapping('field_background_image');
+    $this->addHeroIncentivesIconFieldMapping('field_icon');
 
-  function csvcolumns() {
-    $columns = parent::csvcolumns();
-    return $columns;
+  }
+
+  protected function addHeroIncentivesPaneStyleFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_pane_style');
+  }
+
+  protected function addHeroIncentivesCallsToActionFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_calls_to_action');
+    $this->addFieldMapping($field_name . ':title', 'field_calls_to_action_title');
+    $this->addFieldMapping($field_name . ':attributes', 'field_calls_to_action_attributes');
+    $this->addFieldMapping($field_name . ':language')->defaultValue(LANGUAGE_NONE);
+  }
+
+  protected function addHeroIncentivesBackgroundImageFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_background_image');
+    $this->addFieldMapping($field_name . ':alt', 'field_background_image_alt');
+    $this->addFieldMapping($field_name . ':title', 'field_background_image_title');
+    $this->addFieldMapping($field_name . ':file_replace')
+      ->defaultValue(FILE_EXISTS_REPLACE);
+    $this->addFieldMapping($field_name . ':source_dir')
+      ->defaultValue($this->getImageDirectoryPath());
+  }
+
+  protected function addHeroIncentivesIconFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_icon');
+    $this->addFieldMapping($field_name . ':alt', 'field_icon_alt');
+    $this->addFieldMapping($field_name . ':title', 'field_icon_title');
+    $this->addFieldMapping($field_name . ':file_replace')
+      ->defaultValue(FILE_EXISTS_REPLACE);
+    $this->addFieldMapping($field_name . ':source_dir')
+      ->defaultValue($this->getImageDirectoryPath());
   }
 }

@@ -69,7 +69,6 @@ abstract class SBPMigration extends Migration {
     $columns[] = array('field_logo', 'Logo filename');
     $columns[] = array('field_logo_alt', 'Logo alt');
     $columns[] = array('field_logo_title', 'Logo title');
-    $columns[] = array('field_logo_source_dir', 'Logo source directory');
   }
 
   protected function addUrlCsvColumns(&$columns) {
@@ -81,6 +80,27 @@ abstract class SBPMigration extends Migration {
 
   protected function addSponsorCustCsvColumns(&$columns) {
     $columns[] = array('comment', 'Comment');
+  }
+
+  //TODO
+  protected function addResourcesCust(&$columns) {
+    $columns[] = array('field_document_display', 'Resource Document Display');
+    $columns[] = array('field_document_description', 'Resource Document Description');
+  }
+
+  protected function addIncentivesCust(&$columns) {
+    $columns[] = array('field_incentive_url', 'Field Incentive URL Field');
+    $columns[] = array('field_incentive_url_title', 'Field Incentive Title');
+    $columns[] = array('field_incentive_url_attributes', 'Field Incentive Attributes');
+  }
+
+  protected function addResourcesIncentivesSharedCust(&$columns) {
+    $columns[] = array('field_main_feature', 'Resource Main Feature');
+    $columns[] = array('field_secondary_feature', 'Resource Secondary Feature');
+    $columns[] = array('field_business_need', 'Resource Business Needs Field');
+    $columns[] = array('field_industry_tag', 'Resource Industry Tags Field');
+    $columns[] = array('field_business_ownership', 'Resource Business Ownership Field');
+    $columns[] = array('field_resource_type', 'Resource Resource Type Field');
   }
 
   protected function getImportFilePath() {
@@ -131,10 +151,22 @@ abstract class SBPMigrationNode extends SBPMigration {
     $this->addFieldMapping('promote', 'promote');
     $this->addFieldMapping('path', 'path');
 
-    if ($this->useImages = FALSE && $this->useSponsorCust != 1) {
+    if ($this->useImages = FALSE) {
+      if (isset($this->useSponsorCust) && $this->useSponsorCust != 1) {
+        $this->addImageFieldMappings('field_image');
+      }
+      if (!isset($this->useSponsorCust)) {
+        $this->addImageFieldMappings('field_image');
+      }
+    }
+    if ($this->useImages = FALSE && isset($this->useSponsorCust) && $this->useSponsorCust != 1) {
       $this->addImageFieldMappings('field_image');
     }
-    if($this->useSponsorCust != 1) {
+    if(isset($useSponsorCust) && $this->useSponsorCust != 1) {
+      $this->addFieldMapping('body', 'body');
+      $this->addFieldMapping('body:format')->defaultValue('filtered_html');
+    }
+    if(!isset($useSponsorCust)) {
       $this->addFieldMapping('body', 'body');
       $this->addFieldMapping('body:format')->defaultValue('filtered_html');
     }
@@ -165,7 +197,7 @@ abstract class SBPMigrationNode extends SBPMigration {
     $this->addFieldMapping($field_name . ':title', 'field_logo_title');
     $this->addFieldMapping($field_name . ':file_replace')
       ->defaultValue(FILE_EXISTS_REPLACE);
-    $this->addFieldMapping($field_name . ':source_dir', 'field_logo_source_dir')
+    $this->addFieldMapping($field_name . ':source_dir')
       ->defaultValue($this->getImageDirectoryPath());
   }
 
@@ -177,6 +209,53 @@ abstract class SBPMigrationNode extends SBPMigration {
     $this->addFieldMapping($field_name . ':language')->defaultValue(LANGUAGE_NONE);
   }
 
+  protected function addDocumentFieldMapping($field_name) {
+    $this->addFieldMapping($field_name . ':description', 'field_document_description');
+    $this->addFieldMapping($field_name . ':display', 'field_document_display')
+      ->defaultValue(1);
+    $this->addFieldMapping($field_name . ':file_replace')
+      ->defaultValue(FILE_EXISTS_REPLACE);
+    $this->addFieldMapping($field_name . ':source_dir')
+      ->defaultValue($this->getImageDirectoryPath());
+
+  }
+
+  protected function addIncentiveUrlFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_incentive_url');
+    $this->addFieldMapping($field_name . ':title', 'field_incentive_url_title');
+    $this->addFieldMapping($field_name . ':attributes', 'field_incentive_url_attributes');
+    $this->addFieldMapping($field_name . ':language')->defaultValue(LANGUAGE_NONE);
+  }
+
+  protected function addMainFeatureFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_main_feature');
+  }
+
+  protected function addSecondaryFeatureFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_secondary_feature');
+  }
+
+  protected function addBusinessNeedFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_business_need');
+    $this->addFieldMapping($field_name . ':source_type')->defaultValue('tid');
+  }
+
+  protected function addIndustryTagFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_industry_tag');
+    $this->addFieldMapping($field_name . ':source_type')->defaultValue('tid');
+  }
+
+  protected function addBusinessOwnershipFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_business_ownership');
+    $this->addFieldMapping($field_name . ':source_type')->defaultValue('tid');
+
+  }
+
+  protected function addResourceTypeFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_resource_type');
+    $this->addFieldMapping($field_name . ':source_type')->defaultValue('tid');
+  }
+
   function csvcolumns() {
     $columns[] = array('id', 'ID');
     $columns[] = array('title', 'Title');
@@ -185,20 +264,31 @@ abstract class SBPMigrationNode extends SBPMigration {
     if ($this->useImage = FALSE) {
       $this->addImageCsvColumns($columns);
     }
-    if ($this->useSponsorCust = 1) {
-      $this->addSponsorCustCsvColumns($columns);
-    }
-    if ($this->useUrl = 1) {
-      $this->addUrlCsvColumns($columns);
-    }
-    if ($this->useLogo = 1) {
-      $this->addLogoCsvColumns($columns);
-    }
     if ($this->useTags) {
       $columns[] = array('tags', 'Tags');
     }
-    if($this->useSponsorCust != 1) {
+    if(isset($this->useSponsorCust) && $this->useSponsorCust = 1) {
+    }
+    else {
       $columns[] = array('body', 'Body');
+    }
+    if (isset($this->useSponsorCust) && $this->useSponsorCust = 1) {
+      $this->addSponsorCustCsvColumns($columns);
+    }
+    if (isset($this->useUrl) && $this->useUrl = 1) {
+      $this->addUrlCsvColumns($columns);
+    }
+    if (isset($this->useLogo) && $this->useLogo = 1) {
+      $this->addLogoCsvColumns($columns);
+    }
+    if (isset($this->useResourcesCust) && $this->useResourcesCust = 1) {
+      $this->addResourcesCust($columns);
+    }
+    if (isset($this->useIncentivesCust) && $this->useIncentivesCust = 1) {
+      $this->addIncentivesCust($columns);
+    }
+    if (isset($this->useResourcesIncentivesSharedCust) && $this->useResourcesIncentivesSharedCust = 1) {
+      $this->addResourcesIncentivesSharedCust($columns);
     }
     return $columns;
   }
