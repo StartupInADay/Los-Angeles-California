@@ -119,6 +119,17 @@ abstract class SBPMigration extends Migration {
     $columns[] = array('field_permit_image_title', 'Permit title');
   }
 
+  protected function addDepartmentCust(&$columns) {
+    $columns[] = array('field_phone', 'Department Phone');
+    $columns[] = array('field_description', 'Department Description');
+    $columns[] = array('field_link', 'Department Link');
+    $columns[] = array('field_link_title', 'Department Link Title');
+    $columns[] = array('field_link_attributes', 'Department Link Attributes');
+    $columns[] = array('field_department_type', 'Checklist Description');
+    $columns[] = array('field_main_feature', 'Guide PDF Description');
+    $columns[] = array('field_secondary_feature', 'Guide PDF Display');
+  }
+
   protected function getImportFilePath() {
     return $this->baseImportDirectory . '/' . $this->importFileName;
   }
@@ -306,6 +317,23 @@ abstract class SBPMigrationNode extends SBPMigration {
       ->defaultValue($this->getImageDirectoryPath());
   }
 
+  protected function addDescriptionFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_description');
+    $this->addFieldMapping($field_name . ':format')->defaultValue('filtered_html');
+  }
+
+  protected function addLinkFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_link');
+    $this->addFieldMapping($field_name . ':title', 'field_link_title');
+    $this->addFieldMapping($field_name . ':attributes', 'field_link_attributes');
+    $this->addFieldMapping($field_name . ':language')->defaultValue(LANGUAGE_NONE);
+  }
+
+  protected function addDepartmentTypeFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_department_type');
+    $this->addFieldMapping($field_name . ':source_type')->defaultValue('tid');
+  }
+
   function csvcolumns() {
     $columns[] = array('id', 'ID');
     $columns[] = array('title', 'Title');
@@ -340,6 +368,9 @@ abstract class SBPMigrationNode extends SBPMigration {
     }
     if (isset($this->useStarterKitCust) && $this->useStarterKitCust = 1) {
       $this->addStarterKitCust($columns);
+    }
+    if (isset($this->useDepartmentCust) && $this->useDepartmentCust = 1) {
+      $this->addDepartmentCust($columns);
     }
     return $columns;
   }
