@@ -13,6 +13,8 @@ class SBPMigrationTermStyleTemplate extends SBPMigrationTerm {
     $this->addStyleClassFieldMapping('field_style_class');
     
     $this->description = t('Import Style Template terms.');
+    
+    $this->addSoftDependencies(array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType'));
   }
 
   protected function addStyleClassFieldMapping($field_name) {

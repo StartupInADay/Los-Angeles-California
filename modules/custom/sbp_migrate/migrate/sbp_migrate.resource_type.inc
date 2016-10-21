@@ -10,6 +10,8 @@ class SBPMigrationTermResourceType extends SBPMigrationTerm {
     $this->setProperties('resource_type');
     parent::__construct($arguments);
     $this->description = t('Import Business Needs terms.');
+
+    $this->addSoftDependencies(array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags'));
   }
 
   function csvcolumns() {

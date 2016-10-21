@@ -1,132 +1,132 @@
-name,description,format,weight,parent_name
-Auto,,,,
-Auto Body & Paint Shop,,,,Auto
-Auto Dealer,,,,Auto
-Auto Detailing,,,,Auto
-Auto Wrecker,,,,Auto
-Auto/Motorcycle Mechanic,,,,Auto
-Brake & Tire Shop,,,,Auto
-Parking Lots & Garages,,,,Auto
-Smog Check Facility,,,,Auto
-Towing Company,,,,Auto
-Child & Elder Care,,,,
-Adult Day Care,,,,Child & Elder Care
-Assisted Living Facility,,,,Child & Elder Care
-Child Care Services,,,,Child & Elder Care
-Elder Care Services,,,,Child & Elder Care
-Home Health Agency,,,,Child & Elder Care
-Contractors & Construction,,,,
-General Contractor,,,,Contractors & Construction
-Specialty Contractor,,,,Contractors & Construction
-Entertainment,,,,
-Bowling Alley,,,,Entertainment
-Nightclub,,,,Entertainment
-Food & Drink,,,,
-Alcohol/Beer & Wine Distributor,,,,Food & Drink
-Alcohol/Beer & Wine Importer,,,,Food & Drink
-Alcohol/Beer & Wine Wholesaler,,,,Food & Drink
-Bakery,,,,Food & Drink
-Bar,,,,Food & Drink
-Cafe or Deli,,,,Food & Drink
-Candy Store,,,,Food & Drink
-Caterer,,,,Food & Drink
-Chocolatier,,,,Food & Drink
-Corner Store,,,,Food & Drink
-Farmer's Market Booth,,,,Food & Drink
-Food Manufacturing,,,,Food & Drink
-Grocery Market,,,,Food & Drink
-Ice Cream Shop,,,,Food & Drink
-Mobile Food Truck,,,,Food & Drink
-Restaurant,,,,Food & Drink
-Vending Machines,,,,Food & Drink
-Winery,,,,Food & Drink
-Healthcare,,,,
-Dentist Office,,,,Healthcare
-Doctor's Office,,,,Healthcare
-Health Clinic,,,,Healthcare
-Medical Device Sales,,,,Healthcare
-Medical Marijuana Dispensary,,,,Healthcare
-Medical Transport,,,,Healthcare
-Pharmacy,,,,Healthcare
-Skilled Nursing Facility,,,,Healthcare
-Manufacturing,,,,
-Animal Food Manufacturing,,,,Manufacturing
-Clothing & Apparel Manufacturing,,,,Manufacturing
-Food Manufacturing,,,,Manufacturing
-Jewelry Manufacturing,,,,Manufacturing
-Personal Services,,,,
-Cleaning Business,,,,Personal Services
-Dog Walking,,,,Personal Services
-Gym & Yoga Studio,,,,Personal Services
-Hair/Nail Salon,,,,Personal Services
-Laundry/Dry Cleaning,,,,Personal Services
-Massage Establishment,,,,Personal Services
-Personal Trainer,,,,Personal Services
-Tattoo & Piercing Parlor,,,,Personal Services
-Pet Services,,,,
-Dog Kennel,,,,Pet Services
-Dog Walking,,,,Pet Services
-Pet Hospital,,,,Pet Services
-Pet Shop,,,,Pet Services
-Pet Sitting,,,,Pet Services
-Professional Services,,,,
-Accounting Service,,,,Professional Services
-Advertising Agency,,,,Professional Services
-Appliance Repair & Service,,,,Professional Services
-Architectural Consultant,,,,Professional Services
-Art Consultant,,,,Professional Services
-Broker Dealer,,,,Professional Services
-Business Consultant,,,,Professional Services
-Educational Consulting,,,,Professional Services
-Electronics & Computer Repair,,,,Professional Services
-Employment/Staffing Agency,,,,Professional Services
-Engineering Consultant,,,,Professional Services
-Escrow Agency,,,,Professional Services
-Event & Wedding Planning,,,,Professional Services
-Financial Advisor,,,,Professional Services
-Graphic/Web Design,,,,Professional Services
-Insurance Agency/Broker,,,,Professional Services
-IT Consultant,,,,Professional Services
-Junk Dealer/Junkyard,,,,Professional Services
-Landlord,,,,Professional Services
-Law Firm,,,,Professional Services
-Marketing Consultant,,,,Professional Services
-Modeling/Talent Agency,,,,Professional Services
-Payroll Services,,,,Professional Services
-Photography,,,,Professional Services
-Real Estate Agency,,,,Professional Services
-Recycling Business,,,,Professional Services
-Residential Leasing,,,,Professional Services
-Security Services,,,,Professional Services
-Software Developer,,,,Professional Services
-Transportation & Shipping,,,,
-Airport Passenger Transportation,,,,Transportation & Shipping
-Commercial Transportation/Trucking,,,,Transportation & Shipping
-Hazardous Materials Transportation,,,,Transportation & Shipping
-Import/Export,,,,Transportation & Shipping
-Limousine Services,,,,Transportation & Shipping
-Pedicab,,,,Transportation & Shipping
-Shipping,,,,Transportation & Shipping
-Taxi Company,,,,Transportation & Shipping
-Valet Parking,,,,Transportation & Shipping
-Vehicle Rental,,,,Transportation & Shipping
-Travel/Tourism,,,,
-Travel Company,,,,Travel/Tourism
-Tour Company,,,,Travel/Tourism
-Bed & Breakfast,,,,Travel/Tourism
-Hotel,,,,Travel/Tourism
-Retail,,,,
-Antique Shop,,,,Retail
-Art Gallery,,,,Retail
-Book Store,,,,Retail
-Clothing Store,,,,Retail
-Electronic Sales,,,,Retail
-Florist,,,,Retail
-Furniture Store,,,,Retail
-General Retail,,,,Retail
-Jeweler,,,,Retail
-Online Retailer,,,,Retail
-Pawn Shop,,,,Retail
-Print & Photocopy Shop,,,,Retail
-Street Artist,,,,Retail
-Tobacco Sales,,,,Retail
+id,name,description,format,weight,parent_name
+34,Auto,,,,
+35,Auto Body & Paint Shop,,,,Auto
+36,Auto Dealer,,,,Auto
+37,Auto Detailing,,,,Auto
+38,Auto Wrecker,,,,Auto
+39,Auto/Motorcycle Mechanic,,,,Auto
+40,Brake & Tire Shop,,,,Auto
+41,Parking Lots & Garages,,,,Auto
+42,Smog Check Facility,,,,Auto
+43,Towing Company,,,,Auto
+44,Child & Elder Care,,,,
+45,Adult Day Care,,,,Child & Elder Care
+46,Assisted Living Facility,,,,Child & Elder Care
+47,Child Care Services,,,,Child & Elder Care
+48,Elder Care Services,,,,Child & Elder Care
+49,Home Health Agency,,,,Child & Elder Care
+50,Contractors & Construction,,,,
+51,General Contractor,,,,Contractors & Construction
+52,Specialty Contractor,,,,Contractors & Construction
+53,Entertainment,,,,
+54,Bowling Alley,,,,Entertainment
+55,Nightclub,,,,Entertainment
+56,Food & Drink,,,,
+57,Alcohol/Beer & Wine Distributor,,,,Food & Drink
+58,Alcohol/Beer & Wine Importer,,,,Food & Drink
+59,Alcohol/Beer & Wine Wholesaler,,,,Food & Drink
+60,Bakery,,,,Food & Drink
+61,Bar,,,,Food & Drink
+62,Cafe or Deli,,,,Food & Drink
+63,Candy Store,,,,Food & Drink
+64,Caterer,,,,Food & Drink
+65,Chocolatier,,,,Food & Drink
+66,Corner Store,,,,Food & Drink
+67,Farmer's Market Booth,,,,Food & Drink
+68,Food Manufacturing,,,,Food & Drink
+69,Grocery Market,,,,Food & Drink
+70,Ice Cream Shop,,,,Food & Drink
+71,Mobile Food Truck,,,,Food & Drink
+72,Restaurant,,,,Food & Drink
+73,Vending Machines,,,,Food & Drink
+74,Winery,,,,Food & Drink
+75,Healthcare,,,,
+76,Dentist Office,,,,Healthcare
+77,Doctor's Office,,,,Healthcare
+78,Health Clinic,,,,Healthcare
+79,Medical Device Sales,,,,Healthcare
+80,Medical Marijuana Dispensary,,,,Healthcare
+81,Medical Transport,,,,Healthcare
+82,Pharmacy,,,,Healthcare
+83,Skilled Nursing Facility,,,,Healthcare
+84,Manufacturing,,,,
+85,Animal Food Manufacturing,,,,Manufacturing
+86,Clothing & Apparel Manufacturing,,,,Manufacturing
+87,Food Manufacturing,,,,Manufacturing
+88,Jewelry Manufacturing,,,,Manufacturing
+89,Personal Services,,,,
+90,Cleaning Business,,,,Personal Services
+91,Dog Walking,,,,Personal Services
+92,Gym & Yoga Studio,,,,Personal Services
+93,Hair/Nail Salon,,,,Personal Services
+94,Laundry/Dry Cleaning,,,,Personal Services
+95,Massage Establishment,,,,Personal Services
+96,Personal Trainer,,,,Personal Services
+97,Tattoo & Piercing Parlor,,,,Personal Services
+98,Pet Services,,,,
+99,Dog Kennel,,,,Pet Services
+100,Dog Walking,,,,Pet Services
+101,Pet Hospital,,,,Pet Services
+102,Pet Shop,,,,Pet Services
+103,Pet Sitting,,,,Pet Services
+104,Professional Services,,,,
+105,Accounting Service,,,,Professional Services
+106,Advertising Agency,,,,Professional Services
+107,Appliance Repair & Service,,,,Professional Services
+108,Architectural Consultant,,,,Professional Services
+109,Art Consultant,,,,Professional Services
+110,Broker Dealer,,,,Professional Services
+111,Business Consultant,,,,Professional Services
+112,Educational Consulting,,,,Professional Services
+113,Electronics & Computer Repair,,,,Professional Services
+114,Employment/Staffing Agency,,,,Professional Services
+115,Engineering Consultant,,,,Professional Services
+116,Escrow Agency,,,,Professional Services
+117,Event & Wedding Planning,,,,Professional Services
+118,Financial Advisor,,,,Professional Services
+119,Graphic/Web Design,,,,Professional Services
+120,Insurance Agency/Broker,,,,Professional Services
+121,IT Consultant,,,,Professional Services
+122,Junk Dealer/Junkyard,,,,Professional Services
+123,Landlord,,,,Professional Services
+124,Law Firm,,,,Professional Services
+125,Marketing Consultant,,,,Professional Services
+126,Modeling/Talent Agency,,,,Professional Services
+127,Payroll Services,,,,Professional Services
+128,Photography,,,,Professional Services
+129,Real Estate Agency,,,,Professional Services
+130,Recycling Business,,,,Professional Services
+131,Residential Leasing,,,,Professional Services
+132,Security Services,,,,Professional Services
+133,Software Developer,,,,Professional Services
+134,Transportation & Shipping,,,,
+135,Airport Passenger Transportation,,,,Transportation & Shipping
+136,Commercial Transportation/Trucking,,,,Transportation & Shipping
+137,Hazardous Materials Transportation,,,,Transportation & Shipping
+138,Import/Export,,,,Transportation & Shipping
+139,Limousine Services,,,,Transportation & Shipping
+140,Pedicab,,,,Transportation & Shipping
+141,Shipping,,,,Transportation & Shipping
+142,Taxi Company,,,,Transportation & Shipping
+143,Valet Parking,,,,Transportation & Shipping
+144,Vehicle Rental,,,,Transportation & Shipping
+145,Travel/Tourism,,,,
+146,Travel Company,,,,Travel/Tourism
+147,Tour Company,,,,Travel/Tourism
+148,Bed & Breakfast,,,,Travel/Tourism
+149,Hotel,,,,Travel/Tourism
+150,Retail,,,,
+151,Antique Shop,,,,Retail
+152,Art Gallery,,,,Retail
+153,Book Store,,,,Retail
+154,Clothing Store,,,,Retail
+155,Electronic Sales,,,,Retail
+156,Florist,,,,Retail
+157,Furniture Store,,,,Retail
+158,General Retail,,,,Retail
+159,Jeweler,,,,Retail
+160,Online Retailer,,,,Retail
+161,Pawn Shop,,,,Retail
+162,Print & Photocopy Shop,,,,Retail
+163,Street Artist,,,,Retail
+164,Tobacco Sales,,,,Retail
