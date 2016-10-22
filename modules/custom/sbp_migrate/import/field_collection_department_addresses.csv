@@ -1,0 +1,5 @@
+id,field_title,field_address,field_address_country,field_address_administrative_area,field_address_sub_administrative_area,field_address_locality,field_address_dependent_locality,field_address_postal_code,field_address_thoroughfare,field_address_premise,field_address_sub_premise,field_address_organisation_name,field_address_name_line,field_address_first_name,field_address_last_name,field_address_data
+501,N. Figueroa St.,US,CA,NULL,Los Angeles,,90012,201/221 N. Figueroa St.,NULL,NULL,NULL,NULL,NULL,NULL,NULL
+502,West 7th Street,US,CA,NULL,Los Angeles,,90017,1200 West 7th Street,NULL,NULL,NULL,NULL,NULL,NULL,NULL
+503,E. 1st Street,US,CA,NULL,Los Angeles,,90012,111 E. 1st Street,CHS Room 512,NULL,NULL,NULL,NULL,NULL,NULL
+504,West 1st Street,US,CA,NULL,Los Angeles,,90012,100 West 1st Street,NULL,NULL,NULL,NULL,NULL,NULL,NULL

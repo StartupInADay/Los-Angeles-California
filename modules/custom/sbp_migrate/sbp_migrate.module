@@ -72,11 +72,14 @@ function sbp_migrate_map() {
     'SBPMigrationNodeIncentives' => 'sbp_incentives',
     'SBPMigrationNodeOnlineResources' => 'sbp_online_resources',
     'SBPMigrationNodeStarterKit' => 'sbp_starter_kit',
+    'SBPMigrationNodeDepartment' => 'sbp_department',
     'SBPMigrationFieldCollectionOnlineResourcesHero' => 'sbp_field_collection_online_resources_hero',
     'SBPMigrationFieldCollectionIncentivesHero' => 'sbp_field_collection_incentives_hero',
     'SBPMigrationFieldCollectionStarterKitHero' => 'sbp_field_collection_starter_kit_hero',
+    'SBPMigrationFieldCollectionDepartmentHero' => 'sbp_field_collection_department_hero',
     'SBPMigrationFieldCollectionStarterKitChecklistItems' => 'sbp_field_collection_starter_kit_checklist_items',
-    'SBPMigrationFieldCollectionStarterKitPermitSection' => 'sbp_field_collection_starter_kit_permit_section'
+    'SBPMigrationFieldCollectionStarterKitPermitSection' => 'sbp_field_collection_starter_kit_permit_section',
+    'SBPMigrationFieldCollectionDepartmentAddresses' => 'sbp_field_collection_department_addresses'
   );
   // Allow other modules to alter the migrations to, for example, use
   // a custom class.

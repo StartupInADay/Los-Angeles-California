@@ -1,0 +1,10 @@
+id,title,promote,path,field_phone,field_description,field_link,field_link_title,field_link_attributes,field_department_type,field_main_feature,field_secondary_feature
+501,Department of Building and Safety,0,department/pub_safety,235-987-3298,Department of Pulic safety is a long standing pillar of goodness for the community.,http://www.google.com,Public Safety,a:1:{s:6:"target";i:0;},3,0,1
+502,Economic and Workforce Development Department,0,department/economic_dev,349-298-0382,The Department of Economic Development is a long standing pillar of goodness for the community.,http://www.google.com,Economic Development,a:1:{s:6:"target";i:0;},6,1,0
+503,Department of Transportation,0,department/transportation,309-298-7893,The Department of Transportation is a long standing pillar of goodness for the community.,http://www.google.com,Transportation,a:1:{s:6:"target";i:0;},5,0,1
+504,Department of Water and Power,0,department/water_and_power,870-230-8790,The Department of Water and Power is a long standing pillar of goodness for the community.,http://www.google.com,Water and Power,a:1:{s:6:"target";i:0;},5,0,1
+505,Department of Public Works,0,department/public_works,398-789-3509,The Department of Public Works is a long standing pillar of goodness for the community.,http://www.google.com,Public Works,a:1:{s:6:"target";i:0;},6,0,1
+506,Fire Department,0,department/fire,298-209-7823,The Fire Department is a long standing pillar of goodness for the community.,http://www.google.com,Fire,a:1:{s:6:"target";i:0;},8,0,1
+507,General Services Department,0,department/gen_services,340-987-3498,The General Services Department is a long standing pillar of goodness for the community.,http://www.google.com,General Services,a:1:{s:6:"target";i:0;},6,0,1
+508,Police Department,0,department/police,340-987-2368,The Police Department is a long standing pillar of goodness for the community.,http://www.google.com,Police,a:1:{s:6:"target";i:0;},8,0,1
+509,Department of City Planning,0,department/city_planning,340-982-3409,The Department of City Planning is a long standing pillar of goodness for the community.,http://www.google.com,City Planning,a:1:{s:6:"target";i:0;},5,0,1
