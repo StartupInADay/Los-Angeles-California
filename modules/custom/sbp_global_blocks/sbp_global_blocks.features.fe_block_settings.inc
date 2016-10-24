@@ -12,6 +12,39 @@ function sbp_global_blocks_default_fe_block_settings() {
 
   $export['version'] = '2.0';
 
+  $export['menu-menu-footer-'] = array(
+    'cache' => -1,
+    'css_class' => '',
+    'custom' => 0,
+    'delta' => 'menu-footer-',
+    'module' => 'menu',
+    'node_types' => array(),
+    'pages' => '',
+    'roles' => array(),
+    'themes' => array(
+      'business_portal_theme' => array(
+        'region' => 'bottom',
+        'status' => 1,
+        'theme' => 'business_portal_theme',
+        'weight' => 0,
+      ),
+      'ember' => array(
+        'region' => '',
+        'status' => 0,
+        'theme' => 'ember',
+        'weight' => 0,
+      ),
+      'zen' => array(
+        'region' => '',
+        'status' => 0,
+        'theme' => 'zen',
+        'weight' => 0,
+      ),
+    ),
+    'title' => '<none>',
+    'visibility' => 0,
+  );
+
   $export['sbp_global_blocks-footer_col_1'] = array(
     'cache' => 1,
     'css_class' => '',
@@ -237,6 +270,39 @@ function sbp_global_blocks_default_fe_block_settings() {
         'status' => 0,
         'theme' => 'zen',
         'weight' => 0,
+      ),
+    ),
+    'title' => '',
+    'visibility' => 0,
+  );
+
+  $export['system-help'] = array(
+    'cache' => -1,
+    'css_class' => '',
+    'custom' => 0,
+    'delta' => 'help',
+    'module' => 'system',
+    'node_types' => array(),
+    'pages' => '',
+    'roles' => array(),
+    'themes' => array(
+      'business_portal_theme' => array(
+        'region' => 'help',
+        'status' => 1,
+        'theme' => 'business_portal_theme',
+        'weight' => 5,
+      ),
+      'ember' => array(
+        'region' => 'help',
+        'status' => 1,
+        'theme' => 'ember',
+        'weight' => 0,
+      ),
+      'zen' => array(
+        'region' => 'help',
+        'status' => 1,
+        'theme' => 'zen',
+        'weight' => 5,
       ),
     ),
     'title' => '',
