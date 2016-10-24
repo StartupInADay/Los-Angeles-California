@@ -130,6 +130,13 @@ abstract class SBPMigration extends Migration {
     $columns[] = array('field_secondary_feature', 'Guide PDF Display');
   }
 
+  protected function addWizardScreenCust(&$columns) {
+    $columns[] = array('field_screen_type', 'Screen Type');
+    $columns[] = array('field_section', 'Screen Section');
+    $columns[] = array('field_description', 'Screen Description');
+    $columns[] = array('field_tip', 'Section Tip');
+  }
+
   protected function getImportFilePath() {
     return $this->baseImportDirectory . '/' . $this->importFileName;
   }
@@ -322,6 +329,11 @@ abstract class SBPMigrationNode extends SBPMigration {
     $this->addFieldMapping($field_name . ':format')->defaultValue('filtered_html');
   }
 
+  protected function addTipFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_tip');
+    $this->addFieldMapping($field_name . ':format')->defaultValue('filtered_html');
+  }
+
   protected function addLinkFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'field_link');
     $this->addFieldMapping($field_name . ':title', 'field_link_title');
@@ -331,6 +343,11 @@ abstract class SBPMigrationNode extends SBPMigration {
 
   protected function addDepartmentTypeFieldMapping($field_name) {
     $this->addFieldMapping($field_name, 'field_department_type');
+    $this->addFieldMapping($field_name . ':source_type')->defaultValue('tid');
+  }
+
+  protected function addSectionFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_section');
     $this->addFieldMapping($field_name . ':source_type')->defaultValue('tid');
   }
 
@@ -371,6 +388,9 @@ abstract class SBPMigrationNode extends SBPMigration {
     }
     if (isset($this->useDepartmentCust) && $this->useDepartmentCust = 1) {
       $this->addDepartmentCust($columns);
+    }
+    if (isset($this->useWizardScreenCust) && $this->useWizardScreenCust = 1) {
+      $this->addWizardScreenCust($columns);
     }
     return $columns;
   }
@@ -420,6 +440,26 @@ abstract class SBPMigrationTerm extends SBPMigration {
     $this->addFieldMapping('parent_name', 'parent_name');
   }
 
+  protected function addImageFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_image');
+    $this->addFieldMapping($field_name . ':source_dir')
+      ->defaultValue($this->getImageDirectoryPath());
+    $this->addFieldMapping($field_name . ':file_replace')
+      ->defaultValue(FILE_EXISTS_REPLACE);
+    $this->addFieldMapping($field_name . ':alt', 'field_image_alt');
+    $this->addFieldMapping($field_name . ':title', 'field_image_title');
+  }
+
+  protected function addIllustrationFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'illustration');
+    $this->addFieldMapping($field_name . ':source_dir')
+      ->defaultValue($this->getImageDirectoryPath());
+    $this->addFieldMapping($field_name . ':file_replace')
+      ->defaultValue(FILE_EXISTS_REPLACE);
+    $this->addFieldMapping($field_name . ':alt', 'field_illustration_alt');
+    $this->addFieldMapping($field_name . ':title', 'field_illustration_title');
+  }
+
   function csvcolumns() {
     $columns[] = array('id', 'ID');
     $columns[] = array('name', 'Name');
@@ -430,6 +470,19 @@ abstract class SBPMigrationTerm extends SBPMigration {
 
     if (isset($this->useStyleClass) && $this->useStyleClass = 1) {
       $columns[] = array('field_style_class', 'Style Class');
+    }
+    
+    if (isset($this->useBPWSCust) && $this->useBPWSCust = 1) {
+      $columns[] = array('field_color', 'Wizard Color');
+      $columns[] = array('field_contextual_color', 'Wizard Contextual Color');
+      $columns[] = array('field_drawer_color', 'Wizard Drawer Color');
+      $columns[] = array('field_jurisdiction', 'Wizard Jurisdiction');
+      $columns[] = array('field_image', 'Wizard Image');
+      $columns[] = array('field_image_title', 'Wizard Image Title');
+      $columns[] = array('field_image_alt', 'Wizard Image Alternate Text');
+      $columns[] = array('field_illustration', 'Wizard Illustration');
+      $columns[] = array('field_illustration_title', 'Wizard Illustration Title');
+      $columns[] = array('field_illustration_alt', 'Wizard Illustration Alternate Text');
     }
 
     return $columns;
