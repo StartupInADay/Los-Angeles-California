@@ -33,18 +33,18 @@ function sbp_global_blocks_block_view($delta = '') {
   switch ($delta) {
     case 'footer_col_1':
       // Set the subject of the block.
-      $block['subject'] = t('Footer Col 1');
-      $block['content'] = "<h4>About Cityville</h4><p>For generations, the world has come to Cityville to create the future and in turn has helped build one of the most diverse and forward-thinking cities in history. With instant name recognition around the globe, Cityville is known as a place where new ideas and fresh-thinking are as much a part of the landscape as our mountains, beaches, and unrivaled weather.</p>";
+      $block['subject'] = t('About Cityville');
+      $block['content'] = "<p>For generations, the world has come to Cityville to create the future and in turn has helped build one of the most diverse and forward-thinking cities in history. With instant name recognition around the globe, Cityville is known as a place where new ideas and fresh-thinking are as much a part of the landscape as our mountains, beaches, and unrivaled weather.</p>";
       break;
     case 'footer_col_2':
       // Set the subject of the block.
-      $block['subject'] = t('Footer Col 2');
-      $block['content'] = "<h4>The Cityville Business Portal</h4><p>We know that starting a business is not easy.  It’s even more difficult when you don’t know where you’re supposed to go or what forms you need to fill out.  The Cityville Business Portal changes that.  A “one way in” for business owners, the Business Portal was designed to be a comprehensive resource to help you get your business off the ground — from how to register your business to how to access the resources available to you to help you succeed and grow.​</p>";
+      $block['subject'] = t('The Cityville Business Portal');
+      $block['content'] = "<p>We know that starting a business is not easy.  It’s even more difficult when you don’t know where you’re supposed to go or what forms you need to fill out.  The Cityville Business Portal changes that.  A “one way in” for business owners, the Business Portal was designed to be a comprehensive resource to help you get your business off the ground — from how to register your business to how to access the resources available to you to help you succeed and grow.​</p>";
       break;
     case 'footer_col_3':
       // Set the subject of the block.
-      $block['subject'] = t('Footer Col 3');
-      $block['content'] = "<h4>Built as Open Source</h4><p>The Cityville Business Portal is an open source project — meant to serve as a resource for anyone who is looking to create an online resource for their own business community. This is made possible through a partnership with the City of Burghport, whose Business Portal code base served as a foundation upon which the open source code was built.</p>";
+      $block['subject'] = t('Built as Open Source');
+      $block['content'] = "<p>The Cityville Business Portal is an open source project — meant to serve as a resource for anyone who is looking to create an online resource for their own business community. This is made possible through a partnership with the City of Burghport, whose Business Portal code base served as a foundation upon which the open source code was built.</p>";
       break;
   }
   return $block;
