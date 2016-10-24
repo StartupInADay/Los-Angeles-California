@@ -23,8 +23,8 @@ function sbp_global_blocks_default_fe_block_settings() {
     'roles' => array(),
     'themes' => array(
       'business_portal_theme' => array(
-        'region' => '',
-        'status' => 0,
+        'region' => 'footer_content1',
+        'status' => 1,
         'theme' => 'business_portal_theme',
         'weight' => 0,
       ),
@@ -56,8 +56,8 @@ function sbp_global_blocks_default_fe_block_settings() {
     'roles' => array(),
     'themes' => array(
       'business_portal_theme' => array(
-        'region' => '',
-        'status' => 0,
+        'region' => 'footer_content2',
+        'status' => 1,
         'theme' => 'business_portal_theme',
         'weight' => 0,
       ),
@@ -89,8 +89,8 @@ function sbp_global_blocks_default_fe_block_settings() {
     'roles' => array(),
     'themes' => array(
       'business_portal_theme' => array(
-        'region' => '',
-        'status' => 0,
+        'region' => 'footer_content3',
+        'status' => 1,
         'theme' => 'business_portal_theme',
         'weight' => 0,
       ),
