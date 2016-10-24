@@ -67,19 +67,22 @@ function sbp_migrate_map() {
     'SBPMigrationTermStyleTemplate' => 'style_template',
     'SBPMigrationTermTermsDefinitionsGrouping' => 'sbp_taxonomy',
     'SBPMigrationTermTermsDefinitions' => 'sbp_taxonomy',
+    'SBPMigrationTermBusinessPortalWizardSections' => 'sbp_taxonomy',
     'SBPMigrationNodeLandingPage' => 'sbp_landing_page',
     'SBPMigrationNodeBusinessSponsor' => 'sbp_business_sponsors',
     'SBPMigrationNodeIncentives' => 'sbp_incentives',
     'SBPMigrationNodeOnlineResources' => 'sbp_online_resources',
     'SBPMigrationNodeStarterKit' => 'sbp_starter_kit',
     'SBPMigrationNodeDepartment' => 'sbp_department',
+    'SBPMigrationNodeWizardScreen' => 'sbp_wizard_screen',
     'SBPMigrationFieldCollectionOnlineResourcesHero' => 'sbp_field_collection_online_resources_hero',
     'SBPMigrationFieldCollectionIncentivesHero' => 'sbp_field_collection_incentives_hero',
     'SBPMigrationFieldCollectionStarterKitHero' => 'sbp_field_collection_starter_kit_hero',
     'SBPMigrationFieldCollectionDepartmentHero' => 'sbp_field_collection_department_hero',
     'SBPMigrationFieldCollectionStarterKitChecklistItems' => 'sbp_field_collection_starter_kit_checklist_items',
     'SBPMigrationFieldCollectionStarterKitPermitSection' => 'sbp_field_collection_starter_kit_permit_section',
-    'SBPMigrationFieldCollectionDepartmentAddresses' => 'sbp_field_collection_department_addresses'
+    'SBPMigrationFieldCollectionDepartmentAddresses' => 'sbp_field_collection_department_addresses',
+    'SBPMigrationFieldCollectionWizardScreenButton' => 'sbp_field_collection_wizard_screen_button'
   );
   // Allow other modules to alter the migrations to, for example, use
   // a custom class.
