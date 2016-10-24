@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- *  Taxonomy Industry Tags migration.
+ *  Taxonomy Business Needs migration.
  */
 
 class SBPMigrationTermBusinessNeeds extends SBPMigrationTerm {

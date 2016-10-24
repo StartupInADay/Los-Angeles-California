@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- *  Taxonomy Industry Tags migration.
+ *  Taxonomy Business Ownership migration.
  */
 
 class SBPMigrationTermBusinessOwnership extends SBPMigrationTerm {
