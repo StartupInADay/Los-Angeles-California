@@ -17,6 +17,7 @@ class SBPMigrationNodeWizardScreen extends SBPMigrationNode {
     $this->addFieldMapping('pathauto')->defaultValue(0);
 
     $this->dependencies = array('SBPMigrationTermBusinessPortalWizardSections');
+    $this->addSoftDependencies(array('SBPMigrationTermBusinessPortalWizardSections'));
 
     $this->addFieldMapping('field_screen_type', 'field_screen_type');
     

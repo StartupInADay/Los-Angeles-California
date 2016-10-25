@@ -12,9 +12,10 @@ class SBPMigrationNodeStarterKit extends SBPMigrationNode {
     $this->useImage = FALSE;
     $this->useStarterKitCust = TRUE;
     $this->addFieldMapping('pathauto')->defaultValue(0);
-    
+
     $this->dependencies = array('SBPMigrationTermDepartmentType','SBPMigrationTermTermsDefinitions');
-    
+    $this->addSoftDependencies(array('SBPMigrationTermDepartmentType','SBPMigrationTermTermsDefinitions'));
+
     // Text fields
     $this->addFieldMapping('field_guide_title', 'field_guide_title');
     $this->addFieldMapping('field_guide_description', 'field_guide_description');

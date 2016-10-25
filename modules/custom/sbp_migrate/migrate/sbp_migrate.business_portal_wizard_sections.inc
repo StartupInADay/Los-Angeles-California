@@ -8,9 +8,9 @@ class SBPMigrationTermBusinessPortalWizardSections extends SBPMigrationTerm {
 
   public function __construct($arguments) {
     $this->setProperties('business_portal_wizard_sections');
+    $this->useBPWSCust = TRUE;
     parent::__construct($arguments);
     $this->description = t('Import Business Portal Wizard Section terms.');
-    $this->useBPWSCust = TRUE;
     
     $this->addFieldMapping('field_color', 'field_color');
     $this->addFieldMapping('field_contextual_color', 'field_contextual_color');
@@ -20,16 +20,9 @@ class SBPMigrationTermBusinessPortalWizardSections extends SBPMigrationTerm {
 
     $this->addImageFieldMapping('field_image');
     $this->addIllustrationFieldMapping('field_illustration');
-    
+
     $this->dependencies = array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags');
-  }
-
-  protected function addImageFieldMapping($field_name) {
-    $this->addFieldMapping($field_name, 'field_image');
-  }
-
-  protected function addIllustrationFieldMapping($field_name) {
-    $this->addFieldMapping($field_name, 'field_illustration');
+    $this->addSoftDependencies(array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags'));
   }
 
   function csvcolumns() {
