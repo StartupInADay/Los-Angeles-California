@@ -13,6 +13,7 @@ class SBPMigrationFieldCollectionDepartmentAddresses extends SBPMigration {
     parent::__construct($arguments);
 
     $this->dependencies = array('SBPMigrationNodeDepartment');
+    $this->addSoftDependencies(array('SBPMigrationNodeDepartment'));
     
     $this->destination = new MigrateDestinationFieldCollection(
       'field_addresses',
