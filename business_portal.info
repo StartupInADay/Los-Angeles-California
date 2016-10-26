@@ -142,6 +142,7 @@ dependencies[] = views_fieldsets
 dependencies[] = views_load_more
 dependencies[] = visitor_actions
 dependencies[] = uuid
+dependencies[] = uuid_features
 dependencies[] = webform
 dependencies[] = xautoload
 
