@@ -15,8 +15,8 @@ class SBPMigrationTermStyleTemplate extends SBPMigrationTerm {
 
     $this->dependencies = array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType');
     $this->addSoftDependencies(array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType'));
-
-    $this->addStyleClassFieldMapping('field_style_class');
+    
+    $this->addFieldMapping('field_style_class', 'field_style_class');
   }
 
   function csvcolumns() {
