@@ -8,13 +8,14 @@ dependencies[] = migrate
 dependencies[] = sbp_field_base
 dependencies[] = sbp_incentives
 dependencies[] = sbp_landing_page
-dependencies[] = sbp_online_resources
+dependencies[] = sbp_online_resource
 dependencies[] = sbp_resources_incentives
 dependencies[] = sbp_sponsors
 dependencies[] = sbp_terms_definitions
 dependencies[] = sbp_taxonomy
 dependencies[] = sbp_wizard
 dependencies[] = uuid
+dependencies[] = uuid_features
 
 files[] = sbp_migrate.migrate.inc
 files[] = migrate/sbp_migrate.department_type.inc
