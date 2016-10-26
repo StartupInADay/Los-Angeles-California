@@ -411,6 +411,10 @@ abstract class SBPMigrationTerm extends SBPMigration {
     parent::__construct($arguments);
     $this->description = t('Import taxonomy terms.');
 
+    // Create a MigrateSource object.
+    $this->source = new MigrateSourceCSV($this->getImportFilePath(), $this->csvcolumns(), array('header_rows' => 1));
+    $this->destination = new MigrateDestinationTerm($this->bundle);
+
     // Create a map object for tracking the relationships between source rows
     $this->map = new MigrateSQLMap($this->machineName,
       array(
@@ -427,11 +431,6 @@ abstract class SBPMigrationTerm extends SBPMigration {
       ),
       MigrateDestinationTerm::getKeySchema()
     );
-
-    // Create a MigrateSource object.
-    $this->source = new MigrateSourceCSV($this->getImportFilePath(), $this->csvcolumns(), array('header_rows' => 1));
-    $this->destination = new MigrateDestinationTerm($this->bundle);
-
 
     $this->addFieldMapping('name', 'name');
     $this->addFieldMapping('description', 'description');
@@ -451,7 +450,7 @@ abstract class SBPMigrationTerm extends SBPMigration {
   }
 
   protected function addIllustrationFieldMapping($field_name) {
-    $this->addFieldMapping($field_name, 'illustration');
+    $this->addFieldMapping($field_name, 'field_illustration');
     $this->addFieldMapping($field_name . ':source_dir')
       ->defaultValue($this->getImageDirectoryPath());
     $this->addFieldMapping($field_name . ':file_replace')
@@ -471,7 +470,7 @@ abstract class SBPMigrationTerm extends SBPMigration {
     if (isset($this->useStyleClass) && $this->useStyleClass = 1) {
       $columns[] = array('field_style_class', 'Style Class');
     }
-    
+
     if (isset($this->useBPWSCust) && $this->useBPWSCust = 1) {
       $columns[] = array('field_color', 'Wizard Color');
       $columns[] = array('field_contextual_color', 'Wizard Contextual Color');
