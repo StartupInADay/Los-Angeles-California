@@ -459,11 +459,6 @@ abstract class SBPMigrationTerm extends SBPMigration {
     $this->addFieldMapping($field_name . ':title', 'field_illustration_title');
   }
 
-  protected function addStyleClassFieldMapping($field_name) {
-    $this->addFieldMapping($field_name, 'field_style_class');
-    $this->addFieldMapping($field_name . ':format')->defaultValue('plain_text');
-  }
-
   function csvcolumns() {
     $columns[] = array('id', 'ID');
     $columns[] = array('name', 'Name');
