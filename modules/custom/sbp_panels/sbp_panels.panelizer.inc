@@ -91,7 +91,7 @@ function sbp_panels_panelizer_defaults() {
       'fieldable_panels_pane' => (object) array(
         'timestamp' => 1477504709,
         'uid' => '1',
-        'title' => 'Welcome to the LA Business Portal',
+        'title' => 'Welcome to the Business Portal',
         'log' => '',
         'vuuid' => 'aa2f5492-c940-4b1d-9c48-c1e41970aaeb',
         'fpid' => '1',
@@ -138,7 +138,7 @@ function sbp_panels_panelizer_defaults() {
         'field_component_body' => array(
           'und' => array(
             0 => array(
-              'value' => '<p>The LA Business Portal provides you with all of the information you need to plan, start, manage, and grow your business. Try our Start Up Guide to quickly map out how to register your new business and be compliant. Explore a rich library of content and resources to help you manage and grow your business. Small businesses are essential to our city’s economy. The LA Business Portal is here to make sure you have everything you need to succeed.</p>
+              'value' => '<p>The Business Portal provides you with all of the information you need to plan, start, manage, and grow your business. Try our Start Up Guide to quickly map out how to register your new business and be compliant. Explore a rich library of content and resources to help you manage and grow your business. Small businesses are essential to our city’s economy. The Business Portal is here to make sure you have everything you need to succeed.</p>
 ',
               'format' => 'filtered_html',
             ),
@@ -158,7 +158,7 @@ function sbp_panels_panelizer_defaults() {
           'vid' => '1',
           'timestamp' => '1477503713',
           'uid' => '1',
-          'title' => 'Welcome to the LA Business Portal',
+          'title' => 'Welcome to the Business Portal',
           'log' => '',
           'vuuid' => 'f4d7abf3-92be-41d6-9776-2310b0051e34',
           'fpid' => '1',
@@ -216,9 +216,9 @@ function sbp_panels_panelizer_defaults() {
           'field_component_body' => array(
             'und' => array(
               0 => array(
-                'value' => 'The LA Business Portal provides you with all of the information you need to plan, start, manage, and grow your business. Try our Start Up Guide to quickly map out how to register your new business and be compliant.  Explore a rich library of content and resources to help you manage and grow your business.
+                'value' => 'The Business Portal provides you with all of the information you need to plan, start, manage, and grow your business. Try our Start Up Guide to quickly map out how to register your new business and be compliant.  Explore a rich library of content and resources to help you manage and grow your business.
  
-Small businesses are essential to our city’s economy. The LA Business Portal is here to make sure you have everything you need to succeed.',
+Small businesses are essential to our city’s economy. The Business Portal is here to make sure you have everything you need to succeed.',
                 'format' => 'filtered_html',
               ),
             ),
