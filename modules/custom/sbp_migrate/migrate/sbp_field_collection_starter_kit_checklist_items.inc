@@ -12,8 +12,8 @@ class SBPMigrationFieldCollectionStarterKitChecklistItems extends SBPMigration {
     $this->setProperties('field_collection_starter_kit_checklist_items');
     parent::__construct($arguments);
 
-    $this->dependencies = array('SBPMigrationNodeStarterKit', 'SBPMigrationTermDepartmentType');
-    $this->addSoftDependencies(array('SBPMigrationNodeStarterKit', 'SBPMigrationTermDepartmentType'));
+    //$this->dependencies = array('SBPMigrationNodeStarterKit', 'SBPMigrationTermDepartmentType');
+    //$this->addSoftDependencies(array('SBPMigrationNodeStarterKit', 'SBPMigrationTermDepartmentType'));
 
     $this->destination = new MigrateDestinationFieldCollection(
       'field_checklist_items',

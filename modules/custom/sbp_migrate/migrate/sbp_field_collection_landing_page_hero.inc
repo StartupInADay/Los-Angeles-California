@@ -12,8 +12,8 @@ class SBPMigrationFieldCollectionLandingPageHero extends SBPMigration {
     $this->setProperties('field_collection_landing_page_hero');
     parent::__construct($arguments);
 
-    $this->dependencies = array('SBPMigrationNodeLandingPage','SBPMigrationTermStyleTemplate');
-    $this->addSoftDependencies(array('SBPMigrationNodeLandingPage','SBPMigrationTermStyleTemplate'));
+    //$this->dependencies = array('SBPMigrationNodeLandingPage','SBPMigrationTermStyleTemplate');
+    //$this->addSoftDependencies(array('SBPMigrationNodeLandingPage','SBPMigrationTermStyleTemplate'));
       
     $this->destination = new MigrateDestinationFieldCollection(
       'field_hero',

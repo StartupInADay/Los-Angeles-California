@@ -12,8 +12,8 @@ class SBPMigrationFieldCollectionWizardScreenButton extends SBPMigration {
     $this->setProperties('field_collection_wizard_screen_button');
     parent::__construct($arguments);
 
-    $this->dependencies = array('SBPMigrationNodeWizardScreen');
-    $this->addSoftDependencies(array('SBPMigrationNodeWizardScreen'));
+    //$this->dependencies = array('SBPMigrationNodeWizardScreen');
+    //$this->addSoftDependencies(array('SBPMigrationNodeWizardScreen'));
     
     $this->destination = new MigrateDestinationFieldCollection(
       'field_button',

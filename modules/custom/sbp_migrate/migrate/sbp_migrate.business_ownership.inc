@@ -11,8 +11,8 @@ class SBPMigrationTermBusinessOwnership extends SBPMigrationTerm {
     parent::__construct($arguments);
     $this->description = t('Import Industry Tag terms.');
 
-    $this->dependencies = array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds');
-    $this->addSoftDependencies(array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds'));
+    //$this->dependencies = array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds');
+    //$this->addSoftDependencies(array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds'));
   }
 
   function csvcolumns() {

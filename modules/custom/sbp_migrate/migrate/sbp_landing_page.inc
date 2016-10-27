@@ -16,7 +16,7 @@ class SBPMigrationNodeLandingPage extends SBPMigrationNode {
     parent::__construct($arguments);
     $this->description = t('Import Landing Pages.');
 
-    $this->dependencies = array('SBPMigrationTermTermsDefinitions','SBPMigrationTermStyleTemplate');
-    $this->addSoftDependencies(array('SBPMigrationTermTermsDefinitions','SBPMigrationTermStyleTemplate'));
+    //$this->dependencies = array('SBPMigrationTermTermsDefinitions','SBPMigrationTermStyleTemplate');
+    //$this->addSoftDependencies(array('SBPMigrationTermTermsDefinitions','SBPMigrationTermStyleTemplate'));
   }
 }
