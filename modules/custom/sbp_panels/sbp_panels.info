@@ -45,7 +45,6 @@ features[defaultconfig][] = strongarm:field_bundle_settings_fieldable_panels_pan
 features[defaultconfig][] = strongarm:panels_page_allowed_layouts
 features[defaultconfig][] = strongarm:panels_page_allowed_types
 features[defaultconfig][] = strongarm:panels_page_default
-features[defaultconfig][] = strongarm:site_frontpage
 features[features_api][] = api:2
 features[field_instance][] = field_collection_item-field_calls_to_actions-field_description
 features[field_instance][] = field_collection_item-field_calls_to_actions-field_icon
