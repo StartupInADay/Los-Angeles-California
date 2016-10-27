@@ -115,25 +115,47 @@ function sbp_migrate_enable_migrate_support($modules = array()) {
 function sbp_migrate_process_imports($modules = array()) {
   // Ensure that migration classes are registered.
   migrate_get_module_apis(TRUE);
+
+  print_r($modules);
+  $migration_order = array();
+  $migration_order[0] = 'SBPMigrationTermDepartmentType';
+  $migration_order[1] = 'SBPMigrationTermBusinessNeeds';
+  $migration_order[2] = 'SBPMigrationTermBusinessOwnership';
+  $migration_order[3] = 'SBPMigrationTermIndustryTags';
+  $migration_order[4] = 'SBPMigrationTermResourceType';
+  $migration_order[5] = 'SBPMigrationTermTermsDefinitionsGrouping';
+  $migration_order[6] = 'SBPMigrationTermTermsDefinitions';
+  $migration_order[7] = 'SBPMigrationTermStyleTemplate';
+  $migration_order[8] = 'SBPMigrationTermBusinessPortalWizardSections';
+  $migration_order[9] = 'SBPMigrationNodeLandingPage';
+  $migration_order[10] = 'SBPMigrationNodeDepartment';
+  $migration_order[11] = 'SBPMigrationNodeBusinessSponsor';
+  $migration_order[12] = 'SBPMigrationNodeIncentives';
+  $migration_order[13] = 'SBPMigrationNodeOnlineResources';
+  $migration_order[14] = 'SBPMigrationNodeStarterKit';
+  $migration_order[15] = 'SBPMigrationNodeWizardScreen';
+  $migration_order[16] = 'SBPMigrationFieldCollectionOnlineResourcesHero';
+  $migration_order[17] = 'SBPMigrationFieldCollectionIncentivesHero';
+  $migration_order[18] = 'SBPMigrationFieldCollectionStarterKitHero';
+  $migration_order[19] = 'SBPMigrationFieldCollectionDepartmentHero';
+  $migration_order[20] = 'SBPMigrationFieldCollectionLandingPageHero';
+  $migration_order[21] = 'SBPMigrationFieldCollectionStarterKitChecklistItems';
+  $migration_order[22] = 'SBPMigrationFieldCollectionStarterKitPermitSection';
+  $migration_order[23] = 'SBPMigrationFieldCollectionDepartmentAddresses';
+  $migration_order[24] = 'SBPMigrationFieldCollectionWizardScreenButton';
+
   $map = sbp_migrate_map();
   if (!empty($modules)) {
     $map = array_intersect($map, $modules);
   }
-  // Handle a single level of dependency by pushing any migrations with
-  // dependencies to a subsequent round.
-  $subsequent = array();
-  foreach (array_keys($map) as $class_name) {
-    $migration = Migration::getInstance($class_name);
-    $dependencies = $migration->getDependencies();
-    if (empty($dependencies)) {
+
+  //foreach (array_keys($map) as $class_name) {
+  foreach ($migration_order as $class_name) {
+    foreach (array_keys($map) as $key)
+    if ($key == $class_name) {
+      $migration = Migration::getInstance($class_name);
       $migration->processImport();
+      echo $class_name;
     }
-    else {
-      $migration->processImport();
-      $subsequent[] = $migration;
-    }
-  }
-  foreach ($subsequent as $migration) {
-    $migration->processImport();
   }
 }

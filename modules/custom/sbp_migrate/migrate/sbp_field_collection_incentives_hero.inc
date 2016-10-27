@@ -12,8 +12,8 @@ class SBPMigrationFieldCollectionIncentivesHero extends SBPMigration {
     $this->setProperties('field_collection_incentives_hero');
     parent::__construct($arguments);
 
-    $this->dependencies = array('SBPMigrationNodeIncentives','SBPMigrationTermStyleTemplate');
-    $this->addSoftDependencies(array('SBPMigrationNodeIncentives','SBPMigrationTermStyleTemplate'));
+    //$this->dependencies = array('SBPMigrationNodeIncentives','SBPMigrationTermStyleTemplate');
+    //$this->addSoftDependencies(array('SBPMigrationNodeIncentives','SBPMigrationTermStyleTemplate'));
       
     $this->destination = new MigrateDestinationFieldCollection(
       'field_hero',

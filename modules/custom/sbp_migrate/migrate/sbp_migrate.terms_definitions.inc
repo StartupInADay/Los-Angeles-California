@@ -11,8 +11,8 @@ class SBPMigrationTermTermsDefinitions extends SBPMigrationTerm {
     parent::__construct($arguments);
     $this->description = t('Import Terms and Definitions terms.');
 
-    $this->dependencies = array('SBPMigrationTermTermsDefinitionsGrouping','SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType');
-    $this->addSoftDependencies(array('SBPMigrationTermTermsDefinitionsGrouping','SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType'));
+    //$this->dependencies = array('SBPMigrationTermTermsDefinitionsGrouping','SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType');
+    //$this->addSoftDependencies(array('SBPMigrationTermTermsDefinitionsGrouping','SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType'));
 
     $this->addFieldMapping('field_term_definitions_grouping', 'grouping');
   }

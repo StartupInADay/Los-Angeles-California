@@ -16,8 +16,8 @@ class SBPMigrationNodeOnlineResources extends SBPMigrationNode {
     $this->useResourcesIncentivesSharedCust = TRUE;
     $this->addFieldMapping('pathauto')->defaultValue(0);
 
-    $this->dependencies = array('SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType');
-    $this->addSoftDependencies(array('SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType'));
+    //$this->dependencies = array('SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType');
+    //$this->addSoftDependencies(array('SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType'));
 
     $this->addDocumentFieldMapping('field_document');
     $this->addMainFeatureFieldMapping('field_main_feature');
