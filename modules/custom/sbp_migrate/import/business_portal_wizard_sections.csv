@@ -1,7 +1,7 @@
 id,name,description,format,weight,parent_name,field_color,field_contextual_color,field_drawer_color,field_jurisdiction,field_image,field_image_title,field_image_alt,field_illustration,field_illustration_title,field_illustration_alt
-187,1 - City registration,City registration,filtered_html,0,,6bc3f3,99d5f5,65b9e6,,registration.png,Registration,registration,registration.png,Registration,registration
-188,2 - Business name,Business Name,filtered_html,0,,89d5c4,c5e6de,82caba,1,business_name.png,Business Name,business_name,business_name.png,Business Name,business_name
-189,3 - Seller's permit and use taxes,Seller's Permit,filtered_html,0,,b5cf6e,d8eda2,abc468,2,permits.png,Permits,permits,permits.png,Permits,permits
-190,4 - Employee Identification Number,EIN,filtered_html,0,,e9c759,eed78e,ddbc54,3,ein.png,EIN,ein,ein.png,EIN,ein
-191,5 - Registration checklist,Registration checklist,filtered_html,0,,6bc3f3,99d5f5,65b9e6,4,checklist.png,Checklist,checklist,checklist.png,Checklist,checklist
-192,Home,Home,filtered_html,0,,6bc3f3,fbb040,eea73c,,,,,,,
+178,1 - City registration,City registration,filtered_html,0,,6bc3f3,99d5f5,65b9e6,,registration.png,Registration,registration,registration.png,Registration,registration
+179,2 - Business name,Business Name,filtered_html,0,,89d5c4,c5e6de,82caba,1,business_name.png,Business Name,business_name,business_name.png,Business Name,business_name
+180,3 - Seller's permit and use taxes,Seller's Permit,filtered_html,0,,b5cf6e,d8eda2,abc468,2,permits.png,Permits,permits,permits.png,Permits,permits
+181,4 - Employee Identification Number,EIN,filtered_html,0,,e9c759,eed78e,ddbc54,3,ein.png,EIN,ein,ein.png,EIN,ein
+182,5 - Registration checklist,Registration checklist,filtered_html,0,,6bc3f3,99d5f5,65b9e6,4,checklist.png,Checklist,checklist,checklist.png,Checklist,checklist
+183,Home,Home,filtered_html,0,,6bc3f3,fbb040,eea73c,,,,,,,

@@ -30,11 +30,11 @@ function _sbp_migrate_set_displays() {
   node_save($depts_page);
 
   // Placing homepage display to the homepage page.
-  /*$home_page = _sbp_migrate_get_node_by_path('home');
+  $home_page = _sbp_migrate_get_node_by_path('home');
   $home_page_variant = 'node:sbp_landing_page:homepage';
   $panelizer = ctools_export_load_object('panelizer_defaults', 'names', array($home_page_variant));
   $home_page->panelizer['page_manager'] = $panelizer[$home_page_variant];
-  node_save($home_page);*/
+  node_save($home_page);
 
   // Placing service center display to the service center page.
   $sc_page = _sbp_migrate_get_node_by_path('resources/service-centers');
@@ -121,7 +121,7 @@ function _sbp_migrate_build_menu_links() {
     'module' => 'menu',
   );
   menu_link_save($item);
-  /*$normal_path = drupal_get_normal_path('home');
+  $normal_path = drupal_get_normal_path('home');
   $item = array(
     'link_path' => $normal_path,
     'link_title' => 'Home',
@@ -130,7 +130,7 @@ function _sbp_migrate_build_menu_links() {
     'plid' => $resources,
     'module' => 'menu',
   );
-  menu_link_save($item);*/
+  menu_link_save($item);
   $normal_path = drupal_get_normal_path('resources/service-centers');
   $item = array(
     'link_path' => $normal_path,

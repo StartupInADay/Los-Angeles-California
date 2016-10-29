@@ -23,9 +23,6 @@ class SBPMigrationNodeBusinessSponsor extends SBPMigrationNode {
     parent::__construct($arguments);
 
     $this->description = t('Import Sponsor Pages.');
-    
-    //$this->dependencies = array('SBPMigrationTermTermsDefinitions');
-    //$this->addSoftDependencies(array('SBPMigrationTermTermsDefinitions'));
   }
 
   function csvcolumns() {

@@ -10,9 +10,6 @@ class SBPMigrationTermBusinessNeeds extends SBPMigrationTerm {
     $this->setProperties('business_needs');
     parent::__construct($arguments);
     $this->description = t('Import Business Needs terms.');
-
-    //$this->dependencies = array('SBPMigrationTermDepartmentType');
-    //$this->addSoftDependencies(array('SBPMigrationTermDepartmentType'));
   }
 
   function csvcolumns() {

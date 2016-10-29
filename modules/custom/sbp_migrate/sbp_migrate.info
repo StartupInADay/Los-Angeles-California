@@ -2,6 +2,7 @@ name = Business Portal Migrate
 description = Provide migration support for Business Portal demo content.
 core = 7.x
 
+dependencies[] = dblog
 dependencies[] = editor
 dependencies[] = filter
 dependencies[] = migrate
@@ -12,12 +13,14 @@ dependencies[] = sbp_incentives
 dependencies[] = sbp_landing_page
 dependencies[] = sbp_online_resource
 dependencies[] = sbp_page
+dependencies[] = sbp_panels
 dependencies[] = sbp_resources_incentives
 dependencies[] = sbp_sponsors
 dependencies[] = sbp_starter_kit
 dependencies[] = sbp_terms_definitions
 dependencies[] = sbp_taxonomy
 dependencies[] = sbp_wizard
+dependencies[] = sbp_users
 dependencies[] = uuid
 dependencies[] = uuid_features
 

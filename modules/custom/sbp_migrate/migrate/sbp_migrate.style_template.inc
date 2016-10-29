@@ -12,9 +12,6 @@ class SBPMigrationTermStyleTemplate extends SBPMigrationTerm {
     parent::__construct($arguments);
     
     $this->description = t('Import Style Template terms.');
-
-    //$this->dependencies = array('SBPMigrationTermBusinessPortalWizardSections','SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType','SBPMigrationTermTermsDefinitionsGrouping','SBPMigrationTermTermsDefinitions');
-    //$this->addSoftDependencies(array('SBPMigrationTermBusinessPortalWizardSections','SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType','SBPMigrationTermTermsDefinitionsGrouping','SBPMigrationTermTermsDefinitions'));
     
     $this->addFieldMapping('field_style_class', 'field_style_class');
   }

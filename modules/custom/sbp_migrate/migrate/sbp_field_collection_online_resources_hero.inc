@@ -11,10 +11,7 @@ class SBPMigrationFieldCollectionOnlineResourcesHero extends SBPMigration {
   public function __construct($arguments) {
     $this->setProperties('field_collection_online_resources_hero');
     parent::__construct($arguments);
-
-    //$this->dependencies = array('SBPMigrationNodeOnlineResources','SBPMigrationTermStyleTemplate');
-    //$this->addSoftDependencies(array('SBPMigrationNodeOnlineResources','SBPMigrationTermStyleTemplate'));
-      
+    
     $this->destination = new MigrateDestinationFieldCollection(
       'field_hero',
       array('host_entity_type' => 'node')
