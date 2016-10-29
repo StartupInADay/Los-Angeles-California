@@ -12,9 +12,6 @@ class SBPMigrationFieldCollectionStarterKitHero extends SBPMigration {
     $this->setProperties('field_collection_starter_kit_hero');
     parent::__construct($arguments);
 
-    //$this->dependencies = array('SBPMigrationNodeStarterKit','SBPMigrationTermStyleTemplate');
-    //$this->addSoftDependencies(array('SBPMigrationNodeStarterKit','SBPMigrationTermStyleTemplate'));
-
     $this->destination = new MigrateDestinationFieldCollection(
       'field_hero',
       array('host_entity_type' => 'node')

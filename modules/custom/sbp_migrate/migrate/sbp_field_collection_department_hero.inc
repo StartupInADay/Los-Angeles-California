@@ -12,9 +12,6 @@ class SBPMigrationFieldCollectionDepartmentHero extends SBPMigration {
     $this->setProperties('field_collection_department_hero');
     parent::__construct($arguments);
 
-    //$this->dependencies = array('SBPMigrationNodeDepartment','SBPMigrationTermStyleTemplate');
-    //$this->addSoftDependencies(array('SBPMigrationNodeDepartment','SBPMigrationTermStyleTemplate'));
-
     $this->destination = new MigrateDestinationFieldCollection(
       'field_hero',
       array('host_entity_type' => 'node')

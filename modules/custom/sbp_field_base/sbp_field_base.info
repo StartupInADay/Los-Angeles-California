@@ -103,7 +103,6 @@ features[field_base][] = field_section_tip
 features[field_base][] = field_section_title
 features[field_base][] = field_services
 features[field_base][] = field_sponsor_url
-features[field_base][] = field_style_class
 features[field_base][] = field_subtitle_2
 features[field_base][] = field_subtitle_long
 features[field_base][] = field_three_ctas

@@ -9,6 +9,7 @@ dependencies[] = strongarm
 dependencies[] = taxonomy
 features[ctools][] = strongarm:strongarm:1
 features[features_api][] = api:2
+features[field_base][] = field_style_class
 features[field_base][] = field_term_definitions_grouping
 features[field_instance][] = taxonomy_term-style_template-field_style_class
 features[field_instance][] = taxonomy_term-terms_definitions-field_term_definitions_grouping

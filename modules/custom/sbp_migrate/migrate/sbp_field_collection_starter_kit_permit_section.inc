@@ -12,9 +12,6 @@ class SBPMigrationFieldCollectionStarterKitPermitSection extends SBPMigration {
     $this->setProperties('field_collection_starter_kit_permit_section');
     parent::__construct($arguments);
 
-    //$this->dependencies = array('SBPMigrationNodeStarterKit','SBPMigrationTermDepartmentType');
-    //$this->addSoftDependencies(array('SBPMigrationNodeStarterKit','SBPMigrationTermDepartmentType'));
-
     $this->destination = new MigrateDestinationFieldCollection(
       'field_permit_section',
       array('host_entity_type' => 'node')
