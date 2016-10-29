@@ -21,7 +21,7 @@ Drupal.behaviors.layout = {
   }
 };
 
-Drupal.behaviors.accordion = {
+/*Drupal.behaviors.accordion = {
   attach: function(context, settings) {
 
     var els = $(".field-starter-kit-key-points");
@@ -37,7 +37,7 @@ Drupal.behaviors.accordion = {
      header: ".field-title",
      animated: false});
   }
-}
+}*/
 
 Drupal.behaviors.rotator = {
   attach: function(context, settings) {
