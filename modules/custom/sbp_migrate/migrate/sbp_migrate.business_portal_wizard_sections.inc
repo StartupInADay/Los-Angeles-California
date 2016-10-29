@@ -20,9 +20,6 @@ class SBPMigrationTermBusinessPortalWizardSections extends SBPMigrationTerm {
 
     $this->addImageFieldMapping('field_image');
     $this->addIllustrationFieldMapping('field_illustration');
-
-    $this->dependencies = array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags');
-    $this->addSoftDependencies(array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags'));
   }
 
   function csvcolumns() {

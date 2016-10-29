@@ -64,7 +64,6 @@ function sbp_migrate_map() {
     'SBPMigrationTermBusinessOwnership' => 'sbp_taxonomy',
     'SBPMigrationTermIndustryTags' => 'sbp_taxonomy',
     'SBPMigrationTermResourceType' => 'sbp_taxonomy',
-    'SBPMigrationTermStyleTemplate' => 'sbp_taxonomy',
     'SBPMigrationTermTermsDefinitionsGrouping' => 'sbp_taxonomy',
     'SBPMigrationTermTermsDefinitions' => 'sbp_taxonomy',
     'SBPMigrationTermBusinessPortalWizardSections' => 'sbp_taxonomy',
@@ -75,15 +74,16 @@ function sbp_migrate_map() {
     'SBPMigrationNodeStarterKit' => 'sbp_starter_kit',
     'SBPMigrationNodeDepartment' => 'sbp_department',
     'SBPMigrationNodeWizardScreen' => 'sbp_wizard_screen',
+    'SBPMigrationFieldCollectionStarterKitChecklistItems' => 'sbp_field_collection_starter_kit_checklist_items',
+    'SBPMigrationFieldCollectionStarterKitPermitSection' => 'sbp_field_collection_starter_kit_permit_section',
+    'SBPMigrationFieldCollectionDepartmentAddresses' => 'sbp_field_collection_department_addresses',
+    'SBPMigrationFieldCollectionWizardScreenButton' => 'sbp_field_collection_wizard_screen_button',
+    'SBPMigrationTermStyleTemplate' => 'sbp_taxonomy',
     'SBPMigrationFieldCollectionOnlineResourcesHero' => 'sbp_field_collection_online_resources_hero',
     'SBPMigrationFieldCollectionIncentivesHero' => 'sbp_field_collection_incentives_hero',
     'SBPMigrationFieldCollectionStarterKitHero' => 'sbp_field_collection_starter_kit_hero',
     'SBPMigrationFieldCollectionDepartmentHero' => 'sbp_field_collection_department_hero',
-    'SBPMigrationFieldCollectionLandingPageHero' => 'sbp_field_collection_landing_page_hero',
-    'SBPMigrationFieldCollectionStarterKitChecklistItems' => 'sbp_field_collection_starter_kit_checklist_items',
-    'SBPMigrationFieldCollectionStarterKitPermitSection' => 'sbp_field_collection_starter_kit_permit_section',
-    'SBPMigrationFieldCollectionDepartmentAddresses' => 'sbp_field_collection_department_addresses',
-    'SBPMigrationFieldCollectionWizardScreenButton' => 'sbp_field_collection_wizard_screen_button'
+    'SBPMigrationFieldCollectionLandingPageHero' => 'sbp_field_collection_landing_page_hero'
   );
   // Allow other modules to alter the migrations to, for example, use
   // a custom class.
@@ -115,25 +115,47 @@ function sbp_migrate_enable_migrate_support($modules = array()) {
 function sbp_migrate_process_imports($modules = array()) {
   // Ensure that migration classes are registered.
   migrate_get_module_apis(TRUE);
+
+  $migration_order = array();
+  $migration_order[0] = 'SBPMigrationTermDepartmentType';
+  $migration_order[1] = 'SBPMigrationTermBusinessNeeds';
+  $migration_order[2] = 'SBPMigrationTermBusinessOwnership';
+  $migration_order[3] = 'SBPMigrationTermIndustryTags';
+  $migration_order[4] = 'SBPMigrationTermResourceType';
+  $migration_order[5] = 'SBPMigrationTermTermsDefinitionsGrouping';
+  $migration_order[6] = 'SBPMigrationTermTermsDefinitions';
+  $migration_order[7] = 'SBPMigrationTermBusinessPortalWizardSections';
+  //$migration_order[8] = 'SBPMigrationTermStyleTemplate';
+  $migration_order[9] = 'SBPMigrationNodeLandingPage';
+  $migration_order[10] = 'SBPMigrationNodeDepartment';
+  $migration_order[11] = 'SBPMigrationNodeBusinessSponsor';
+  $migration_order[12] = 'SBPMigrationNodeIncentives';
+  $migration_order[13] = 'SBPMigrationNodeOnlineResources';
+  $migration_order[14] = 'SBPMigrationNodeStarterKit';
+  $migration_order[15] = 'SBPMigrationNodeWizardScreen';
+  $migration_order[16] = 'SBPMigrationFieldCollectionStarterKitChecklistItems';
+  $migration_order[17] = 'SBPMigrationFieldCollectionStarterKitPermitSection';
+  $migration_order[18] = 'SBPMigrationFieldCollectionDepartmentAddresses';
+  $migration_order[19] = 'SBPMigrationFieldCollectionWizardScreenButton';
+  $migration_order[20] = 'SBPMigrationTermStyleTemplate';
+  $migration_order[21] = 'SBPMigrationFieldCollectionOnlineResourcesHero';
+  $migration_order[22] = 'SBPMigrationFieldCollectionIncentivesHero';
+  $migration_order[23] = 'SBPMigrationFieldCollectionStarterKitHero';
+  $migration_order[24] = 'SBPMigrationFieldCollectionDepartmentHero';
+  $migration_order[25] = 'SBPMigrationFieldCollectionLandingPageHero';
+
   $map = sbp_migrate_map();
   if (!empty($modules)) {
     $map = array_intersect($map, $modules);
   }
-  // Handle a single level of dependency by pushing any migrations with
-  // dependencies to a subsequent round.
-  $subsequent = array();
-  foreach (array_keys($map) as $class_name) {
-    $migration = Migration::getInstance($class_name);
-    $dependencies = $migration->getDependencies();
-    if (empty($dependencies)) {
+
+  echo 'Here is the parade of migration classes as they migrate:';
+  foreach ($migration_order as $class_name) {
+    foreach (array_keys($map) as $key)
+    if ($key == $class_name) {
+      $migration = Migration::getInstance($class_name);
       $migration->processImport();
+      echo ' ' . $class_name . ' ';
     }
-    else {
-      $migration->processImport();
-      $subsequent[] = $migration;
-    }
-  }
-  foreach ($subsequent as $migration) {
-    $migration->processImport();
   }
 }

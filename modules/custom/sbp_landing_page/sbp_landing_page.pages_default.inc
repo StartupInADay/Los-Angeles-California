@@ -19,7 +19,7 @@ function sbp_landing_page_default_page_manager_handlers() {
   $handler->handler = 'panel_context';
   $handler->weight = -97;
   $handler->conf = array(
-    'title' => 'Front Page',
+    'title' => 'Sample Default Page',
     'no_blocks' => 0,
     'pipeline' => 'standard',
     'body_classes_to_remove' => '',
@@ -35,7 +35,7 @@ function sbp_landing_page_default_page_manager_handlers() {
         0 => array(
           'name' => 'front',
           'settings' => NULL,
-          'not' => FALSE,
+          'not' => TRUE,
         ),
       ),
     ),

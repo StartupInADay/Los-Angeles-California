@@ -16,9 +16,6 @@ class SBPMigrationNodeIncentives extends SBPMigrationNode {
     $this->useResourcesIncentivesSharedCust = TRUE;
     $this->addFieldMapping('pathauto')->defaultValue(0);
 
-    $this->dependencies = array('SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType');
-    $this->addSoftDependencies(array('SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType'));
-
     $this->addIncentiveUrlFieldMapping('field_incentive_url');
     $this->addMainFeatureFieldMapping('field_main_feature');
     $this->addSecondaryFeatureFieldMapping('field_secondary_feature');

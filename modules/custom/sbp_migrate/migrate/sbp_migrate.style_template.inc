@@ -12,9 +12,6 @@ class SBPMigrationTermStyleTemplate extends SBPMigrationTerm {
     parent::__construct($arguments);
     
     $this->description = t('Import Style Template terms.');
-
-    $this->dependencies = array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType');
-    $this->addSoftDependencies(array('SBPMigrationTermDepartmentType','SBPMigrationTermBusinessNeeds','SBPMigrationTermBusinessOwnership','SBPMigrationTermIndustryTags','SBPMigrationTermResourceType'));
     
     $this->addFieldMapping('field_style_class', 'field_style_class');
   }

@@ -16,9 +16,6 @@ class SBPMigrationNodeDepartment extends SBPMigrationNode {
     $this->useNotBody = TRUE;
     $this->addFieldMapping('pathauto')->defaultValue(0);
 
-    $this->dependencies = array('SBPMigrationTermDepartmentType');
-    $this->addSoftDependencies(array('SBPMigrationTermDepartmentType'));
-
     $this->addFieldMapping('field_phone', 'field_phone');
     
     $this->addDescriptionFieldMapping('field_description');
