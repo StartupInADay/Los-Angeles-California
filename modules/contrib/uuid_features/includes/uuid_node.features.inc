@@ -9,12 +9,14 @@
  */
 function uuid_node_features_export_options() {
   $options = array();
+
   // Check what content types are enabled for uuid features export.
-  $types = variable_get('uuid_features_entity_node', FALSE);
-  if (!empty($types)) {
+  $enabled_types = variable_get('uuid_features_entity_node', FALSE);
+  if (!empty($enabled_types)) {
+    $types = node_type_get_names();
     $query = db_select('node', 'n');
     $query->fields('n', array('nid', 'title', 'type', 'uuid'))
-      ->condition('type', $types)
+      ->condition('type', $enabled_types)
       ->orderBy('type')
       ->orderBy('title');
     $nodes = $query->execute()->fetchAll();
@@ -25,6 +27,7 @@ function uuid_node_features_export_options() {
       ));
     }
   }
+
   drupal_alter('uuid_node_features_export_options', $options);
   return $options;
 }
@@ -37,8 +40,6 @@ function uuid_node_features_export($data, &$export, $module_name = '') {
 
   $export['dependencies']['uuid_features'] = 'uuid_features';
 
-  uuid_features_load_module_includes();
-
   $nids = entity_get_id_by_uuid('node', $data);
   foreach ($nids as $uuid => $nid) {
     // Load the existing node, with a fresh cache.
@@ -50,11 +51,13 @@ function uuid_node_features_export($data, &$export, $module_name = '') {
     // drupal_alter() normally supports just one byref parameter. Using
     // the __drupal_alter_by_ref key, we can store any additional parameters
     // that need to be altered, and they'll be split out into additional params
-    // for the hook_*_alter() implementations.  The hook_alter signature is
-    // hook_uuid_node_features_export_alter(&$export, &$pipe, $node)
+    // for the hook_*_alter() implementations.
     $data = &$export;
-    $data['__drupal_alter_by_ref'] = array(&$pipe);
-    drupal_alter('uuid_node_features_export', $data, $node);
+    $data['__drupal_alter_by_ref']['pipe'] = &$pipe;
+    $entity_type = 'node';
+    drupal_alter('uuid_entity_features_export', $entity_type, $data, $node);
+    drupal_alter('uuid_node_features_export', $data, $node, $module);
+    unset($data['__drupal_alter_by_ref']);
   }
 
   return $pipe;
@@ -65,8 +68,6 @@ function uuid_node_features_export($data, &$export, $module_name = '') {
  */
 function uuid_node_features_export_render($module, $data) {
   $translatables = $code = array();
-
-  uuid_features_load_module_includes();
 
   $code[] = '  $nodes = array();';
   $code[] = '';
@@ -84,41 +85,31 @@ function uuid_node_features_export_render($module, $data) {
     if (!empty($node->path)) {
       $node->pathauto_perform_alias = FALSE;
     }
+    // Clone entity to avoid changes by reference.
     $export = clone $node;
 
-    // Use date instead of created, in the same format used by node_object_prepare.
+    // Use date instead of created, in the same format used by
+    // node_object_prepare().
     $export->date = format_date($export->created, 'custom', 'Y-m-d H:i:s O');
 
     // Don't cause conflicts with nid/vid/revision_timestamp/changed fields.
-    unset($export->nid);
-    unset($export->vid);
-    unset($export->revision_timestamp);
-    unset($export->changed);
-    unset($export->last_comment_timestamp);
     uuid_features_file_field_export($export, 'node');
 
-    // Export taxonomy_term_reference with its UUID.
-    $fields_info = field_info_instances('node', $node->type);
-    foreach ($fields_info as $field_name => $value) {
-      $field_info = field_info_field($field_name);
-      $type = $field_info['type'];
-      if ($type == 'taxonomy_term_reference') {
-        if (!empty($node->$field_name)) {
-          foreach ($node->{$field_name} as $lang => $terms) {
-            foreach ($terms as $k => $v) {
-              $tid = $node->{$field_name}[$lang][$k]['tid'];
-              $term_uuids = entity_get_uuid_by_id('taxonomy_term', array($tid));
-              $export->{$field_name}[$lang][$k]['uuid'] = $term_uuids[$tid];
-              unset($node->{$field_name}[$lang][$k]['tid']);
-            }
-          }
-        }
-      }
-    }
-
-    // The hook_alter signature is:
-    // hook_uuid_node_features_export_render_alter(&$export, $node, $module);
+    $entity_type = 'node';
+    drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $node);
     drupal_alter('uuid_node_features_export_render', $export, $node, $module);
+
+    unset($export->revision_uid);
+    unset($export->revision_timestamp);
+    unset($export->nid);
+    unset($export->vid);
+    unset($export->vuuid);
+    unset($export->changed);
+    unset($export->last_comment_timestamp);
+    unset($export->last_comment_id);
+    unset($export->last_comment_name);
+    unset($export->last_comment_uid);
+    unset($export->cid);
 
     $code[] = '  $nodes[] = ' . features_var_export($export) . ';';
   }
@@ -140,6 +131,7 @@ function uuid_node_features_revert($module) {
 
 /**
  * Implements hook_features_rebuild().
+ *
  * Rebuilds nodes based on UUID from code defaults.
  */
 function uuid_node_features_rebuild($module) {
@@ -150,47 +142,75 @@ function uuid_node_features_rebuild($module) {
   if (!empty($nodes)) {
     module_load_include('inc', 'node', 'node.pages');
 
-    foreach ($nodes as $data) {
+    $tmp = array();
+    foreach ($nodes as $key => $data) {
+      if (isset($data['og_group_ref'])) {
+        $tmp[] = $data;
+        unset($nodes[$key]);
+      }
+    }
+
+    $nodes = array_merge($nodes, $tmp);
+    return uuid_node_features_rebuild_nodes($nodes);
+  }
+  return TRUE;
+}
+
+/**
+ * Runs the node import multiple times to resolve dependencies.
+ *
+ * We might need several runs of ths function to resolve the dependencies
+ * created by reference fields. Those can only be resolved if the target node
+ * already exists.
+ *
+ * @param array $nodes
+ *   The nodes to process.
+ * @param int $max_nesting
+ *   Maximal nesting level.
+ * @param int $nesting_level
+ *   Current nesting level.
+ *
+ * @return bool
+ *   TRUE if all nodes could be restored.
+ */
+function uuid_node_features_rebuild_nodes($nodes, $max_nesting = 5, $nesting_level = 0) {
+  // Max nesting level hit.
+  if ($max_nesting < $nesting_level) {
+    watchdog('UUID Features', 'Unable to restore nodes. Max nesting level reached.', array(), WATCHDOG_ERROR);
+    return FALSE;
+  }
+  $second_run_nodes = array();
+  foreach ($nodes as $data) {
+    try {
       $node = (object) $data;
+      $node->uid = 0;
       node_object_prepare($node);
 
       // Find the matching UUID, with a fresh cache.
       $nids = entity_get_id_by_uuid('node', array($node->uuid));
       if (isset($nids[$node->uuid])) {
-          $nid = array_key_exists($node->uuid, $nids) ? $nids[$node->uuid] : FALSE;
-          $existing = node_load($nid, NULL, TRUE);
-          if (!empty($existing)) {
-            $node->nid = $existing->nid;
-            $node->vid = $existing->vid;
-          }
-      }
-
-      // Rebuild taxonomy_term_reference with its UUID.
-      $fields_info = field_info_instances('node', $node->type);
-      foreach ($fields_info as $field_name => $value) {
-        $field_info = field_info_field($field_name);
-        $type = $field_info['type'];
-        if ($type == 'taxonomy_term_reference') {
-          if (!empty($node->$field_name)) {
-            foreach ($node->{$field_name} as $lang => $terms) {
-              foreach ($terms as $k => $v) {
-                $term_uuid = $node->{$field_name}[$lang][$k]['uuid'];
-                $tids = entity_get_id_by_uuid('taxonomy_term', array($term_uuid));
-                $node->{$field_name}[$lang][$k]['tid'] = $tids[$term_uuid];
-                unset($node->{$field_name}[$lang][$k]['uuid']);
-              }
-            }
-          }
+        $nid = array_key_exists($node->uuid, $nids) ? $nids[$node->uuid] : FALSE;
+        $existing = node_load($nid, NULL, TRUE);
+        if (!empty($existing)) {
+          $node->nid = $existing->nid;
+          $node->vid = $existing->vid;
         }
       }
 
-      // The hook_alter signature is:
-      // hook_uuid_node_features_rebuild_alter(&node, $module);
+      $entity_type = 'node';
+      drupal_alter('uuid_entity_features_rebuild', $entity_type, $node, $data);
       drupal_alter('uuid_node_features_rebuild', $node, $module);
 
       $node = node_submit($node);
       uuid_features_file_field_import($node, 'node');
       node_save($node);
     }
+    catch (Exception $e) {
+      $second_run_nodes[] = $data;
+    }
   }
+  if (!empty($second_run_nodes)) {
+    return uuid_node_features_rebuild_nodes($second_run_nodes, $max_nesting, ++$nesting_level);
+  }
+  return TRUE;
 }

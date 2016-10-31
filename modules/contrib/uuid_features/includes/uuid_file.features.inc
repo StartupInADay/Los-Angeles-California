@@ -62,6 +62,7 @@ function uuid_file_features_revert($module) {
 
 /**
  * Implements hook_features_rebuild().
+ *
  * Rebuilds files based on UUID from code defaults.
  */
 function uuid_file_features_rebuild($module) {

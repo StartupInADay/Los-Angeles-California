@@ -40,7 +40,6 @@ function sbp_taxonomy_field_default_field_instances() {
     'label' => 'Style Class',
     'required' => 1,
     'settings' => array(
-      //TODO: is this next line actually valuable?  What does it do?
       'text_processing' => 0,
       'user_register_form' => FALSE,
     ),
