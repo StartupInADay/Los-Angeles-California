@@ -137,6 +137,53 @@ abstract class SBPMigration extends Migration {
     $columns[] = array('field_tip', 'Section Tip');
   }
 
+  protected function addFourColCsvColumns(&$columns) {
+    $columns[] = array('field_pane_style', 'Pane Style');
+  }
+
+  protected function addGeneralContentCsvColumns(&$columns) {
+    $columns[] = array('field_intro_title', 'Intro Title');
+    $columns[] = array('field_description', 'Description');
+    $columns[] = array('field_pane_style', 'Pane Style');
+    $columns[] = array('field_call_to_action', 'Call to Action');
+    $columns[] = array('field_call_to_action_title', 'Call to Action Link Title');
+    $columns[] = array('field_call_to_action_attributes', 'Call to Action Link Attributes');
+  }
+
+  protected function addPullQuoteCsvColumns(&$columns) {
+    $columns[] = array('field_quote', 'Quote');
+    $columns[] = array('field_quote_subtitle', 'Quote Subtitle');
+    $columns[] = array('field_author', 'Author');
+    $columns[] = array('field_pane_style', 'Pane Style');
+    $columns[] = array('field_quote_image', 'Background filename');
+    $columns[] = array('field_quote_image_alt', 'Background alt');
+    $columns[] = array('field_quote_image_title', 'Background title');
+  }
+
+  protected function addSectionContentCsvColumns(&$columns) {
+    $columns[] = array('field_component_body', 'Component Body');
+    $columns[] = array('field_pane_style', 'Pane Style');
+    $columns[] = array('field_calls_to_action', 'Call to Action');
+    $columns[] = array('field_calls_to_action_title', 'Call to Action Link Title');
+    $columns[] = array('field_calls_to_action_attributes', 'Call to Action Link Attributes');
+    $columns[] = array('field_background_image', 'Background filename');
+    $columns[] = array('field_background_image_alt', 'Background alt');
+    $columns[] = array('field_background_image_title', 'Background title');
+  }
+
+  protected function addThreeColumnCsvColumns(&$columns) {
+    $columns[] = array('field_component_body', 'Component Body');
+    $columns[] = array('field_pane_style', 'Pane Style');
+  }
+
+  protected function addTimelineCsvColumns(&$columns) {
+    $columns[] = array('field_pane_style', 'Pane Style');
+  }
+
+  protected function addFeaturedResourcesCsvColumns(&$columns) {
+    $columns[] = array('field_pane_style', 'Pane Style');
+  }
+
   protected function getImportFilePath() {
     return $this->baseImportDirectory . '/' . $this->importFileName;
   }
@@ -401,6 +448,127 @@ abstract class SBPMigrationNode extends SBPMigration {
     $this->imageDirectory = 'images/' . $bundle;
   }
 }
+
+
+
+/**
+ * Base migration for fieldable panels panes in SBP.
+ */
+abstract class SBPMigrationFPP extends SBPMigration  {
+
+  /**
+   * Whether or not the fieldable panel pane type supports a field_tags taxonomy term reference
+   * field.
+   */
+  protected $useTags = TRUE;
+
+  public function __construct($arguments) {
+    parent::__construct($arguments);
+
+    $this->description = t('Import Fieldable Panels Panes content.');
+    // Create a MigrateSource object.
+    $this->source = new MigrateSourceCSV($this->getImportFilePath(), $this->csvcolumns(), array('header_rows' => 1));
+
+    $this->destination = new MigrateDestinationFieldablePanelsPanes($this->bundle);
+
+    // Create a map object for tracking the relationships between source rows
+    $this->map = new MigrateSQLMap($this->machineName,
+      array(
+        'id' => array(
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+        ),
+      ),
+      MigrateDestinationFieldablePanelsPanes::getKeySchema()
+    );
+
+    $this->addFieldMapping('title', 'title');
+    $this->addFieldMapping('path', 'path');
+  }
+
+  protected function addBackgroundImageFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_background_image');
+    $this->addFieldMapping($field_name . ':alt', 'field_background_image_alt');
+    $this->addFieldMapping($field_name . ':title', 'field_background_image_title');
+    $this->addFieldMapping($field_name . ':file_replace')
+    ->defaultValue(FILE_EXISTS_REPLACE);
+    $this->addFieldMapping($field_name . ':source_dir')
+    ->defaultValue($this->getImageDirectoryPath());
+  }
+
+  protected function addQuoteImageFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_quote_image');
+    $this->addFieldMapping($field_name . ':alt', 'field_quote_image_alt');
+    $this->addFieldMapping($field_name . ':title', 'field_quote_image_title');
+    $this->addFieldMapping($field_name . ':file_replace')
+    ->defaultValue(FILE_EXISTS_REPLACE);
+    $this->addFieldMapping($field_name . ':source_dir')
+    ->defaultValue($this->getImageDirectoryPath());
+  }
+
+  protected function addPaneStyleFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_pane_style');
+    $this->addFieldMapping($field_name . ':source_type')->defaultValue('tid');
+  }
+
+
+  protected function addComponentBodyFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_component_body');
+    $this->addFieldMapping($field_name . ':format')
+      ->defaultValue('filtered_html');
+  }
+
+  protected function addCallToActionFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_call_to_action');
+    $this->addFieldMapping($field_name . ':title', 'field_call_to_action_title');
+    $this->addFieldMapping($field_name . ':attributes', 'field_call_to_action_attributes');
+  }
+
+  protected function addCallsToActionFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_calls_to_action');
+    $this->addFieldMapping($field_name . ':title', 'field_calls_to_action_title');
+    $this->addFieldMapping($field_name . ':attributes', 'field_calls_to_action_attributes');
+  }
+
+  function csvcolumns() {
+    $columns[] = array('id', 'ID');
+    $columns[] = array('title', 'Title');
+    $columns[] = array('path', 'Path');
+
+    if (isset($this->useFourCol) && $this->useFourCol = 1) {
+      $this->addFourColCsvColumns($columns);
+    }
+    if (isset($this->useGeneralContent) && $this->useGeneralContent = 1) {
+      $this->addGeneralContentCsvColumns($columns);
+    }
+    if (isset($this->useThreeColumn) && $this->useThreeColumn = 1) {
+      $this->addThreeColumnCsvColumns($columns);
+    }
+    if (isset($this->usePullQuote) && $this->usePullQuote = 1) {
+      $this->addPullQuoteCsvColumns($columns);
+    }
+    if (isset($this->useSectionContent) && $this->useSectionContent = 1) {
+      $this->addSectionContentCsvColumns($columns);
+    }
+    if (isset($this->useTimeline) && $this->useTimeline = 1) {
+      $this->addTimelineCsvColumns($columns);
+    }
+    if (isset($this->useFeaturedResources) && $this->useFeaturedResources = 1) {
+      $this->addFeaturedResourcesCsvColumns($columns);
+    }
+
+    return $columns;
+  }
+
+  protected function setProperties($bundle) {
+    parent::setProperties($bundle);
+    $this->bundle = $bundle;
+    $this->imageDirectory = 'images/' . $bundle;
+  }
+}
+
+
 
 /**
  * Base migration for terms in SBP.

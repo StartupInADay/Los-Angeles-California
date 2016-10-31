@@ -1,21 +1,24 @@
 <?php
 /**
  * @file
- *  Incentives migration.
+ *  Fieldable Panel Pane Panel - Timeline migration.
  * 
  * No custom imports necessary at this point.
  */
 
-class SBPMigrationFPPSectionHomepage extends MigrateDestinationFieldablePanelsPanes {
+class SBPMigrationFPPTimeline extends SBPMigrationFPP {
 
   public function __construct($arguments) {
-    $this->setProperties('fpp_section_homepage');
+    $this->setProperties('timeline');
     $this->useTags = FALSE;
     $this->useImage = FALSE;
-
+    $this->useTimeline = TRUE;
+    
     parent::__construct($arguments);
 
-    $this->description = t('Import Resource Pages.');
+    $this->addPaneStyleFieldMapping('field_pane_style');
+
+    $this->description = t('Import Timeline FPP.');
   }
 
   function csvcolumns() {
