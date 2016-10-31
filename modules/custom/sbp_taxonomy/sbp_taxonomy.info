@@ -1,12 +1,16 @@
 name = SBP Taxonomy
 core = 7.x
 package = Small Business Portal
+version = 7.x-1.0
 dependencies[] = ctools
 dependencies[] = features
 dependencies[] = options
 dependencies[] = sbp_wizard
 dependencies[] = strongarm
 dependencies[] = taxonomy
+dependencies[] = text
+dependencies[] = uuid
+dependencies[] = uuid_features
 features[ctools][] = strongarm:strongarm:1
 features[features_api][] = api:2
 features[field_base][] = field_style_class

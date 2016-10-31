@@ -823,6 +823,82 @@ Small businesses are essential to our city’s economy. The Business Portal is h
     $pane->uuid = '3ce527d9-1089-42be-97b0-bb7fcd0d53d5';
     $display->content['new-3ce527d9-1089-42be-97b0-bb7fcd0d53d5'] = $pane;
     $display->panels['middle'][5] = 'new-3ce527d9-1089-42be-97b0-bb7fcd0d53d5';
+    $pane = new stdClass();
+    $pane->pid = 'new-5ce5d88e-878e-4899-b3ad-956640ee468a';
+    $pane->panel = 'middle';
+    $pane->type = 'fieldable_panels_pane';
+    $pane->subtype = 'uuid:c81fd4f2-4b11-49fb-bdde-b85ec509762c';
+    $pane->shown = TRUE;
+    $pane->access = array();
+    $pane->configuration = array(
+      'view_mode' => 'full',
+      'fieldable_panels_pane' => (object) array(
+        'bundle' => 'general_content',
+        'language' => '',
+        'is_new' => TRUE,
+        'title' => 'test general content',
+        'link' => 0,
+        'path' => '',
+        'reusable' => 0,
+        'admin_title' => '',
+        'admin_description' => '',
+        'category' => '',
+        'vid' => '1',
+        'current_vid' => '',
+        'revision' => 1,
+        'fpid' => '1',
+        'field_call_to_action' => array(
+          'und' => array(
+            0 => array(
+              'title' => 'google',
+              'url' => 'http://google.com',
+              'attributes' => 'a:1:{s:6:"target";i:0;}',
+            ),
+          ),
+        ),
+        'field_description' => array(
+          'und' => array(
+            0 => array(
+              'value' => '<p>testing description</p>
+',
+              'format' => 'full_html',
+            ),
+          ),
+        ),
+        'field_intro_title' => array(
+          'und' => array(
+            0 => array(
+              'value' => 'testing intro title',
+            ),
+          ),
+        ),
+        'field_pane_style' => array(
+          'und' => array(
+            0 => array(
+              'tid' => '184',
+            ),
+          ),
+        ),
+        'log' => '',
+        'created' => 1477927486,
+        'timestamp' => 1477927486,
+        'changed' => 1477927486,
+        'uuid' => 'c81fd4f2-4b11-49fb-bdde-b85ec509762c',
+        'vuuid' => '70a29fba-d6db-4e12-9e42-99143045a891',
+        'uid' => '1',
+      ),
+    );
+    $pane->cache = array();
+    $pane->style = array(
+      'settings' => NULL,
+    );
+    $pane->css = array();
+    $pane->extras = array();
+    $pane->position = 6;
+    $pane->locks = array();
+    $pane->uuid = '5ce5d88e-878e-4899-b3ad-956640ee468a';
+    $display->content['new-5ce5d88e-878e-4899-b3ad-956640ee468a'] = $pane;
+    $display->panels['middle'][6] = 'new-5ce5d88e-878e-4899-b3ad-956640ee468a';
   $display->hide_title = PANELS_TITLE_FIXED;
   $display->title_pane = '0';
   $panelizer->display = $display;
