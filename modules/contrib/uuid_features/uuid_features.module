@@ -58,6 +58,7 @@ function uuid_features_entity_info_alter(&$entity_info) {
     'node',
     'taxonomy_term',
     'fieldable_panels_pane',
+    'field_collection_item',
   );
   foreach ($entity_types as $type) {
     // Only add flag on existing entity types.
@@ -254,6 +255,7 @@ function uuid_features_settings($form, &$form_state) {
   $entity_info = entity_get_info();
 
   foreach ($entity_info as $type => $info) {
+
     foreach ($info['bundles'] as $bundle => $bundle_info) {
       $bundles[$type][$bundle] = $bundle_info['label'];
     }
