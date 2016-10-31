@@ -55,7 +55,7 @@ function sbp_landing_page_uuid_features_default_fpps() {
     ),
     'rdf_mapping' => array(),
   );
-  $fpps[] = array(
+  /*$fpps[] = array(
     'timestamp' => 1477938303,
     'title' => 'From the Mayor',
     'log' => '',
@@ -141,7 +141,7 @@ function sbp_landing_page_uuid_features_default_fpps() {
       ),
     ),
     'rdf_mapping' => array(),
-  );
+  );*/
   $fpps[] = array(
     'timestamp' => 1477938036,
     'title' => 'Welcome to the Business Portal',
@@ -198,6 +198,7 @@ function sbp_landing_page_uuid_features_default_fpps() {
     ),
     'rdf_mapping' => array(),
   );
+
   $fpps[] = array(
     'timestamp' => 1477938693,
     'title' => 'Resources',
