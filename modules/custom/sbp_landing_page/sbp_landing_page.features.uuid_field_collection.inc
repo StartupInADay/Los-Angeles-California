@@ -29,8 +29,8 @@ function sbp_landing_page_uuid_features_default_field_collections() {
         0 => array(
           'uid' => 1,
           'filename' => 'icon_pnl_resources_1.png',
-          'uri' => 'public:\\/\\/icon_pnl_resources_1.png',
-          'filemime' => 'image\\/png',
+          'uri' => 'public://icon_pnl_resources_1.png',
+          'filemime' => 'image/png',
           'filesize' => 11536,
           'status' => 1,
           'type' => 'image',
@@ -92,8 +92,8 @@ function sbp_landing_page_uuid_features_default_field_collections() {
         0 => array(
           'uid' => 1,
           'filename' => 'icon_pnl_departments_2.png',
-          'uri' => 'public:\\/\\/icon_pnl_departments_2.png',
-          'filemime' => 'image\\/png',
+          'uri' => 'public://icon_pnl_departments_2.png',
+          'filemime' => 'image/png',
           'filesize' => 16281,
           'status' => 1,
           'type' => 'image',
@@ -155,8 +155,8 @@ function sbp_landing_page_uuid_features_default_field_collections() {
         0 => array(
           'uid' => 1,
           'filename' => 'icon_pnl_business_2.png',
-          'uri' => 'public:\\/\\/icon_pnl_business_2.png',
-          'filemime' => 'image\\/png',
+          'uri' => 'public://icon_pnl_business_2.png',
+          'filemime' => 'image/png',
           'filesize' => 13741,
           'status' => 1,
           'type' => 'image',
