@@ -31,7 +31,6 @@ function _sbp_migrate_set_displays() {
 
   // Placing homepage display to the homepage page.
   $home_page = _sbp_migrate_get_node_by_path('home');
-
   $home_page_variant = 'node:sbp_landing_page:homepage';
   $panelizer = ctools_export_load_object('panelizer_defaults', 'names', array($home_page_variant));
   $home_page->panelizer['page_manager'] = $panelizer[$home_page_variant];
