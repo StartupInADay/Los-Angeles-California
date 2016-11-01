@@ -150,6 +150,7 @@ dependencies[] = xautoload
 dependencies[] = sbp_department
 dependencies[] = sbp_faq
 dependencies[] = sbp_field_base
+dependencies[] = sbp_global_blocks
 dependencies[] = sbp_hero
 dependencies[] = sbp_incentives
 dependencies[] = sbp_landing_page

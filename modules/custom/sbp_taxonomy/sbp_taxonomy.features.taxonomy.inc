@@ -16,6 +16,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'business_ownership' => array(
       'name' => 'Business Ownership',
@@ -24,6 +39,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'business_portal_wizard_sections' => array(
       'name' => 'Business Portal Wizard Sections',
@@ -32,6 +62,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'carousel' => array(
       'name' => 'Carousel',
@@ -40,6 +85,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'department_type' => array(
       'name' => 'Agency type',
@@ -48,6 +108,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'document_business_need' => array(
       'name' => 'Document - Business Need',
@@ -56,6 +131,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'document_business_stage' => array(
       'name' => 'Document - Business Stage',
@@ -64,6 +154,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'document_type' => array(
       'name' => 'Document - Type',
@@ -72,6 +177,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'geographical_area' => array(
       'name' => 'Geographical Area',
@@ -80,6 +200,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'industry_tags' => array(
       'name' => 'Business Portal Industry',
@@ -88,6 +223,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'permit_government_level' => array(
       'name' => 'Permit - Government Level',
@@ -96,6 +246,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'permit_issuing_department' => array(
       'name' => 'Permit - Issuing Department',
@@ -104,6 +269,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'permit_tags' => array(
       'name' => 'Permit - Tags',
@@ -112,6 +292,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'question_category' => array(
       'name' => 'Question Category',
@@ -120,6 +315,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'required_featured_items' => array(
       'name' => 'Required / Featured Items',
@@ -128,6 +338,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'resource_type' => array(
       'name' => 'Resource Type',
@@ -136,6 +361,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'sbp_tags' => array(
       'name' => 'Tags',
@@ -144,6 +384,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 1,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'style_template' => array(
       'name' => 'Style Template',
@@ -152,6 +407,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'term_alphabet' => array(
       'name' => 'Term Alphabet',
@@ -160,6 +430,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'terms_definitions' => array(
       'name' => 'Terms & Definitions',
@@ -168,6 +453,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
     'terms_definitions_grouping' => array(
       'name' => 'Terms & Definitions Grouping',
@@ -176,6 +476,21 @@ function sbp_taxonomy_taxonomy_default_vocabularies() {
       'hierarchy' => 0,
       'module' => 'taxonomy',
       'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
     ),
   );
 }

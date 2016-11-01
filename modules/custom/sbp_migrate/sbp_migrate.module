@@ -83,7 +83,17 @@ function sbp_migrate_map() {
     'SBPMigrationFieldCollectionIncentivesHero' => 'sbp_field_collection_incentives_hero',
     'SBPMigrationFieldCollectionStarterKitHero' => 'sbp_field_collection_starter_kit_hero',
     'SBPMigrationFieldCollectionDepartmentHero' => 'sbp_field_collection_department_hero',
-    'SBPMigrationFieldCollectionLandingPageHero' => 'sbp_field_collection_landing_page_hero'
+    'SBPMigrationFieldCollectionLandingPageHero' => 'sbp_field_collection_landing_page_hero',
+    'SBPMigrationFPPFourColumnCTA' => 'sbp_fpp_four_column_cta',
+    'SBPMigrationFPPThreeColumnCTA' => 'sbp_fpp_three_column_cta',
+    'SBPMigrationFPPGeneralContent' => 'sbp_fpp_general_content',
+    'SBPMigrationFPPSectionContent' => 'sbp_fpp_section_content',
+    'SBPMigrationFPPPullQuote' => 'sbp_fpp_pull_quote',
+    'SBPMigrationFPPTimeline' => 'sbp_fpp_timeline',
+    'SBPMigrationFPPFeaturedResources' => 'sbp_fpp_featured_resources',
+    'SBPMigrationFPPFieldCollectionFourColumnCTACallsToActions' => 'sbp_fpp_field_collection_four_column_cta_calls_to_actions',
+    'SBPMigrationFPPFieldCollectionThreeColumnCTAThreeCTAS' => 'sbp_fpp_field_collection_three_column_cta_three_ctas',
+    'SBPMigrationFPPFieldCollectionTimelineTimelineItems' => 'sbp_fpp_field_collection_timeline_timeline_items',
   );
   // Allow other modules to alter the migrations to, for example, use
   // a custom class.
@@ -125,7 +135,6 @@ function sbp_migrate_process_imports($modules = array()) {
   $migration_order[5] = 'SBPMigrationTermTermsDefinitionsGrouping';
   $migration_order[6] = 'SBPMigrationTermTermsDefinitions';
   $migration_order[7] = 'SBPMigrationTermBusinessPortalWizardSections';
-  //$migration_order[8] = 'SBPMigrationTermStyleTemplate';
   $migration_order[9] = 'SBPMigrationNodeLandingPage';
   $migration_order[10] = 'SBPMigrationNodeDepartment';
   $migration_order[11] = 'SBPMigrationNodeBusinessSponsor';
@@ -143,6 +152,17 @@ function sbp_migrate_process_imports($modules = array()) {
   $migration_order[23] = 'SBPMigrationFieldCollectionStarterKitHero';
   $migration_order[24] = 'SBPMigrationFieldCollectionDepartmentHero';
   $migration_order[25] = 'SBPMigrationFieldCollectionLandingPageHero';
+  $migration_order[26] = 'SBPMigrationFPPFourColumnCTA';
+  $migration_order[27] = 'SBPMigrationFPPThreeColumnCTA';
+  $migration_order[28] = 'SBPMigrationFPPGeneralContent';
+  $migration_order[29] = 'SBPMigrationFPPSectionContent';
+  $migration_order[30] = 'SBPMigrationFPPPullQuote';
+  $migration_order[31] = 'SBPMigrationFPPTimeline';
+  $migration_order[32] = 'SBPMigrationFPPFeaturedResources';
+  $migration_order[33] = 'SBPMigrationFPPFieldCollectionFourColumnCTACallsToActions';
+  $migration_order[34] = 'SBPMigrationFPPFieldCollectionThreeColumnCTAThreeCTAS';
+  $migration_order[35] = 'SBPMigrationFPPFieldCollectionTimelineTimelineItems';
+
 
   $map = sbp_migrate_map();
   if (!empty($modules)) {

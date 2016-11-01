@@ -1,0 +1,75 @@
+<?php
+/**
+ * @file
+ *  Three CTAS Field Collection migration for Three Column CTA FPP.
+ * 
+ * No custom imports necessary at this point.
+ */
+
+class SBPMigrationFPPFieldCollectionThreeColumnCTAThreeCTAS extends SBPMigration {
+
+  public function __construct($arguments) {
+    $this->setProperties('field_collection_three_column_cta_three_ctas');
+    parent::__construct($arguments);
+
+    $this->destination = new MigrateDestinationFieldCollection(
+      'field_three_ctas',
+      array('host_entity_type' => 'fieldable_panels_panes')
+    );
+
+    $this->addFieldMapping('host_entity_id', 'id')
+      ->sourceMigration('SBPMigrationFPPThreeColumnCTA');
+
+    $columns = array(
+      array('id', 'ThreeColumnCTAID'),
+      array('field_title', 'CTA Title'),
+      array('field_description', 'CTA Description'),
+      array('field_link', 'Calls to Action Link Field'),
+      array('field_link_title', 'Calls to Action URL title'),
+      array('field_link_attributes', 'Calls to Action URL attributes'),
+      array('field_icon', 'Icon'),
+      array('field_icon_title', 'Icon Title'),
+      array('field_icon_alt', 'Icon Alt'),
+    );
+
+    $this->source = new MigrateSourceCSV(
+      drupal_get_path('module', 'sbp_migrate') . '/import/field_collection_three_column_cta_three_ctas.csv',
+      $columns,
+      array('header_rows' => 1)
+    );
+
+    $this->map = new MigrateSQLMap($this->machineName,
+      array(
+        'id' => array(
+          'type' => 'int',
+          'not null' => true,
+        ),
+      ),
+      MigrateDestinationFieldablePanelsPanes::getKeySchema()
+    );
+
+    $this->addFieldMapping('field_title', 'field_title');
+    $this->addFieldMapping('field_description', 'field_description');
+
+    $this->addThreeColumnCTALinkFieldMapping('field_link');
+    $this->addThreeColumnCTAIconFieldMapping('field_icon');
+
+  }
+
+  protected function addThreeColumnCTALinkFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_link');
+    $this->addFieldMapping($field_name . ':title', 'field_link_title');
+    $this->addFieldMapping($field_name . ':attributes', 'field_link_attributes');
+    $this->addFieldMapping($field_name . ':language')->defaultValue(LANGUAGE_NONE);
+  }
+
+  protected function addThreeColumnCTAIconFieldMapping($field_name) {
+    $this->addFieldMapping($field_name, 'field_icon');
+    $this->addFieldMapping($field_name . ':alt', 'field_icon_alt');
+    $this->addFieldMapping($field_name . ':title', 'field_icon_title');
+    $this->addFieldMapping($field_name . ':file_replace')
+      ->defaultValue(FILE_EXISTS_REPLACE);
+    $this->addFieldMapping($field_name . ':source_dir')
+      ->defaultValue($this->getImageDirectoryPath());
+  }
+}

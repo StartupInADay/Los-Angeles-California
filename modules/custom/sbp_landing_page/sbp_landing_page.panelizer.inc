@@ -393,155 +393,233 @@ function sbp_landing_page_panelizer_defaults() {
   $display->uuid = '9651d298-1204-4968-8c95-80567812310d';
   $display->content = array();
   $display->panels = array();
-  $pane = new stdClass();
-  $pane->pid = 'new-a5e85646-3b64-4a6d-b1b0-dfd80875d29f';
-  $pane->panel = 'middle';
-  $pane->type = 'entity_field';
-  $pane->subtype = 'node:field_hero';
-  $pane->shown = TRUE;
-  $pane->access = array();
-  $pane->configuration = array(
-    'label' => 'above',
-    'formatter' => 'field_collection_view',
-    'delta_limit' => 0,
-    'delta_offset' => '0',
-    'delta_reversed' => FALSE,
-    'formatter_settings' => array(
-      'add' => 'Add',
-      'delete' => 'Delete',
-      'description' => TRUE,
-      'edit' => 'Edit',
-      'quickedit' => array(
-        'editor' => 'form',
+    $pane = new stdClass();
+    $pane->pid = 'new-a5e85646-3b64-4a6d-b1b0-dfd80875d29f';
+    $pane->panel = 'middle';
+    $pane->type = 'entity_field';
+    $pane->subtype = 'node:field_hero';
+    $pane->shown = TRUE;
+    $pane->access = array();
+    $pane->configuration = array(
+      'label' => 'above',
+      'formatter' => 'field_collection_view',
+      'delta_limit' => 0,
+      'delta_offset' => '0',
+      'delta_reversed' => FALSE,
+      'formatter_settings' => array(
+        'add' => 'Add',
+        'delete' => 'Delete',
+        'description' => TRUE,
+        'edit' => 'Edit',
+        'quickedit' => array(
+          'editor' => 'form',
+        ),
+        'view_mode' => 'full',
       ),
+      'context' => 'panelizer',
+    );
+    $pane->cache = array();
+    $pane->style = array(
+      'settings' => NULL,
+    );
+    $pane->css = array();
+    $pane->extras = array();
+    $pane->position = 0;
+    $pane->locks = array();
+    $pane->uuid = 'a5e85646-3b64-4a6d-b1b0-dfd80875d29f';
+    $display->content['new-a5e85646-3b64-4a6d-b1b0-dfd80875d29f'] = $pane;
+    $display->panels['middle'][0] = 'new-a5e85646-3b64-4a6d-b1b0-dfd80875d29f';
+    $pane = new stdClass();
+    $pane->pid = 'new-90ee3a06-6f59-4ad7-9147-07d2120cabd7';
+    $pane->panel = 'middle';
+    $pane->type = 'fieldable_panels_pane';
+    $pane->subtype = 'uuid:81dde205-336c-4f62-a34d-1c30349f04b2';
+    $pane->shown = TRUE;
+    $pane->access = array();
+    $pane->configuration = array(
       'view_mode' => 'full',
-    ),
-    'context' => 'panelizer',
-  );
-  $pane->cache = array();
-  $pane->style = array(
-    'settings' => NULL,
-  );
-  $pane->css = array();
-  $pane->extras = array();
-  $pane->position = 0;
-  $pane->locks = array();
-  $pane->uuid = 'a5e85646-3b64-4a6d-b1b0-dfd80875d29f';
-  $display->content['new-a5e85646-3b64-4a6d-b1b0-dfd80875d29f'] = $pane;
-  $display->panels['middle'][0] = 'new-a5e85646-3b64-4a6d-b1b0-dfd80875d29f';
-  $pane = new stdClass();
-  $pane->pid = 'new-d7e2fbab-4e24-4729-9004-05eb86eb6647';
-  $pane->panel = 'middle';
-  $pane->type = 'fieldable_panels_pane';
-  $pane->subtype = 'current:1';
-  $pane->shown = TRUE;
-  $pane->access = array();
-  $pane->configuration = array(
-    'view_mode' => 'full',
-    'fieldable_panels_pane' => (object) array(
-      'timestamp' => 1477669238,
-      'uid' => '1',
-      'title' => 'Welcome to the Business Portal',
-      'log' => '',
-      'vuuid' => '35204928-63d9-4064-b433-0dbbe0dbb456',
-      'fpid' => '1',
-      'bundle' => 'section_content',
-      'link' => 0,
-      'path' => '',
-      'reusable' => 1,
-      'admin_title' => 'Welcome',
-      'admin_description' => '',
-      'category' => '',
-      'view_access' => NULL,
-      'edit_access' => NULL,
-      'created' => '1477669204',
-      'changed' => 1477669238,
-      'uuid' => 'fc7a26fa-a6db-477e-a81a-c9b400aac758',
-      'language' => '',
-      'current_vid' => '1',
-      'field_background_image' => array(
-        'und' => array(
-          0 => array(
-            'fid' => '20',
-            'display' => '1',
-            'description' => '',
-            'upload_button' => 'Upload',
-            'remove_button' => 'Remove',
-            'upload' => '',
-            'width' => 420,
-            'height' => 698,
-            'alt' => '',
-            'title' => '',
-            'focal_point' => '50,50',
-          ),
-        ),
-      ),
-      'field_calls_to_action' => array(
-        'und' => array(
-          0 => array(
-            'title' => 'TRY THE STARTUP GUIDE',
-            'url' => 'http://www.google.com',
-            'attributes' => 'a:0:{}',
-          ),
-        ),
-      ),
-      'field_component_body' => array(
-        'und' => array(
-          0 => array(
-            'value' => '<p>The Business Portal provides you with all of the information you need to plan, start, manage, and grow your business. Try our Start Up Guide to quickly map out how to register your new business and be compliant. Explore a rich library of content and resources to help you manage and grow your business. Small businesses are essential to our city’s economy. The Business Portal is here to make sure you have everything you need to succeed.</p>
-',
-            'format' => 'filtered_html',
-          ),
-        ),
-      ),
-      'field_pane_style' => array(
-        'und' => array(
-          0 => array(
-            'tid' => '186',
-          ),
-        ),
-      ),
-      'rdf_mapping' => array(),
-      'revision' => 1,
-      'is_new' => FALSE,
-      'original' => (object) array(
-        'vid' => '1',
-        'timestamp' => '1477669204',
-        'uid' => '1',
+      'fieldable_panels_pane' => (object) array(
+        'bundle' => 'general_content',
+        'language' => '',
+        'is_new' => TRUE,
         'title' => 'Welcome to the Business Portal',
-        'log' => '',
-        'vuuid' => '5aa58e11-e58c-4e5a-afc5-8b80dedaa973',
-        'fpid' => '1',
-        'bundle' => 'section_content',
-        'link' => '0',
+        'link' => 0,
         'path' => '',
-        'reusable' => '1',
-        'admin_title' => 'Welcome',
+        'reusable' => 0,
+        'admin_title' => '',
         'admin_description' => '',
         'category' => '',
-        'view_access' => NULL,
-        'edit_access' => NULL,
-        'created' => '1477669204',
-        'changed' => '1477669204',
-        'uuid' => 'fc7a26fa-a6db-477e-a81a-c9b400aac758',
-        'language' => '',
-        'current_vid' => '1',
-        'field_background_image' => array(),
-        'field_calls_to_action' => array(
+        'vid' => '5',
+        'current_vid' => '',
+        'revision' => 1,
+        'fpid' => '3',
+        'field_call_to_action' => array(
           'und' => array(
             0 => array(
-              'url' => 'http://www.google.com',
-              'title' => 'TRY THE STARTUP GUIDE',
-              'attributes' => array(),
+              'title' => 'Try the startup guide',
+              'url' => 'start',
+              'attributes' => 'a:1:{s:6:"target";i:0;}',
             ),
           ),
         ),
+        'field_description' => array(
+          'und' => array(
+            0 => array(
+              'value' => '<p>The Business Portal has many features available to businesses served in your area.</p>
+',
+              'format' => 'full_html',
+            ),
+          ),
+        ),
+        'field_intro_title' => array(
+          'und' => array(
+            0 => array(
+              'value' => 'Welcome to the Business Portal',
+            ),
+          ),
+        ),
+        'field_pane_style' => array(
+          'und' => array(
+            0 => array(
+              'tid' => '184',
+            ),
+          ),
+        ),
+        'log' => '',
+        'created' => 1477938036,
+        'timestamp' => 1477938036,
+        'changed' => 1477938036,
+        'uuid' => '81dde205-336c-4f62-a34d-1c30349f04b2',
+        'vuuid' => '4f183426-4a16-4b7d-b894-422ab148651b',
+        'uid' => '1',
+      ),
+    );
+    $pane->cache = array();
+    $pane->style = array(
+      'settings' => NULL,
+    );
+    $pane->css = array();
+    $pane->extras = array();
+    $pane->position = 1;
+    $pane->locks = array();
+    $pane->uuid = '90ee3a06-6f59-4ad7-9147-07d2120cabd7';
+    $display->content['new-90ee3a06-6f59-4ad7-9147-07d2120cabd7'] = $pane;
+    $display->panels['middle'][1] = 'new-90ee3a06-6f59-4ad7-9147-07d2120cabd7';
+    $pane = new stdClass();
+    $pane->pid = 'new-ec46f2a0-2352-41c0-8673-1b1ad7fb40c9';
+    $pane->panel = 'middle';
+    $pane->type = 'fieldable_panels_pane';
+    $pane->subtype = 'uuid:5a864689-f4ed-4da5-ab68-e0d77287577e';
+    $pane->shown = TRUE;
+    $pane->access = array();
+    $pane->configuration = array(
+      'view_mode' => 'full',
+      'fieldable_panels_pane' => (object) array(
+        'bundle' => 'pull_quote',
+        'language' => '',
+        'is_new' => TRUE,
+        'title' => 'From the Mayor',
+        'link' => 0,
+        'path' => '',
+        'reusable' => 0,
+        'admin_title' => '',
+        'admin_description' => '',
+        'category' => '',
+        'vid' => '6',
+        'current_vid' => '',
+        'revision' => 1,
+        'fpid' => '4',
+        'field_author' => array(
+          'und' => array(
+            0 => array(
+              'value' => 'Peter Garret',
+            ),
+          ),
+        ),
+        'field_pane_style' => array(
+          'und' => array(
+            0 => array(
+              'tid' => '188',
+            ),
+          ),
+        ),
+        'field_quote' => array(
+          'und' => array(
+            0 => array(
+              'value' => 'Whether you’re starting a bakery or run an auto shop — we designed the Business Portal to help ALL businesses.',
+            ),
+          ),
+        ),
+        'field_quote_image' => array(
+          'und' => array(
+            0 => array(
+              'fid' => '20',
+              'display' => '1',
+              'description' => '',
+              'attach_button' => 'Attach',
+              'upload' => '',
+              'remove_button' => 'Remove',
+              'width' => 881,
+              'height' => 1150,
+            ),
+          ),
+        ),
+        'field_quote_subtitle' => array(
+          'und' => array(
+            0 => array(
+              'value' => 'Mayor of Cityville',
+            ),
+          ),
+        ),
+        'log' => '',
+        'created' => 1477938303,
+        'timestamp' => 1477938303,
+        'changed' => 1477938303,
+        'uuid' => '5a864689-f4ed-4da5-ab68-e0d77287577e',
+        'vuuid' => 'bc02d46d-3d02-4b56-a90c-c4a992bfe022',
+        'uid' => '1',
+      ),
+    );
+    $pane->cache = array();
+    $pane->style = array(
+      'settings' => NULL,
+    );
+    $pane->css = array();
+    $pane->extras = array();
+    $pane->position = 2;
+    $pane->locks = array();
+    $pane->uuid = 'ec46f2a0-2352-41c0-8673-1b1ad7fb40c9';
+    $display->content['new-ec46f2a0-2352-41c0-8673-1b1ad7fb40c9'] = $pane;
+    $display->panels['middle'][2] = 'new-ec46f2a0-2352-41c0-8673-1b1ad7fb40c9';
+    $pane = new stdClass();
+    $pane->pid = 'new-020d573a-f5fc-45c9-aca7-40e8dcdf87d2';
+    $pane->panel = 'middle';
+    $pane->type = 'fieldable_panels_pane';
+    $pane->subtype = 'uuid:a0c321f6-ea1e-4dcb-bc7e-45e344d373df';
+    $pane->shown = TRUE;
+    $pane->access = array();
+    $pane->configuration = array(
+      'view_mode' => 'full',
+      'fieldable_panels_pane' => (object) array(
+        'bundle' => 'three_column_cta',
+        'language' => 'und',
+        'is_new' => TRUE,
+        'title' => 'Resources',
+        'link' => 0,
+        'path' => '',
+        'reusable' => 0,
+        'admin_title' => '',
+        'admin_description' => '',
+        'category' => '',
+        'vid' => '7',
+        'current_vid' => '',
+        'revision' => 1,
+        'fpid' => '5',
         'field_component_body' => array(
           'und' => array(
             0 => array(
-              'value' => 'The Business Portal provides you with all of the information you need to plan, start, manage, and grow your business. Try our Start Up Guide to quickly map out how to register your new business and be compliant.  Explore a rich library of content and resources to help you manage and grow your business.
- 
-Small businesses are essential to our city’s economy. The Business Portal is here to make sure you have everything you need to succeed.',
+              'value' => '<p>You know what running a successful business will look like, but you may need help to get there. Browse featured organizations, websites, courses, guides, incentives, and tools to help you on your way.</p>
+',
               'format' => 'filtered_html',
             ),
           ),
@@ -549,334 +627,117 @@ Small businesses are essential to our city’s economy. The Business Portal is h
         'field_pane_style' => array(
           'und' => array(
             0 => array(
-              'tid' => '186',
+              'tid' => '192',
             ),
           ),
         ),
-        'rdf_mapping' => array(),
-      ),
-      'old_vid' => '1',
-      'vid' => '2',
-    ),
-  );
-  $pane->cache = array();
-  $pane->style = array(
-    'settings' => NULL,
-  );
-  $pane->css = array();
-  $pane->extras = array();
-  $pane->position = 1;
-  $pane->locks = array();
-  $pane->uuid = 'd7e2fbab-4e24-4729-9004-05eb86eb6647';
-  $display->content['new-d7e2fbab-4e24-4729-9004-05eb86eb6647'] = $pane;
-  $display->panels['middle'][1] = 'new-d7e2fbab-4e24-4729-9004-05eb86eb6647';
-  $pane = new stdClass();
-  $pane->pid = 'new-d9ccec26-9f6a-463e-a36a-8f15c49e8c92';
-  $pane->panel = 'middle';
-  $pane->type = 'fieldable_panels_pane';
-  $pane->subtype = 'uuid:84c7aae1-031e-4a88-bdf7-4c4f531650a2';
-  $pane->shown = TRUE;
-  $pane->access = array();
-  $pane->configuration = array(
-    'view_mode' => 'full',
-    'fieldable_panels_pane' => (object) array(
-      'bundle' => 'three_column_cta',
-      'language' => '',
-      'is_new' => TRUE,
-      'title' => 'Resources',
-      'link' => 0,
-      'path' => '',
-      'reusable' => 1,
-      'admin_title' => 'Resources',
-      'admin_description' => '',
-      'category' => '',
-      'vid' => '3',
-      'current_vid' => '',
-      'revision' => 1,
-      'fpid' => '2',
-      'field_component_body' => array(
-        'und' => array(
-          0 => array(
-            'value' => 'You know what running a successful business will look like, but you may need help to get there. Browse featured organizations, websites, courses, guides, incentives, and tools to help you on your way.',
-            'format' => 'filtered_html',
+        'field_three_ctas' => array(
+          'und' => array(
+            0 => array(
+              'value' => '24',
+              'revision_id' => '24',
+            ),
+            1 => array(
+              'value' => '25',
+              'revision_id' => '25',
+            ),
+            2 => array(
+              'value' => '26',
+              'revision_id' => '26',
+            ),
           ),
         ),
+        'log' => '',
+        'created' => 1477938693,
+        'timestamp' => 1477938693,
+        'changed' => 1477938693,
+        'uuid' => 'a0c321f6-ea1e-4dcb-bc7e-45e344d373df',
+        'vuuid' => '9edc5486-5082-4fa1-8f1a-9ff8345cda67',
+        'uid' => '1',
       ),
-      'field_pane_style' => array(
-        'und' => array(
-          0 => array(
-            'tid' => '182',
+    );
+    $pane->cache = array();
+    $pane->style = array(
+      'settings' => NULL,
+    );
+    $pane->css = array();
+    $pane->extras = array();
+    $pane->position = 3;
+    $pane->locks = array();
+    $pane->uuid = '020d573a-f5fc-45c9-aca7-40e8dcdf87d2';
+    $display->content['new-020d573a-f5fc-45c9-aca7-40e8dcdf87d2'] = $pane;
+    $display->panels['middle'][3] = 'new-020d573a-f5fc-45c9-aca7-40e8dcdf87d2';
+    $pane = new stdClass();
+    $pane->pid = 'new-b37d6645-dca3-47dc-a531-bb7deac2bce9';
+    $pane->panel = 'middle';
+    $pane->type = 'fieldable_panels_pane';
+    $pane->subtype = 'uuid:1c0cd9fa-b871-46cb-b569-0f6effe32f3c';
+    $pane->shown = TRUE;
+    $pane->access = array();
+    $pane->configuration = array(
+      'view_mode' => 'full',
+      'fieldable_panels_pane' => (object) array(
+        'bundle' => 'four_column_cta',
+        'language' => '',
+        'is_new' => TRUE,
+        'title' => 'Build Your Capacity',
+        'link' => 0,
+        'path' => '',
+        'reusable' => 0,
+        'admin_title' => '',
+        'admin_description' => '',
+        'category' => '',
+        'vid' => '8',
+        'current_vid' => '',
+        'revision' => 1,
+        'fpid' => '6',
+        'field_calls_to_actions' => array(
+          'und' => array(
+            0 => array(
+              'value' => '27',
+              'revision_id' => '27',
+            ),
+            1 => array(
+              'value' => '28',
+              'revision_id' => '28',
+            ),
+            2 => array(
+              'value' => '29',
+              'revision_id' => '29',
+            ),
+            3 => array(
+              'value' => '30',
+              'revision_id' => '30',
+            ),
           ),
         ),
-      ),
-      'field_three_ctas' => array(
-        'und' => array(
-          0 => array(
-            'value' => '24',
-            'revision_id' => '24',
-          ),
-          1 => array(
-            'value' => '25',
-            'revision_id' => '25',
-          ),
-          2 => array(
-            'value' => '26',
-            'revision_id' => '26',
+        'field_pane_style' => array(
+          'und' => array(
+            0 => array(
+              'tid' => '191',
+            ),
           ),
         ),
+        'log' => '',
+        'created' => 1477939113,
+        'timestamp' => 1477939113,
+        'changed' => 1477939113,
+        'uuid' => '1c0cd9fa-b871-46cb-b569-0f6effe32f3c',
+        'vuuid' => '79a1060e-f544-4540-9ddf-4a1992a8e88b',
+        'uid' => '1',
       ),
-      'log' => '',
-      'created' => 1477669482,
-      'timestamp' => 1477669482,
-      'changed' => 1477669482,
-      'uuid' => '84c7aae1-031e-4a88-bdf7-4c4f531650a2',
-      'vuuid' => '2b69e419-c6c0-4e44-838c-221e144cd8c5',
-      'uid' => '1',
-    ),
-  );
-  $pane->cache = array();
-  $pane->style = array(
-    'settings' => NULL,
-  );
-  $pane->css = array();
-  $pane->extras = array();
-  $pane->position = 2;
-  $pane->locks = array();
-  $pane->uuid = 'd9ccec26-9f6a-463e-a36a-8f15c49e8c92';
-  $display->content['new-d9ccec26-9f6a-463e-a36a-8f15c49e8c92'] = $pane;
-  $display->panels['middle'][2] = 'new-d9ccec26-9f6a-463e-a36a-8f15c49e8c92';
-  $pane = new stdClass();
-  $pane->pid = 'new-2160a26d-e481-4568-abfd-ab286e68b313';
-  $pane->panel = 'middle';
-  $pane->type = 'fieldable_panels_pane';
-  $pane->subtype = 'uuid:4960b416-7bc9-4c7e-b9f4-6057d5999239';
-  $pane->shown = TRUE;
-  $pane->access = array();
-  $pane->configuration = array(
-    'view_mode' => 'full',
-    'fieldable_panels_pane' => (object) array(
-      'bundle' => 'four_column_cta',
-      'language' => '',
-      'is_new' => TRUE,
-      'title' => 'Build your Capacity',
-      'link' => 0,
-      'path' => '',
-      'reusable' => 1,
-      'admin_title' => 'Capacity',
-      'admin_description' => '',
-      'category' => '',
-      'vid' => '4',
-      'current_vid' => '',
-      'revision' => 1,
-      'fpid' => '3',
-      'field_calls_to_actions' => array(
-        'und' => array(
-          0 => array(
-            'value' => '27',
-            'revision_id' => '27',
-          ),
-          1 => array(
-            'value' => '28',
-            'revision_id' => '28',
-          ),
-          2 => array(
-            'value' => '29',
-            'revision_id' => '29',
-          ),
-          3 => array(
-            'value' => '30',
-            'revision_id' => '30',
-          ),
-        ),
-      ),
-      'field_pane_style' => array(
-        'und' => array(
-          0 => array(
-            'tid' => '180',
-          ),
-        ),
-      ),
-      'log' => '',
-      'created' => 1477669745,
-      'timestamp' => 1477669745,
-      'changed' => 1477669745,
-      'uuid' => '4960b416-7bc9-4c7e-b9f4-6057d5999239',
-      'vuuid' => '4897b266-123b-44d3-8c4d-21c237ca66b3',
-      'uid' => '1',
-    ),
-  );
-  $pane->cache = array();
-  $pane->style = array(
-    'settings' => NULL,
-  );
-  $pane->css = array();
-  $pane->extras = array();
-  $pane->position = 3;
-  $pane->locks = array();
-  $pane->uuid = '2160a26d-e481-4568-abfd-ab286e68b313';
-  $display->content['new-2160a26d-e481-4568-abfd-ab286e68b313'] = $pane;
-  $display->panels['middle'][3] = 'new-2160a26d-e481-4568-abfd-ab286e68b313';
-  $pane = new stdClass();
-  $pane->pid = 'new-e16290fe-0fcc-45c4-b0c0-25287ea1d7b3';
-  $pane->panel = 'middle';
-  $pane->type = 'fieldable_panels_pane';
-  $pane->subtype = 'uuid:a79dba70-698d-485e-92e9-0582c7bb2e94';
-  $pane->shown = TRUE;
-  $pane->access = array();
-  $pane->configuration = array(
-    'view_mode' => 'full',
-    'fieldable_panels_pane' => (object) array(
-      'bundle' => 'general_content',
-      'language' => 'und',
-      'is_new' => TRUE,
-      'title' => 'Manufacturing Support Initiative',
-      'link' => 0,
-      'path' => '',
-      'reusable' => 1,
-      'admin_title' => 'Initiative',
-      'admin_description' => '',
-      'category' => '',
-      'vid' => '5',
-      'current_vid' => '',
-      'revision' => 1,
-      'fpid' => '4',
-      'field_call_to_action' => array(
-        'und' => array(
-          0 => array(
-            'title' => 'Go',
-            'url' => 'http://www.google.com',
-            'attributes' => 'a:1:{s:6:"target";s:6:"_blank";}',
-          ),
-        ),
-      ),
-      'field_description' => array(
-        'und' => array(
-          0 => array(
-            'value' => 'The Mayor\'s Manufacturing Support Initiative provides entrepreneurs and manufacturers across L.A. with industry support, networking opportunities, and education programs that will reach more than 1,000 entrepreneurs and manufacturers over the next 18 months. ',
-            'format' => 'filtered_html',
-          ),
-        ),
-      ),
-      'field_intro_title' => array(
-        'und' => array(
-          0 => array(
-            'value' => 'Interested in moving your business to our city?',
-          ),
-        ),
-      ),
-      'field_pane_style' => array(
-        'und' => array(
-          0 => array(
-            'tid' => '185',
-          ),
-        ),
-      ),
-      'log' => '',
-      'created' => 1477669879,
-      'timestamp' => 1477669879,
-      'changed' => 1477669879,
-      'uuid' => 'a79dba70-698d-485e-92e9-0582c7bb2e94',
-      'vuuid' => '5beed2ea-78fa-4706-9981-880a5845acdf',
-      'uid' => '1',
-    ),
-  );
-  $pane->cache = array();
-  $pane->style = array(
-    'settings' => NULL,
-  );
-  $pane->css = array();
-  $pane->extras = array();
-  $pane->position = 4;
-  $pane->locks = array();
-  $pane->uuid = 'e16290fe-0fcc-45c4-b0c0-25287ea1d7b3';
-  $display->content['new-e16290fe-0fcc-45c4-b0c0-25287ea1d7b3'] = $pane;
-  $display->panels['middle'][4] = 'new-e16290fe-0fcc-45c4-b0c0-25287ea1d7b3';
-  $pane = new stdClass();
-  $pane->pid = 'new-2225ca81-ee1f-4f2c-80b2-59d45add1bab';
-  $pane->panel = 'middle';
-  $pane->type = 'fieldable_panels_pane';
-  $pane->subtype = 'uuid:53c0f94b-2eae-471c-98dd-a9a479336029';
-  $pane->shown = TRUE;
-  $pane->access = array();
-  $pane->configuration = array(
-    'view_mode' => 'full',
-    'fieldable_panels_pane' => (object) array(
-      'bundle' => 'pull_quote',
-      'language' => '',
-      'is_new' => TRUE,
-      'title' => 'From the Mayor',
-      'link' => 0,
-      'path' => '',
-      'reusable' => 1,
-      'admin_title' => 'Quote',
-      'admin_description' => '',
-      'category' => '',
-      'vid' => '6',
-      'current_vid' => '',
-      'revision' => 1,
-      'fpid' => '5',
-      'field_author' => array(
-        'und' => array(
-          0 => array(
-            'value' => 'Philip Bialetti',
-          ),
-        ),
-      ),
-      'field_pane_style' => array(
-        'und' => array(
-          0 => array(
-            'tid' => '179',
-          ),
-        ),
-      ),
-      'field_quote' => array(
-        'und' => array(
-          0 => array(
-            'value' => 'Whether you’re starting a bakery or run an auto shop — we designed the L.A. Business Portal to help ALL businesses.',
-          ),
-        ),
-      ),
-      'field_quote_image' => array(
-        'und' => array(
-          0 => array(
-            'fid' => '32',
-            'display' => '1',
-            'description' => '',
-            'attach_button' => 'Attach',
-            'upload' => '',
-            'remove_button' => 'Remove',
-            'width' => 680,
-            'height' => 680,
-          ),
-        ),
-      ),
-      'field_quote_subtitle' => array(
-        'und' => array(
-          0 => array(
-            'value' => 'Mayor of Cityville',
-          ),
-        ),
-      ),
-      'log' => '',
-      'created' => 1477670751,
-      'timestamp' => 1477670751,
-      'changed' => 1477670751,
-      'uuid' => '53c0f94b-2eae-471c-98dd-a9a479336029',
-      'vuuid' => '5b813b80-962c-42bd-b6eb-79db30c1a81d',
-      'uid' => '1',
-    ),
-  );
-  $pane->cache = array();
-  $pane->style = array(
-    'settings' => NULL,
-  );
-  $pane->css = array();
-  $pane->extras = array();
-  $pane->position = 5;
-  $pane->locks = array();
-  $pane->uuid = '2225ca81-ee1f-4f2c-80b2-59d45add1bab';
-  $display->content['new-2225ca81-ee1f-4f2c-80b2-59d45add1bab'] = $pane;
-  $display->panels['middle'][5] = 'new-2225ca81-ee1f-4f2c-80b2-59d45add1bab';
+    );
+    $pane->cache = array();
+    $pane->style = array(
+      'settings' => NULL,
+    );
+    $pane->css = array();
+    $pane->extras = array();
+    $pane->position = 4;
+    $pane->locks = array();
+    $pane->uuid = 'b37d6645-dca3-47dc-a531-bb7deac2bce9';
+    $display->content['new-b37d6645-dca3-47dc-a531-bb7deac2bce9'] = $pane;
+    $display->panels['middle'][4] = 'new-b37d6645-dca3-47dc-a531-bb7deac2bce9';
   $display->hide_title = PANELS_TITLE_FIXED;
   $display->title_pane = '0';
   $panelizer->display = $display;

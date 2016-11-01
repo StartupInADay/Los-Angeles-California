@@ -43,7 +43,6 @@ function fieldable_panels_panes_fieldable_panels_pane_ctools_content_types() {
  */
 function fieldable_panels_panes_fieldable_panels_pane_content_type($subtype_id, $plugin) {
   $content_type = array();
-
   // If an ID was passed in, try loading a corresponding FPP.
   if (strpos($subtype_id, ':') !== FALSE) {
     // If a specific FPP was requested, load it. Use the 'force' method to
@@ -267,12 +266,7 @@ function fieldable_panels_panes_fieldable_panels_pane_content_type_edit_form_sub
 
   if (!empty($entity->is_new) || $revision_context_aware) {
     if (module_exists('uuid') && isset($entity->uuid)) {
-      if ($revision_context_aware) {
-        $entity_id = 'vuuid:' . $entity->vuuid;
-      }
-      else {
-        $entity_id = 'uuid:' . $entity->uuid;
-      }
+      $entity_id = 'uuid:' . $entity->uuid;
     }
     else {
       if ($revision_context_aware) {
