@@ -434,9 +434,6 @@ function ctools_content_get_defaults($plugin, $subtype) {
   }
   if (isset($defaults)) {
     if (is_string($defaults) && function_exists($defaults)) {
-      //TODO: $pane
-      dpm($pane);
-      dpm($return);
       if ($return = $defaults($pane)) {
         return $return;
       }
